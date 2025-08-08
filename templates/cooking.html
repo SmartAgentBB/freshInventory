@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>재료 기반 요리 추천 - Fresh Inventory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- 상단 네비게이션 바 -->
+    <div class="fixed top-0 left-0 right-0 bg-white shadow-sm border-b z-40">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity" onclick="window.location.href='/'">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="1" y="1" width="22" height="22" rx="3" fill="white" stroke="currentColor" stroke-width="2"/>
+                        <line x1="5" y1="6" x2="5" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M15.5154 10C15.5768 10 15.6485 10.0103 15.7304 10.031C16.3038 10.1135 16.5904 10.4334 16.5904 10.9907C16.5904 11.1765 16.5392 11.4551 16.4369 11.8266C16.0478 13.3127 15.8328 14.2208 15.7918 14.5511C16.1399 14.2828 16.6416 13.7874 17.2969 13.065C17.9932 12.3013 18.5256 11.9195 18.8942 11.9195C19.0785 11.9195 19.2526 11.9711 19.4164 12.0743C19.8055 12.322 20 12.6729 20 13.1269C20 13.4572 19.8259 13.7255 19.4778 13.9319C19.314 14.0351 19.0375 14.1383 18.6485 14.2415C17.2355 14.6336 16.3754 14.8916 16.0683 15.0155C16.4778 15.1806 16.959 15.3354 17.5119 15.4799C18.6792 15.7895 19.3242 15.9752 19.4471 16.0372C19.7747 16.2229 19.9488 16.5119 19.9693 16.904C19.9693 17.0485 19.9386 17.193 19.8771 17.3375C19.6724 17.8328 19.3549 18.0805 18.9249 18.0805C18.5973 18.0805 18.116 17.7606 17.4812 17.1207C16.6212 16.192 16.0478 15.6347 15.7611 15.4489C15.8225 15.903 15.9352 16.4293 16.099 17.0279C16.4266 18.1631 16.5904 18.8132 16.5904 18.9783C16.5904 19.0402 16.5802 19.1022 16.5597 19.1641C16.4778 19.7214 16.1195 20 15.4846 20C15.4232 20 15.3515 19.9897 15.2696 19.969C14.6962 19.8865 14.4096 19.5666 14.4096 19.0093C14.4096 18.8235 14.4608 18.5449 14.5631 18.1734C14.9522 16.6873 15.1672 15.7792 15.2082 15.4489C14.8805 15.6966 14.3993 16.161 13.7645 16.8421C13.0068 17.6677 12.4539 18.0805 12.1058 18.0805C11.9215 18.0805 11.7474 18.0289 11.5836 17.9257C11.1945 17.678 11 17.3271 11 16.8731C11 16.5428 11.1741 16.2745 11.5222 16.0681C11.686 15.9649 11.9625 15.8617 12.3515 15.7585C13.7645 15.3664 14.6246 15.1084 14.9317 14.9845C14.5222 14.8194 14.041 14.6646 13.4881 14.5201C12.3208 14.2105 11.6758 14.0248 11.5529 13.9628C11.2253 13.7771 11.0512 13.4881 11.0307 13.096C11.0307 12.9515 11.0614 12.807 11.1229 12.6625C11.3276 12.1672 11.6451 11.9195 12.0751 11.9195C12.4232 11.9401 12.884 12.2394 13.4573 12.8173C14.3379 13.7255 14.9215 14.2931 15.2082 14.5201C15.1468 14.0867 15.0444 13.581 14.901 13.0031C14.5734 11.8266 14.4096 11.1662 14.4096 11.0217C14.4096 10.9598 14.4198 10.8978 14.4403 10.8359C14.5222 10.2786 14.8805 10 15.5154 10Z" fill="currentColor"/>
+                    </svg>
+                    <h1 class="text-xl font-bold text-gray-800">Fresh Inventory</h1>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="p-2 text-cyan-500 hover:text-cyan-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 27 23">
+                            <path d="M6.73871 11.549V13.8024M21.4532 11.549V20.4071C21.4532 20.4071 19.8362 22 14.2172 22C8.59823 22 6.73871 20.4071 6.73871 20.4071V13.8024M21.4532 13.8024C23.4609 13.3103 27.2374 9.60609 24.5 5.5C22.5 2.5 18.7559 3.54568 18.7559 3.54568M6.73871 13.8024C4.27283 13.4527 0.39795 11.5118 2.50001 6.5C3.96798 3 8.05924 3.05356 9.3663 4.01189C10.0931 2.50793 11.7891 0.0964034 16 1.50001C19 2.5 19.5 5.5 19 7.50002M9 10.2281C9.49857 9.91728 11.533 9.30343 14.2172 9.33452C16.9014 9.3656 18.744 10.2151 19 10.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button id="shoppinglist-btn" class="p-2 text-gray-600 hover:text-gray-800">
+                        <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15.6476 7C16.8806 7 17.8199 8.1048 17.6216 9.32172L16.4807 16.3217C16.323 17.2893 15.4872 18 14.5068 18H4.72475C3.7625 18 2.93666 17.3148 2.75909 16.3691L1.4448 9.36906C1.21368 8.1381 2.15798 7 3.41046 7H15.6476Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M5.5 12.5L8 15L13 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M6 7C6 7 6 1 9.50001 1C13 1 13 7 13 7" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:text-gray-800">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="mt-16 container mx-auto px-4 py-6">
+        <!-- 탭 버튼 -->
+        <div class="flex items-center mb-6 border-b border-gray-200">
+            <button id="tab-recommend" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-cyan-500 text-cyan-600 transition-colors">
+                요리 추천
+            </button>
+            <button id="tab-bookmark" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
+                북마크
+            </button>
+
+        </div>
+
+        <!-- 재고 목록 섹션 -->
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">재고 목록</h2>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div id="inventory-loading" class="text-center py-12">
+                    <svg class="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                    <p class="text-gray-500 text-lg font-medium">재고 목록을 불러오는 중...</p>
+                    <p class="text-gray-400 text-sm mt-1">보유한 재료들이 여기에 표시됩니다</p>
+                </div>
+                
+                <div id="inventory-content" class="hidden">
+                    <div id="inventory-list" class="text-gray-700 leading-relaxed mb-4">
+                        <!-- 재고 목록이 여기에 표시됩니다 -->
+                    </div>
+                    <div id="inventory-total" class="text-sm text-gray-500 font-medium">
+                        <!-- 총 종류 수가 여기에 표시됩니다 -->
+                    </div>
+                </div>
+                
+                <div id="inventory-empty" class="hidden text-center py-8">
+                    <svg class="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                    <p class="text-gray-500 font-medium">사용 가능한 재료가 없습니다</p>
+                    <p class="text-gray-400 text-sm mt-1">재료를 추가한 후 다시 시도해보세요</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 요리 추천 버튼 -->
+        <div class="text-center mb-8">
+            <button id="recommend-cooking-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg transition-all duration-200 hover:scale-105">
+                요리 추천
+            </button>
+        </div>
+
+        <!-- 요리 추천 결과 섹션 -->
+        <div id="cooking-recommendations" class="hidden">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">AI 요리 추천</h2>
+            <div id="recommendations-loading" class="text-center py-8">
+                <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-cyan-500 transition ease-in-out duration-150">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    AI가 요리를 추천하고 있습니다...
+                </div>
+            </div>
+            
+            <div id="recommendations-content" class="hidden">
+                <div id="recommendations-list" class="space-y-4">
+                    <!-- 요리 추천 결과가 여기에 표시됩니다 -->
+                </div>
+            </div>
+            
+            <div id="recommendations-error" class="hidden text-center py-8">
+                <svg class="mx-auto h-12 w-12 text-red-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <p class="text-red-600 font-medium">요리 추천을 불러오는데 실패했습니다</p>
+                <p class="text-gray-500 text-sm mt-1">잠시 후 다시 시도해보세요</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 북마크 요리 상세 모달 -->
+    <div id="bookmark-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <!-- 모달 콘텐츠 -->
+            <div class="p-6">
+                <!-- 모달 헤더 (제목과 닫기 버튼) -->
+                <div class="flex items-center justify-between mb-4">
+                    <h3 id="modal-recipe-title" class="text-lg font-semibold text-gray-800">${recipe.title}</h3>
+                    <button onclick="closeBookmarkModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- 요리 기본 정보 -->
+                <div id="modal-recipe-info" class="mb-6">
+                    <!-- 난이도, 소요시간, 필요한 재료가 여기에 동적으로 추가됩니다 -->
+                </div>
+                
+                <!-- 재료 체크 섹션 -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">재료 체크</h3>
+                    <p class="text-sm text-gray-600 mb-4">위 재료 중 구매가 필요한 재료를 클릭하여 선택하세요. 선택된 재료는 쇼핑 목록에 추가됩니다.</p>
+                    <div id="modal-remaining-check-loading" class="text-center py-4">
+                        <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-cyan-500 transition ease-in-out duration-150">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            재고 남은 양을 확인하는 중...
+                        </div>
+                    </div>
+                    <div id="modal-remaining-check-content" class="hidden">
+                        <div id="modal-remaining-check-list" class="space-y-3">
+                            <!-- 재고 남은 양 목록이 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    <div id="modal-remaining-check-empty" class="hidden text-center py-4">
+                        <svg class="mx-auto h-8 w-8 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                        <p class="text-gray-500 font-medium text-sm">재고가 남은 재료가 없습니다</p>
+                        <p class="text-gray-400 text-xs mt-1">모든 재료를 구매해야 합니다</p>
+                    </div>
+                </div>
+                
+                <!-- 모달 하단 버튼 -->
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <button onclick="closeBookmarkModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
+                        취소
+                    </button>
+                    <button onclick="saveAndCloseModal()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors">
+                        저장
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 재고 목록 불러오기
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInventoryList();
+            
+            // 요리 추천 섹션 초기화 (로딩 상태 숨기기)
+            const loadingDiv = document.getElementById('recommendations-loading');
+            const contentDiv = document.getElementById('recommendations-content');
+            const errorDiv = document.getElementById('recommendations-error');
+            
+            if (loadingDiv) loadingDiv.classList.add('hidden');
+            if (contentDiv) contentDiv.classList.add('hidden');
+            if (errorDiv) errorDiv.classList.add('hidden');
+            
+            // 요리 추천 버튼 클릭 이벤트
+            document.getElementById('recommend-cooking-btn').addEventListener('click', function() {
+                getCookingRecommendations();
+            });
+            
+            // Shopping list 버튼 클릭 이벤트
+            const shoppingListBtn = document.getElementById('shoppinglist-btn');
+            if (shoppingListBtn) {
+                shoppingListBtn.addEventListener('click', () => {
+                    window.location.href = '/shopping.html';
+                });
+            }
+            
+            // 탭 전환 기능
+            setupTabNavigation();
+            
+            // 초기 탭 상태 설정 (요리 추천 탭이 기본 활성화)
+            const recommendTab = document.getElementById('tab-recommend');
+            const bookmarkTab = document.getElementById('tab-bookmark');
+            
+            if (recommendTab && bookmarkTab) {
+                console.log('Initial tab setup completed'); // 디버깅용
+            }
+        });
+
+        // 기존 재고 목록과 동일한 색상 스타일 함수
+        function getColorStyle(expiryColor) {
+            const colorMap = {
+                "green-500": "background-color: #dcfce7; color: #166534;",
+                "green-400": "background-color: #bbf7d0; color: #15803d;",
+                "green-300": "background-color: #d1fae5; color: #047857;",
+                "yellow-400": "background-color: #fef3c7; color: #d97706;",
+                "yellow-500": "background-color: #fef08a; color: #ca8a04;",
+                "orange-400": "background-color: #fed7aa; color: #ea580c;",
+                "orange-500": "background-color: #fdba74; color: #c2410c;",
+                "red-400": "background-color: #fecaca; color: #dc2626;",
+                "red-500": "background-color: #fca5a5; color: #b91c1c;",
+                "red-600": "background-color: #f87171; color: #991b1b;",
+                "red-700": "background-color: #fecaca; color: #7f1d1d;",
+                "gray-400": "background-color: #f3f4f6; color: #6b7280;"
+            };
+            return colorMap[expiryColor] || "background-color: #f3f4f6; color: #6b7280;";
+        }
+
+        async function loadInventoryList() {
+            const loadingDiv = document.getElementById('inventory-loading');
+            const contentDiv = document.getElementById('inventory-content');
+            const emptyDiv = document.getElementById('inventory-empty');
+            const listDiv = document.getElementById('inventory-list');
+            const totalDiv = document.getElementById('inventory-total');
+
+            try {
+                const response = await fetch('/api/cooking-inventory');
+                const data = await response.json();
+
+                // 로딩 상태 숨기기
+                loadingDiv.classList.add('hidden');
+
+                if (data.displayNames && data.displayNames.length > 0) {
+                    // 재고 목록 표시 (색상 배경 적용)
+                    const coloredNames = data.items.map(item => {
+                        if (item.frozen) {
+                            // 냉동 재료 - 하늘색 배경
+                            return `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-800">${item.name}</span>`;
+                        } else {
+                            // 일반 재료 - expiryColor에 따른 색상 적용
+                            const colorStyle = getColorStyle(item.expiryColor);
+                            return `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium" style="${colorStyle}">${item.name}</span>`;
+                        }
+                    });
+                    
+                    const displayText = data.displayNames.length === 10 ? 
+                        `${coloredNames.join(' ')} <span class="text-gray-500">...등</span>` : 
+                        coloredNames.join(' ');
+                    
+                    listDiv.innerHTML = displayText;
+                    totalDiv.innerHTML = `총 ${data.totalCount}종`;
+                    
+                    contentDiv.classList.remove('hidden');
+                } else {
+                    // 재고가 없는 경우
+                    emptyDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('재고 목록 로드 실패:', error);
+                loadingDiv.classList.add('hidden');
+                
+                // 에러 상태 표시
+                listDiv.innerHTML = '재고 목록을 불러오는데 실패했습니다.';
+                totalDiv.innerHTML = '';
+                contentDiv.classList.remove('hidden');
+            }
+        }
+
+        async function getCookingRecommendations() {
+            const recommendationsSection = document.getElementById('cooking-recommendations');
+            const loadingDiv = document.getElementById('recommendations-loading');
+            const contentDiv = document.getElementById('recommendations-content');
+            const errorDiv = document.getElementById('recommendations-error');
+            const listDiv = document.getElementById('recommendations-list');
+            const recommendBtn = document.getElementById('recommend-cooking-btn');
+
+            // Get current inventory items for comparison (including frozen items)
+            let inventoryItems = [];
+            try {
+                const inventoryResponse = await fetch('/api/cooking-inventory');
+                const inventoryData = await inventoryResponse.json();
+                inventoryItems = inventoryData.items || [];
+                
+                // Also get frozen items for comparison
+                const frozenResponse = await fetch('/api/frozen');
+                const frozenData = await frozenResponse.json();
+                const frozenItems = frozenData.map(item => ({...item, frozen: true}));
+                
+                // Combine both lists
+                inventoryItems = [...inventoryItems, ...frozenItems];
+            } catch (error) {
+                console.error('Error fetching inventory for comparison:', error);
+            }
+
+            // Get cookbook data to check existing bookmark/cart status
+            let cookbookData = [];
+            try {
+                const cookbookResponse = await fetch('/api/cookbook');
+                const cookbookResult = await cookbookResponse.json();
+                cookbookData = cookbookResult || [];
+            } catch (error) {
+                console.error('Error fetching cookbook data:', error);
+            }
+
+            // Show recommendations section and loading state
+            recommendationsSection.classList.remove('hidden');
+            loadingDiv.classList.remove('hidden');
+            contentDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            
+            // Disable button during loading
+            recommendBtn.disabled = true;
+            recommendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                const response = await fetch('/api/cooking-recommend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+
+                // Hide loading state
+                loadingDiv.classList.add('hidden');
+
+                if (data.success && data.recommendations) {
+                    // Display recommendations with inventory comparison and cookbook status
+                    displayRecommendations(data.recommendations, inventoryItems, cookbookData);
+                    contentDiv.classList.remove('hidden');
+                } else {
+                    // Show error
+                    errorDiv.classList.remove('hidden');
+                    console.error('AI recommendation error:', data.error);
+                }
+            } catch (error) {
+                console.error('Error getting cooking recommendations:', error);
+                loadingDiv.classList.add('hidden');
+                errorDiv.classList.remove('hidden');
+            } finally {
+                // Re-enable button
+                recommendBtn.disabled = false;
+                recommendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function displayRecommendations(recommendations, inventoryItems, cookbookData) {
+            const listDiv = document.getElementById('recommendations-list');
+            
+            // Create a map of inventory items for quick lookup
+            const inventoryMap = {};
+            inventoryItems.forEach(item => {
+                inventoryMap[item.name] = item;
+            });
+            
+            // Create a map of cookbook data for quick lookup
+            const cookbookMap = {};
+            cookbookData.forEach(recipe => {
+                cookbookMap[recipe.title] = recipe;
+            });
+            
+            const recommendationsHtml = recommendations.map((recipe, index) => {
+                const difficultyStars = getDifficultyStars(recipe.difficulty);
+                
+                // Check if this recipe exists in cookbook
+                const cookbookRecipe = cookbookMap[recipe.title];
+                const isBookmarked = cookbookRecipe ? cookbookRecipe.bookmark : false;
+                const isInCart = cookbookRecipe ? cookbookRecipe.cart : false;
+                
+                return `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">${recipe.title}</h3>
+                        
+                        <p class="text-sm text-gray-600 mb-4">
+                            난이도 ${difficultyStars}${recipe.difficulty} ⏰${recipe.time}
+                        </p>
+                        
+                        <div class="mb-4">
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">필요한 재료:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${recipe.ingredients.map(ingredient => {
+                                    // 괄호와 부가 정보 제거하여 순수한 재료 이름만 추출
+                                    const cleanIngredient = ingredient.replace(/\s*\([^)]*\)/g, '').trim();
+                                    const inventoryItem = inventoryMap[cleanIngredient];
+                                    if (inventoryItem) {
+                                        if (inventoryItem.frozen) {
+                                            // 냉동 재료 - 하늘색 배경
+                                            return `<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-sky-100 text-sky-800">${ingredient}</span>`;
+                                        } else {
+                                            // 일반 재료 - inventory-list와 동일한 색상 적용
+                                            const colorStyle = getColorStyle(inventoryItem.expiryColor);
+                                            return `<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium" style="${colorStyle}">${ingredient}</span>`;
+                                        }
+                                    } else {
+                                        // 재고가 없는 재료 - 진한 회색 배경
+                                        return `<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-600 text-white">${ingredient}</span>`;
+                                    }
+                                }).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <button onclick="openYoutubeSearch('${recipe.title} 레시피')" class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                </svg>
+                                유튜브 검색
+                            </button>
+                            <button onclick="toggleBookmark('${recipe.title}')" class="p-2 ${isBookmarked ? 'text-blue-500' : 'text-gray-400'} hover:text-blue-500 transition-colors" title="${isBookmarked ? '북마크 해제' : '북마크'}">
+                                <svg class="w-5 h-5" fill="${isBookmarked ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            listDiv.innerHTML = recommendationsHtml;
+        }
+
+        function getDifficultyStars(difficulty) {
+            switch (difficulty) {
+                case '쉬움':
+                    return '⭐ ';
+                case '보통':
+                    return '⭐⭐ ';
+                case '어려움':
+                    return '⭐⭐⭐ ';
+                default:
+                    return '';
+            }
+        }
+
+        function openYoutubeSearch(query) {
+            if (query) {
+                const encodedQuery = encodeURIComponent(query);
+                const youtubeUrl = `https://www.youtube.com/results?search_query=${encodedQuery}`;
+                window.open(youtubeUrl, '_blank');
+            }
+        }
+
+        // 북마크 토글 기능
+        async function toggleBookmark(recipeTitle) {
+            const button = event.target.closest('button');
+            const icon = button.querySelector('svg');
+            
+            // 현재 상태 확인 (fill 속성 또는 클래스로 판단)
+            const isActive = icon.style.fill === 'currentColor' || button.classList.contains('text-blue-500');
+            
+            try {
+                // 현재 요리 정보 찾기
+                const recipeCard = button.closest('.bg-white');
+                const titleElement = recipeCard.querySelector('h3');
+                const difficultyElement = recipeCard.querySelector('p');
+                const ingredientsContainer = recipeCard.querySelector('.flex.flex-wrap.gap-2');
+                
+                // 난이도와 시간 추출
+                const difficultyText = difficultyElement.textContent;
+                const difficultyMatch = difficultyText.match(/난이도\s*[⭐]*\s*([^\s]+)/);
+                const timeMatch = difficultyText.match(/⏰([^\s]+)/);
+                
+                const difficulty = difficultyMatch ? difficultyMatch[1] : '보통';
+                const time = timeMatch ? timeMatch[1] : '30분';
+                
+                // 재료 목록 추출
+                const ingredientSpans = ingredientsContainer.querySelectorAll('span');
+                const ingredients = Array.from(ingredientSpans).map(span => span.textContent.trim());
+                
+                // YouTube 검색어 생성 (요리 제목 + "레시피")
+                const youtubeQuery = `${recipeTitle} 레시피`;
+                
+                // 먼저 요리 정보를 저장하거나 업데이트
+                const saveResponse = await fetch('/api/cookbook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: recipeTitle,
+                        ingredients: ingredients,
+                        difficulty: difficulty,
+                        time: time,
+                        youtube_query: youtubeQuery,
+                        bookmark: !isActive,  // 현재 상태의 반대로 설정
+                        cart: false  // cart 기능 제거로 항상 false
+                    })
+                });
+                
+                const saveData = await saveResponse.json();
+                
+                if (saveData.success) {
+                    // 북마크 상태 토글
+                    if (!isActive) {
+                        // 북마크 추가
+                        icon.style.fill = 'currentColor';
+                        button.classList.remove('text-gray-400');
+                        button.classList.add('text-blue-500');
+                        console.log(`북마크 추가: ${recipeTitle}`);
+                    } else {
+                        // 북마크 해제
+                        icon.style.fill = 'none';
+                        button.classList.remove('text-blue-500');
+                        button.classList.add('text-gray-400');
+                        console.log(`북마크 해제: ${recipeTitle}`);
+                        
+                        // 북마크 탭에서 북마크를 해제한 경우 목록에서 제거
+                        const bookmarkSection = document.getElementById('bookmark-section');
+                        if (bookmarkSection && !bookmarkSection.classList.contains('hidden')) {
+                            const recipeCard = button.closest('.bg-white');
+                            if (recipeCard) {
+                                recipeCard.remove();
+                                
+                                // 북마크된 요리가 더 이상 없으면 빈 상태 표시
+                                const bookmarkList = document.getElementById('bookmark-list');
+                                if (bookmarkList && bookmarkList.children.length === 0) {
+                                    const contentDiv = document.getElementById('bookmark-content');
+                                    const emptyDiv = document.getElementById('bookmark-empty');
+                                    if (contentDiv && emptyDiv) {
+                                        contentDiv.classList.add('hidden');
+                                        emptyDiv.classList.remove('hidden');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    console.error('북마크 토글 실패:', saveData.error);
+                }
+            } catch (error) {
+                console.error('북마크 토글 중 오류:', error);
+            }
+        }
+
+
+
+        // 요리 추천 탭 표시
+        function showRecommendTab() {
+            // 기존 요리 추천 섹션 표시
+            const recommendationsSection = document.getElementById('cooking-recommendations');
+            if (recommendationsSection) {
+                recommendationsSection.classList.remove('hidden');
+                
+                // 요리 추천 섹션 내의 로딩 상태 숨기기
+                const loadingDiv = document.getElementById('recommendations-loading');
+                const contentDiv = document.getElementById('recommendations-content');
+                const errorDiv = document.getElementById('recommendations-error');
+                
+                if (loadingDiv) loadingDiv.classList.add('hidden');
+                if (contentDiv) contentDiv.classList.add('hidden');
+                if (errorDiv) errorDiv.classList.add('hidden');
+            }
+            
+            // 북마크 섹션 숨기기
+            const bookmarkSection = document.getElementById('bookmark-section');
+            if (bookmarkSection) {
+                bookmarkSection.classList.add('hidden');
+            }
+            
+            // 재고 목록 섹션 표시
+            const inventorySections = document.querySelectorAll('.mb-8');
+            inventorySections.forEach(section => {
+                const h2 = section.querySelector('h2');
+                if (h2 && h2.textContent.includes('재고 목록')) {
+                    section.classList.remove('hidden');
+                }
+            });
+            
+            // 요리 추천 버튼 표시
+            const recommendBtn = document.getElementById('recommend-cooking-btn');
+            if (recommendBtn) {
+                recommendBtn.classList.remove('hidden');
+            }
+        }
+
+        // 북마크 탭 표시
+        async function showBookmarkTab() {
+            // 요리 추천 섹션 숨기기
+            const recommendationsSection = document.getElementById('cooking-recommendations');
+            if (recommendationsSection) {
+                recommendationsSection.classList.add('hidden');
+            }
+            
+            // 요리 추천 버튼 숨기기
+            const recommendBtn = document.getElementById('recommend-cooking-btn');
+            if (recommendBtn) {
+                recommendBtn.classList.add('hidden');
+            }
+            
+            // 재고 목록 섹션 표시
+            const inventorySections = document.querySelectorAll('.mb-8');
+            inventorySections.forEach(section => {
+                const h2 = section.querySelector('h2');
+                if (h2 && h2.textContent.includes('재고 목록')) {
+                    section.classList.remove('hidden');
+                }
+            });
+            
+            // 북마크 섹션 생성 또는 표시
+            let bookmarkSection = document.getElementById('bookmark-section');
+            if (!bookmarkSection) {
+                bookmarkSection = createBookmarkSection();
+            }
+            
+            bookmarkSection.classList.remove('hidden');
+            
+            // 북마크 데이터 로드
+            await loadBookmarkData();
+        }
+
+        // 북마크 섹션 생성
+        function createBookmarkSection() {
+            const mainContent = document.querySelector('.mt-16.container');
+            
+            const bookmarkSection = document.createElement('div');
+            bookmarkSection.id = 'bookmark-section';
+            bookmarkSection.className = 'mb-8';
+            
+            bookmarkSection.innerHTML = `
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">북마크한 요리</h2>
+                <div id="bookmark-loading" class="text-center py-8">
+                    <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-cyan-500 transition ease-in-out duration-150">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        북마크 데이터를 불러오는 중...
+                    </div>
+                </div>
+                <div id="bookmark-content" class="hidden">
+                    <div id="bookmark-list" class="space-y-4">
+                        <!-- 북마크된 요리들이 여기에 표시됩니다 -->
+                    </div>
+                </div>
+                <div id="bookmark-empty" class="hidden text-center py-8">
+                    <svg class="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                    </svg>
+                    <p class="text-gray-500 font-medium">북마크된 요리가 없습니다</p>
+                    <p class="text-gray-400 text-sm mt-1">요리 추천에서 북마크를 추가해보세요</p>
+                </div>
+                <div id="bookmark-error" class="hidden text-center py-8">
+                    <svg class="mx-auto h-12 w-12 text-red-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                    <p class="text-red-600 font-medium">북마크 데이터를 불러오는데 실패했습니다</p>
+                    <p class="text-gray-500 text-sm mt-1">잠시 후 다시 시도해보세요</p>
+                </div>
+            `;
+            
+            // 요리 추천 섹션 다음에 삽입
+            const recommendationsSection = document.getElementById('cooking-recommendations');
+            if (recommendationsSection) {
+                recommendationsSection.parentNode.insertBefore(bookmarkSection, recommendationsSection.nextSibling);
+            } else {
+                mainContent.appendChild(bookmarkSection);
+            }
+            
+            return bookmarkSection;
+        }
+
+        // 북마크 데이터 로드
+        async function loadBookmarkData() {
+            const loadingDiv = document.getElementById('bookmark-loading');
+            const contentDiv = document.getElementById('bookmark-content');
+            const emptyDiv = document.getElementById('bookmark-empty');
+            const errorDiv = document.getElementById('bookmark-error');
+            const listDiv = document.getElementById('bookmark-list');
+
+            try {
+                // 로딩 상태 표시
+                loadingDiv.classList.remove('hidden');
+                contentDiv.classList.add('hidden');
+                emptyDiv.classList.add('hidden');
+                errorDiv.classList.add('hidden');
+
+                // 북마크된 요리 데이터 가져오기
+                const response = await fetch('/api/cookbook');
+                const data = await response.json();
+
+                // 로딩 상태 숨기기
+                loadingDiv.classList.add('hidden');
+
+                if (data && data.length > 0) {
+                    // bookmark=true인 데이터만 필터링
+                    const bookmarkedRecipes = data.filter(recipe => recipe.bookmark);
+                    
+                    if (bookmarkedRecipes.length > 0) {
+                        // 최신 날짜 순으로 정렬
+                        bookmarkedRecipes.sort((a, b) => new Date(b.insertDate) - new Date(a.insertDate));
+                        
+                        // 북마크된 요리 표시
+                        displayBookmarkedRecipes(bookmarkedRecipes);
+                        contentDiv.classList.remove('hidden');
+                    } else {
+                        // 북마크된 요리가 없는 경우
+                        emptyDiv.classList.remove('hidden');
+                    }
+                } else {
+                    // 데이터가 없는 경우
+                    emptyDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('북마크 데이터 로드 실패:', error);
+                loadingDiv.classList.add('hidden');
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        // 재료 배경색 결정 함수 (북마크/장보기 탭용)
+        function getIngredientColorStyle(ingredient, inventoryMap) {
+            // 괄호와 부가 정보 제거하여 순수한 재료 이름만 추출
+            const cleanIngredient = ingredient.replace(/\s*\([^)]*\)/g, '').trim();
+            const inventoryItem = inventoryMap[cleanIngredient];
+            
+            if (inventoryItem) {
+                if (inventoryItem.frozen) {
+                    // 냉동 재료 - 하늘색 배경
+                    return `class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-sky-100 text-sky-800"`;
+                } else {
+                    // 일반 재료 - inventory-list와 동일한 색상 적용
+                    const colorStyle = getColorStyle(inventoryItem.expiryColor);
+                    return `class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium" style="${colorStyle}"`;
+                }
+            } else {
+                // 재고가 없는 재료 - 진한 회색 배경
+                return `class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-600 text-white"`;
+            }
+        }
+
+        // 북마크된 요리 표시
+        async function displayBookmarkedRecipes(recipes) {
+            const listDiv = document.getElementById('bookmark-list');
+            
+            // 재고 데이터 가져오기
+            let inventoryMap = {};
+            try {
+                const inventoryResponse = await fetch('/api/cooking-inventory');
+                const inventoryData = await inventoryResponse.json();
+                const inventoryItems = inventoryData.items || [];
+                
+                // 냉동 재료도 가져오기
+                const frozenResponse = await fetch('/api/frozen');
+                const frozenData = await frozenResponse.json();
+                const frozenItems = frozenData.map(item => ({...item, frozen: true}));
+                
+                // 두 목록 합치기
+                const allItems = [...inventoryItems, ...frozenItems];
+                allItems.forEach(item => {
+                    inventoryMap[item.name] = item;
+                });
+            } catch (error) {
+                console.error('재고 데이터 가져오기 실패:', error);
+            }
+            
+            const recipesHtml = recipes.map((recipe, index) => {
+                const difficultyStars = getDifficultyStars(recipe.difficulty);
+                
+                return `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow" onclick="openBookmarkModal(${JSON.stringify(recipe).replace(/"/g, '&quot;')})">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">${recipe.title}</h3>
+                        
+                        <p class="text-sm text-gray-600 mb-4">
+                            난이도 ${difficultyStars}${recipe.difficulty} ⏰${recipe.time}
+                        </p>
+                        
+                        <div class="mb-4">
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">필요한 재료:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${recipe.ingredients.map(ingredient => {
+                                    const colorStyle = getIngredientColorStyle(ingredient, inventoryMap);
+                                    return `<span ${colorStyle}>${ingredient}</span>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center" onclick="event.stopPropagation()">
+                            <button onclick="openYoutubeSearch('${recipe.youtube_query}')" class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                </svg>
+                                유튜브 검색
+                            </button>
+                            <button onclick="toggleBookmark('${recipe.title}')" class="p-2 text-blue-500 hover:text-blue-600 transition-colors" title="북마크 해제">
+                                <svg class="w-5 h-5" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            listDiv.innerHTML = recipesHtml;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // 북마크 모달 열기
+        async function openBookmarkModal(recipe) {
+            const modal = document.getElementById('bookmark-modal');
+            const recipeTitleDiv = document.getElementById('modal-recipe-title');
+            const recipeInfoDiv = document.getElementById('modal-recipe-info');
+            
+            // 재고 데이터 가져오기 (재료 색상 결정용)
+            let inventoryMap = {};
+            try {
+                const inventoryResponse = await fetch('/api/cooking-inventory');
+                const inventoryData = await inventoryResponse.json();
+                const inventoryItems = inventoryData.items || [];
+                
+                // 냉동 재료도 가져오기
+                const frozenResponse = await fetch('/api/frozen');
+                const frozenData = await frozenResponse.json();
+                const frozenItems = frozenData.map(item => ({...item, frozen: true}));
+                
+                // 두 목록 합치기
+                const allItems = [...inventoryItems, ...frozenItems];
+                allItems.forEach(item => {
+                    inventoryMap[item.name] = item;
+                });
+            } catch (error) {
+                console.error('재고 데이터 가져오기 실패:', error);
+            }
+            
+            // 요리 제목을 헤더에 표시
+            recipeTitleDiv.textContent = recipe.title;
+            
+            // 요리 기본 정보 표시 (제목 제외)
+            const difficultyStars = getDifficultyStars(recipe.difficulty);
+            recipeInfoDiv.innerHTML = `
+                <p class="text-sm text-gray-600 mb-4">
+                    난이도 ${difficultyStars}${recipe.difficulty} ⏰${recipe.time}
+                </p>
+                <div class="mb-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">필요한 재료:</h4>
+                    <div class="flex flex-wrap gap-2">
+                        ${recipe.ingredients.map((ingredient, index) => {
+                            const colorStyle = getIngredientColorStyle(ingredient, inventoryMap);
+                            return `<span ${colorStyle} class="cursor-pointer select-none border border-gray-200 px-2 py-1 rounded-md transition-all duration-200 hover:bg-gray-100" onclick="toggleIngredientSelection(this, ${index})">${ingredient}</span>`;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+            
+            // 모달 표시
+            modal.classList.remove('hidden');
+            
+            // 재료 체크 데이터 로드
+            await loadModalRemainingCheck(recipe);
+            
+            // shoppingList 데이터 로드하여 선택 상태 설정
+            await loadShoppingListSelections(recipe.title);
+            
+            // 모달 바깥 클릭 이벤트 추가
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeBookmarkModal();
+                }
+            });
+        }
+
+        // 재료 이름에서 괄호 부가 정보 제거하는 함수
+        function cleanIngredientName(ingredient) {
+            // 괄호와 그 안의 내용을 제거 (예: "두부 (선택사항)" -> "두부")
+            return ingredient.replace(/\s*\([^)]*\)/g, '').trim();
+        }
+
+        // shoppingList 데이터 로드하여 선택 상태 설정
+        async function loadShoppingListSelections(recipeTitle) {
+            try {
+                const response = await fetch('/api/shopping-list');
+                const shoppingList = await response.json();
+                
+                // 현재 요리의 재료들
+                const ingredientElements = document.querySelectorAll('#modal-recipe-info .flex.flex-wrap.gap-2 span');
+                
+                ingredientElements.forEach(element => {
+                    const ingredientName = element.innerHTML.replace(/<img[^>]*src="\/img\/check\.svg"[^>]*>/g, '').trim();
+                    const cleanName = cleanIngredientName(ingredientName);
+                    
+                    // shoppingList에서 해당 재료가 todo=true인지 확인 (정리된 이름으로 비교)
+                    const shoppingItem = shoppingList.find(item => 
+                        item.name === cleanName && item.todo === true
+                    );
+                    
+                    if (shoppingItem) {
+                        // 선택 상태로 설정
+                        element.classList.add('selected');
+                        
+                        // 배경색에 따라 적절한 filter 적용
+                        const computedStyle = window.getComputedStyle(element);
+                        const backgroundColor = computedStyle.backgroundColor;
+                        const filter = getBackgroundColorFilter(backgroundColor);
+                        
+                        const checkIcon = `<img src="/img/check.svg" class="w-4 h-4 inline mr-1" style="filter: ${filter};">`;
+                        element.innerHTML = checkIcon + ingredientName;
+                    } else {
+                        // 선택되지 않은 상태로 설정
+                        element.classList.remove('selected');
+                        element.innerHTML = ingredientName;
+                    }
+                });
+            } catch (error) {
+                console.error('shoppingList 데이터 로드 실패:', error);
+            }
+        }
+
+        // 북마크 모달 닫기
+        async function closeBookmarkModal() {
+            const modal = document.getElementById('bookmark-modal');
+            modal.classList.add('hidden');
+        }
+
+        // 저장 후 모달 닫기
+        async function saveAndCloseModal() {
+            const modal = document.getElementById('bookmark-modal');
+            
+            // 선택된 재료들을 shoppingList에 저장
+            await saveSelectedIngredients();
+            
+            modal.classList.add('hidden');
+        }
+
+        // 선택된 재료들을 shoppingList에 저장
+        async function saveSelectedIngredients() {
+            try {
+                const selectedElements = document.querySelectorAll('#modal-recipe-info .flex.flex-wrap.gap-2 span.selected');
+                const selectedIngredients = Array.from(selectedElements).map(element => {
+                    return element.innerHTML.replace(/<img[^>]*src="\/img\/check\.svg"[^>]*>/g, '');
+                });
+                
+                const recipeTitle = document.getElementById('modal-recipe-title').textContent;
+                
+                // 모든 재료 목록 가져오기 (선택되지 않은 재료도 포함)
+                const allIngredientElements = document.querySelectorAll('#modal-recipe-info .flex.flex-wrap.gap-2 span');
+                const allIngredients = Array.from(allIngredientElements).map(element => {
+                    return element.innerHTML.replace(/<img[^>]*src="\/img\/check\.svg"[^>]*>/g, '');
+                });
+                
+                // 선택된 재료만 todo=true로, 나머지는 todo=false로 설정
+                const ingredientsToUpdate = allIngredients.map(ingredient => {
+                    const cleanName = cleanIngredientName(ingredient);
+                    return {
+                        name: cleanName,
+                        todo: selectedIngredients.includes(ingredient),
+                        memo: selectedIngredients.includes(ingredient) ? recipeTitle : null
+                    };
+                });
+                
+                if (ingredientsToUpdate.length > 0) {
+                    const response = await fetch('/api/shopping-list/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            ingredients: ingredientsToUpdate,
+                            recipeTitle: recipeTitle
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        console.log('Shopping list updated successfully');
+                    } else {
+                        console.error('Failed to update shopping list:', result.error);
+                    }
+                }
+            } catch (error) {
+                console.error('Shopping list 저장 실패:', error);
+            }
+        }
+
+        // 재료 선택 토글 기능
+        function toggleIngredientSelection(element, index) {
+            // 현재 선택 상태 확인
+            const isSelected = element.classList.contains('selected');
+            
+            if (isSelected) {
+                // 선택 해제
+                element.classList.remove('selected');
+                // 모든 check 아이콘 제거 (정규식 패턴 개선)
+                element.innerHTML = element.innerHTML.replace(/<img[^>]*src="\/img\/check\.svg"[^>]*>/g, '');
+            } else {
+                // 선택
+                element.classList.add('selected');
+                
+                // 배경색에 따라 적절한 filter 적용
+                const computedStyle = window.getComputedStyle(element);
+                const backgroundColor = computedStyle.backgroundColor;
+                const filter = getBackgroundColorFilter(backgroundColor);
+                
+                const checkIcon = `<img src="/img/check.svg" class="w-4 h-4 inline mr-1" style="filter: ${filter};">`;
+                element.innerHTML = checkIcon + element.innerHTML;
+            }
+            
+            // 선택된 재료 목록 업데이트 (필요시)
+            updateSelectedIngredients();
+        }
+
+        // 배경색에 따른 CSS filter 생성
+        function getBackgroundColorFilter(backgroundColor) {
+            // RGB 색상을 추출
+            const rgbMatch = backgroundColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+            if (!rgbMatch) return 'none';
+            
+            const r = parseInt(rgbMatch[1]);
+            const g = parseInt(rgbMatch[2]);
+            const b = parseInt(rgbMatch[3]);
+            
+            // RGB 밝기 계산
+            const brightness = (r + g + b) / 3 / 255;
+            
+            if (brightness > 0.5) {
+                // 밝은 배경: 어두운 아이콘 (검은색)
+                return 'brightness(0) saturate(100%)';
+            } else {
+                // 어두운 배경: 밝은 아이콘 (흰색)
+                return 'brightness(0) saturate(100%) invert(1)';
+            }
+        }
+
+        // 선택된 재료 목록 업데이트
+        function updateSelectedIngredients() {
+            const selectedElements = document.querySelectorAll('#modal-recipe-info .flex.flex-wrap.gap-2 span.selected');
+            const selectedIngredients = Array.from(selectedElements).map(element => {
+                return element.innerHTML.replace(/<img[^>]*src="\/img\/check\.svg"[^>]*>/g, '');
+            });
+            
+            console.log('선택된 재료:', selectedIngredients);
+            // 여기에 선택된 재료 목록을 활용하는 로직을 추가할 수 있습니다
+        }
+
+        // 모달 재료 체크 데이터 로드
+        async function loadModalRemainingCheck(recipe) {
+            const loadingDiv = document.getElementById('modal-remaining-check-loading');
+            const contentDiv = document.getElementById('modal-remaining-check-content');
+            const emptyDiv = document.getElementById('modal-remaining-check-empty');
+            const listDiv = document.getElementById('modal-remaining-check-list');
+            const totalDiv = document.getElementById('modal-remaining-check-total');
+
+            try {
+                // 로딩 상태 표시
+                loadingDiv.classList.remove('hidden');
+                contentDiv.classList.add('hidden');
+                emptyDiv.classList.add('hidden');
+
+                // 모든 재고 데이터 가져오기
+                const inventoryResponse = await fetch('/api/all-inventory');
+                const inventoryData = await inventoryResponse.json();
+
+                // 재고 맵 생성 (이름으로 빠른 검색)
+                const inventoryMap = {};
+                inventoryData.forEach(item => {
+                    inventoryMap[item.name] = item;
+                });
+
+                // 요리의 재료 중 재고가 남은 것 필터링
+                const remainingIngredients = [];
+                recipe.ingredients.forEach(ingredient => {
+                    // 괄호와 부가 정보 제거하여 순수한 재료 이름만 추출
+                    const cleanIngredient = ingredient.replace(/\s*\([^)]*\)/g, '').trim();
+                    const inventoryItem = inventoryMap[cleanIngredient];
+                    if (inventoryItem && inventoryItem.remains > 0) {
+                        console.log('Found inventory item:', inventoryItem); // 디버깅용
+                        remainingIngredients.push({
+                            name: ingredient,
+                            remains: inventoryItem.remains,
+                            quantity: inventoryItem.quantity,
+                            image: inventoryItem.image
+                        });
+                    }
+                });
+
+                // 로딩 상태 숨기기
+                loadingDiv.classList.add('hidden');
+
+                if (remainingIngredients.length > 0) {
+                    // 재고 남은 양 목록 표시 (썸네일과 2행 레이아웃)
+                    const ingredientsHtml = remainingIngredients.map(item => {
+                        return `
+                            <div class="flex items-start space-x-3 p-3 bg-white rounded-lg border border-gray-200">
+                                <!-- 썸네일 -->
+                                <div class="flex-shrink-0">
+                                    ${item.image ? 
+                                        `<img src="${item.image}" alt="${item.name}" class="w-16 h-16 rounded-lg object-cover border border-gray-200" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` :
+                                        ``
+                                    }
+                                    <div class="w-16 h-16 bg-gray-200 rounded-lg border border-gray-200 flex items-center justify-center" ${item.image ? 'style="display: none;"' : ''}>
+                                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                
+                                <!-- 재료 정보 (2행) -->
+                                <div class="flex-1 min-w-0">
+                                    <!-- 1행: 재료 이름과 수량 -->
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700 truncate">${item.name}</span>
+                                        <span class="text-xs text-gray-500 ml-2">수량: ${item.quantity}</span>
+                                    </div>
+                                    
+                                    <!-- 2행: 남은양 정보 -->
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs text-gray-500">남은 양</span>
+                                        <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                            <div class="bg-cyan-500 h-2 rounded-full transition-all duration-300" style="width: ${item.remains * 100}%"></div>
+                                        </div>
+                                        <span class="text-xs font-medium text-gray-700 w-8 text-right">${Math.round(item.remains * 100)}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    listDiv.innerHTML = ingredientsHtml;
+                    contentDiv.classList.remove('hidden');
+                } else {
+                    // 재고가 남은 재료가 없는 경우
+                    emptyDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('모달 재료 체크 분석 실패:', error);
+                loadingDiv.classList.add('hidden');
+                emptyDiv.classList.remove('hidden');
+            }
+        }
+
+        // 탭 전환 기능
+        function setupTabNavigation() {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            console.log('Found tab buttons:', tabButtons.length); // 디버깅용
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    console.log('Tab clicked:', this.id); // 디버깅용
+                    
+                    // 모든 탭 버튼의 스타일 초기화
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('border-cyan-500', 'text-cyan-600');
+                        btn.classList.add('border-transparent', 'text-gray-500');
+                        // 인라인 스타일도 제거
+                        btn.style.removeProperty('color');
+                        btn.style.removeProperty('border-bottom-color');
+                    });
+                    
+                    // 클릭된 탭 버튼 활성화
+                    this.classList.remove('border-transparent', 'text-gray-500');
+                    this.classList.add('border-cyan-500', 'text-cyan-600');
+                    // 인라인 스타일로 강제 적용
+                    this.style.color = '#0891b2'; // cyan-600
+                    this.style.borderBottomColor = '#0891b2'; // cyan-600
+                    
+                    console.log('Updated classes for', this.id, ':', this.className); // 디버깅용
+                    
+                    // 탭별 콘텐츠 전환
+                    const tabId = this.id;
+                    switch(tabId) {
+                        case 'tab-recommend':
+                            // 요리 추천 탭 - 현재 콘텐츠 유지
+                            showRecommendTab();
+                            break;
+                        case 'tab-bookmark':
+                            // 북마크 탭
+                            showBookmarkTab();
+                            break;
+                        default:
+                            console.log('Unknown tab ID:', tabId); // 디버깅용
+                            break;
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
