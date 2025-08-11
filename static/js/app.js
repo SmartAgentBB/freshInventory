@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sortUrgentBtn = document.getElementById('sort-urgent');
     const sortFrozenNewestBtn = document.getElementById('sort-frozen-newest');
     const sortFrozenOldestBtn = document.getElementById('sort-frozen-oldest');
+    const shoppingBadge = document.getElementById('shopping-badge');
     
     // Tab elements
     const tabCurrent = document.getElementById('tab-current');
@@ -54,6 +55,34 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTab = 'current'; // 'current', 'frozen', or 'history'
     let currentEditItem = null; // To store current item being edited
     let searchQuery = ''; // To store current search query
+
+    // Function to update shopping badge
+    const updateShoppingBadge = async () => {
+        try {
+            console.log('Updating shopping badge...');
+            const response = await fetch('/api/shopping-list/count');
+            const data = await response.json();
+            const count = data.count || 0;
+            
+            console.log('Shopping badge count:', count);
+            console.log('Shopping badge element:', shoppingBadge);
+            
+            if (shoppingBadge) {
+                shoppingBadge.textContent = count;
+                if (count > 0) {
+                    shoppingBadge.style.display = 'flex';
+                    console.log('Shopping badge should be visible');
+                } else {
+                    shoppingBadge.style.display = 'none';
+                    console.log('Shopping badge should be hidden');
+                }
+            } else {
+                console.error('Shopping badge element not found');
+            }
+        } catch (error) {
+            console.error('Error updating shopping badge:', error);
+        }
+    };
 
     const fetchInventory = async () => {
         try {
@@ -1621,6 +1650,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error('Failed to add item to shopping list:', errorData);
                 }
             }
+            
+            // Update shopping badge after adding item
+            updateShoppingBadge();
         } catch (error) {
             console.error('Error adding item to shopping list:', error);
         }
@@ -1637,6 +1669,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update the item's todo status to false
                 await updateShoppingListTodo(itemName, false);
             }
+            
+            // Update shopping badge after removing item
+            updateShoppingBadge();
         } catch (error) {
             console.error('Error removing item from shopping list:', error);
         }
@@ -1666,6 +1701,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error('Failed to update shopping list item');
                 }
             }
+            
+            // Update shopping badge after updating item
+            updateShoppingBadge();
         } catch (error) {
             console.error('Error updating shopping list item:', error);
         }
@@ -1685,4 +1723,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize sort button states
     updateSortButtons();
     updateFrozenSortButtons();
+    
+    // Update shopping badge on page load
+    updateShoppingBadge();
 });

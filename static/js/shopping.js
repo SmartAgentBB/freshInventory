@@ -5,6 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const shoppingList = document.getElementById('shopping-list');
     const completedShopping = document.getElementById('completed-shopping');
     const shoppingCount = document.getElementById('shopping-count');
+    const shoppingBadge = document.getElementById('shopping-badge');
+    
+    // 달력 네비게이션을 위한 전역 변수
+    let currentCalendarYear = new Date().getFullYear();
+    let currentCalendarMonth = new Date().getMonth();
+    let allHistoryItems = []; // 모든 히스토리 데이터를 저장할 변수
 
     // 로고 버튼 클릭 이벤트 (index 화면으로 이동)
     logoBtn.addEventListener('click', () => {
@@ -16,7 +22,27 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/cooking.html';
     });
 
-    // Shopping list 버튼 클릭 이벤트 (현재 페이지이므로 아무것도 하지 않음)
+    // Function to update shopping badge
+    const updateShoppingBadge = async () => {
+        try {
+            const response = await fetch('/api/shopping-list/count');
+            const data = await response.json();
+            const count = data.count || 0;
+            
+            if (shoppingBadge) {
+                shoppingBadge.textContent = count;
+                if (count > 0) {
+                    shoppingBadge.style.display = 'flex';
+                } else {
+                    shoppingBadge.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error updating shopping badge:', error);
+        }
+    };
+
+    // Shopping list button click event (현재 페이지이므로 아무것도 하지 않음)
     shoppingListBtn.addEventListener('click', () => {
         // 현재 페이지이므로 아무것도 하지 않음
     });
@@ -81,40 +107,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // 지난 기록 데이터 가져오기
     const fetchHistory = async () => {
         try {
-            const response = await fetch('/api/inventory/history');
+            const response = await fetch('/api/shopping-list');
             if (response.ok) {
-                const historyItems = await response.json();
-                await displayHistoryItems(historyItems);
+                const shoppingItems = await response.json();
+                // todo가 false인 완료된 쇼핑 항목들만 필터링
+                const completedItems = shoppingItems.filter(item => item.todo === false);
+                allHistoryItems = completedItems; // 모든 히스토리 데이터 저장
+                
+                
+                
+                // 달력 생성 및 데이터 표시
+                generateCalendar(completedItems);
             } else {
-                console.error('Failed to fetch history');
+                console.error('Failed to fetch shopping history');
             }
         } catch (error) {
-            console.error('Error fetching history:', error);
+            console.error('Error fetching shopping history:', error);
         }
     };
 
-    // 지난 기록 표시 (완료한 쇼핑 항목들을 날짜별로 그룹화)
+    // 지난 기록 표시 (인벤토리 히스토리 데이터를 날짜별로 그룹화)
     const displayHistoryItems = async (historyItems) => {
         const historyTable = document.getElementById('history-table');
         
         historyTable.innerHTML = '';
         
-        // 완료한 쇼핑 항목들 가져오기
-        let completedShoppingItems = [];
-        try {
-            const shoppingResponse = await fetch('/api/shopping-list');
-            const shoppingData = await shoppingResponse.json();
-            completedShoppingItems = shoppingData
-                .filter(item => item.todo === false)
-                .sort((a, b) => new Date(b.updateDate) - new Date(a.updateDate)); // 최신순 정렬
-        } catch (error) {
-            console.error('Error fetching shopping list:', error);
-        }
-        
-        if (completedShoppingItems.length === 0) {
+        if (!historyItems || historyItems.length === 0) {
             historyTable.innerHTML = `
                 <div class="text-center py-8 text-gray-500">
-                    완료한 쇼핑 기록이 없습니다.
+                    해당 월의 기록이 없습니다.
                 </div>
             `;
             return;
@@ -122,17 +143,29 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 날짜별로 그룹화
         const groupedByDate = {};
-        completedShoppingItems.forEach(item => {
+        historyItems.forEach(item => {
             const dateKey = item.updateDate.split('T')[0]; // YYYY-MM-DD 형식
             if (!groupedByDate[dateKey]) {
                 groupedByDate[dateKey] = [];
             }
-            groupedByDate[dateKey].push(item.name);
+            // 쇼핑 리스트 데이터의 경우 name을 사용하여 아이템 정보를 표시
+            groupedByDate[dateKey].push({
+                name: item.name,
+                memo: item.memo
+            });
         });
         
-        // 날짜별로 중복 제거 (같은 날짜에 같은 이름이 여러 개 있으면 하나만)
+        // 날짜별로 중복 제거 (같은 날짜에 같은 name이 여러 개 있으면 하나만)
         Object.keys(groupedByDate).forEach(dateKey => {
-            groupedByDate[dateKey] = [...new Set(groupedByDate[dateKey])];
+            const uniqueItems = [];
+            const seenNames = new Set();
+            groupedByDate[dateKey].forEach(item => {
+                if (!seenNames.has(item.name)) {
+                    seenNames.add(item.name);
+                    uniqueItems.push(item);
+                }
+            });
+            groupedByDate[dateKey] = uniqueItems;
         });
         
         // 날짜순으로 정렬 (최신순)
@@ -152,13 +185,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const tableContainer = document.createElement('div');
             tableContainer.className = 'bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6';
             
+            // 아이템 정보 생성
+            const itemsInfo = items.map(item => {
+                let itemText = item.name;
+                if (item.memo) {
+                    itemText += ` (${item.memo})`;
+                }
+                return itemText;
+            }).join(', ');
+            
             // 테이블 내용
             tableContainer.innerHTML = `
                 <div class="p-4 border-b border-gray-100 bg-gray-50">
                     <h3 class="text-md font-semibold text-gray-800">${formattedDate}</h3>
                 </div>
                 <div class="p-4">
-                    <p class="text-sm text-gray-800">${items.join(', ')}</p>
+                    <p class="text-sm text-gray-800">${itemsInfo}</p>
                 </div>
             `;
             
@@ -343,6 +385,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok) {
                     // 페이지 새로고침
                     fetchShoppingList();
+                    // 뱃지 업데이트
+                    updateShoppingBadge();
                 } else {
                     console.error('Failed to toggle shopping item');
                 }
@@ -367,6 +411,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (response.ok) {
                         // 페이지 새로고침
                         fetchShoppingList();
+                        // 뱃지 업데이트
+                        updateShoppingBadge();
                     } else {
                         console.error('Failed to delete shopping item');
                     }
@@ -414,6 +460,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                     fetchShoppingList();
                 }, 500);
+                
+                // 뱃지 업데이트
+                updateShoppingBadge();
             } else {
                 console.error('Failed to add shopping item:', result.error);
                 // 서버에서 받은 에러 메시지를 표시하거나 기본 메시지 사용
@@ -426,10 +475,140 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // 달력 생성 함수
+    const generateCalendar = (historyItems) => {
+        const calendarContainer = document.getElementById('calendar-container');
+        const calendarTitle = document.getElementById('calendar-title');
+        
+        if (!calendarContainer) return;
+        
+        // 월 제목 업데이트
+        calendarTitle.textContent = `${currentCalendarYear}년 ${currentCalendarMonth + 1}월`;
+        
+        // 현재 표시 중인 달의 데이터만 필터링
+        const filteredHistoryItems = historyItems.filter(item => {
+            const itemDate = new Date(item.updateDate);
+            return itemDate.getFullYear() === currentCalendarYear && itemDate.getMonth() === currentCalendarMonth;
+        });
+        
+
+        
+        // 필터링된 데이터로 히스토리 테이블 업데이트
+        displayHistoryItems(filteredHistoryItems);
+        
+        // 데이터가 있는 날짜들 추출
+        const datesWithData = new Set();
+        historyItems.forEach(item => {
+            const itemDate = new Date(item.updateDate);
+            
+            if (itemDate.getFullYear() === currentCalendarYear && itemDate.getMonth() === currentCalendarMonth) {
+                datesWithData.add(itemDate.getDate());
+            }
+        });
+        
+        // 달력 HTML 생성
+        const now = new Date();
+        const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1);
+        const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        
+        let calendarHTML = '<div class="text-sm w-full" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0;">';
+        
+        // 요일 헤더
+        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        weekdays.forEach(day => {
+            calendarHTML += `<div class="text-center text-xs text-gray-500 py-1 border-b border-gray-200">${day}</div>`;
+        });
+        
+        // 날짜들
+        for (let i = 0; i < 42; i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + i);
+            
+            const isCurrentMonth = currentDate.getMonth() === currentCalendarMonth;
+            const isToday = currentDate.toDateString() === now.toDateString() && isCurrentMonth;
+            const hasData = datesWithData.has(currentDate.getDate());
+            
+
+            
+            let dateClass = 'text-center py-1 relative border-b border-gray-100 min-h-[2rem] flex flex-col items-center justify-center';
+            let dateText = currentDate.getDate();
+            
+            if (!isCurrentMonth) {
+                dateClass += ' text-gray-300';
+            } else if (isToday) {
+                dateClass += ' text-cyan-600 font-semibold';
+            } else if (currentDate.getDay() === 0) { // 일요일
+                dateClass += ' text-red-500';
+            } else if (currentDate.getDay() === 6) { // 토요일
+                dateClass += ' text-blue-500';
+            } else {
+                dateClass += ' text-gray-700';
+            }
+            
+            // 데이터가 있는 날짜는 배경색과 테두리 변경
+            if (hasData && isCurrentMonth) {
+                dateClass += ' bg-cyan-50 border-cyan-200';
+            }
+            
+            // 인라인 스타일 추가
+            let inlineStyle = '';
+            if (hasData && isCurrentMonth) {
+                inlineStyle = ' style="background-color: #ecfeff; border-color: #67e8f9;"';
+            }
+            
+            calendarHTML += `<div class="${dateClass}"${inlineStyle}>`;
+            calendarHTML += `<div class="text-xs">${dateText}</div>`;
+            
+            // 데이터가 있는 날짜에 점 표시 (더 눈에 띄게)
+            if (hasData && isCurrentMonth) {
+                calendarHTML += '<div class="w-2 h-2 bg-red-500 rounded-full mt-0.5" style="background-color: #ef4444;"></div>';
+            }
+            
+            calendarHTML += '</div>';
+        }
+        
+        calendarHTML += '</div>';
+        calendarContainer.innerHTML = calendarHTML;
+    };
+
+    // 달력 네비게이션 이벤트 리스너
+    const prevMonthBtn = document.getElementById('prev-month-btn');
+    const nextMonthBtn = document.getElementById('next-month-btn');
+    
+    if (prevMonthBtn) {
+        prevMonthBtn.addEventListener('click', () => {
+            currentCalendarMonth--;
+            if (currentCalendarMonth < 0) {
+                currentCalendarMonth = 11;
+                currentCalendarYear--;
+            }
+            generateCalendar(allHistoryItems); // 저장된 히스토리 데이터로 달력 업데이트
+        });
+    }
+    
+    if (nextMonthBtn) {
+        nextMonthBtn.addEventListener('click', () => {
+            currentCalendarMonth++;
+            if (currentCalendarMonth > 11) {
+                currentCalendarMonth = 0;
+                currentCalendarYear++;
+            }
+            generateCalendar(allHistoryItems); // 저장된 히스토리 데이터로 달력 업데이트
+        });
+    }
+
     // 전역 함수로 등록 (HTML에서 호출하기 위해)
     window.handleAddItemEnter = handleAddItemEnter;
     window.addShoppingItem = addShoppingItem;
 
     // 초기 데이터 로드
     fetchShoppingList();
+    
+    // 초기 뱃지 업데이트
+    updateShoppingBadge();
+    
+    // 초기 달력 표시 (빈 달력)
+    generateCalendar([]);
 });

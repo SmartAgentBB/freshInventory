@@ -1606,6 +1606,27 @@ def add_shopping_item():
         print(f"Error adding shopping item: {e}")
         return jsonify({'error': 'Failed to add shopping item'}), 500
 
+@app.route('/api/shopping-list/count', methods=['GET'])
+def get_shopping_list_count():
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        
+        cursor.execute('''
+            SELECT COUNT(*) as count FROM shoppingList 
+            WHERE todo = TRUE
+        ''')
+        
+        result = cursor.fetchone()
+        count = result['count'] if result else 0
+        
+        db.close()
+        return jsonify({'count': count})
+        
+    except Exception as e:
+        print(f"Error getting shopping list count: {e}")
+        return jsonify({'error': 'Failed to get shopping list count'}), 500
+
 @app.route('/api/cookbook', methods=['GET'])
 def get_cookbook():
     try:

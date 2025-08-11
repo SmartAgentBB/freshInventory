@@ -27,12 +27,13 @@
                             <path d="M6.73871 11.549V13.8024M21.4532 11.549V20.4071C21.4532 20.4071 19.8362 22 14.2172 22C8.59823 22 6.73871 20.4071 6.73871 20.4071V13.8024M21.4532 13.8024C23.4609 13.3103 27.2374 9.60609 24.5 5.5C22.5 2.5 18.7559 3.54568 18.7559 3.54568M6.73871 13.8024C4.27283 13.4527 0.39795 11.5118 2.50001 6.5C3.96798 3 8.05924 3.05356 9.3663 4.01189C10.0931 2.50793 11.7891 0.0964034 16 1.50001C19 2.5 19.5 5.5 19 7.50002M9 10.2281C9.49857 9.91728 11.533 9.30343 14.2172 9.33452C16.9014 9.3656 18.744 10.2151 19 10.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </button>
-                    <button id="shoppinglist-btn" class="p-2 text-cyan-500 hover:text-cyan-600">
+                    <button id="shoppinglist-btn" class="p-2 text-cyan-500 hover:text-cyan-600 relative">
                         <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M15.6476 7C16.8806 7 17.8199 8.1048 17.6216 9.32172L16.4807 16.3217C16.323 17.2893 15.4872 18 14.5068 18H4.72475C3.7625 18 2.93666 17.3148 2.75909 16.3691L1.4448 9.36906C1.21368 8.1381 2.15798 7 3.41046 7H15.6476Z" stroke="currentColor" stroke-width="2"/>
                             <path d="M5.5 12.5L8 15L13 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                             <path d="M6 7C6 7 6 1 9.50001 1C13 1 13 7 13 7" stroke="currentColor" stroke-width="2"/>
                         </svg>
+                        <span id="shopping-badge" class="absolute text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium" style="display: none; z-index: 50; background-color: #ef4444; top: -5px; right: -5px;">0</span>
                     </button>
                     <button class="p-2 text-gray-600 hover:text-gray-800">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,6 +101,26 @@
             <div id="history-tab" class="mb-6 hidden">
                 <div class="mb-6">
                     <p class="text-sm text-gray-600 mb-4">완료한 장보기 기록을 확인하세요.</p>
+                </div>
+                
+                <!-- 달력 섹션 -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <button id="prev-month-btn" class="p-2 text-gray-600 hover:text-gray-800 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <h3 class="text-lg font-semibold text-gray-800 text-center" id="calendar-title">이번달 달력</h3>
+                        <button id="next-month-btn" class="p-2 text-gray-600 hover:text-gray-800 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="calendar-container">
+                        <!-- 달력이 여기에 동적으로 추가됩니다 -->
+                    </div>
                 </div>
                 
                 <div id="history-table">
