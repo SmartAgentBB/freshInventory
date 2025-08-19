@@ -538,7 +538,7 @@ def get_inventory():
     items = cursor.fetchall()
     db.close()
     
-    print(f"Retrieved {len(items)} inventory items from database")
+
     
     inventory_list = []
     current_date = datetime.now()
@@ -832,17 +832,12 @@ def save_items():
     data = request.get_json()
     items = data.get('items')
     
-    print(f"Received save request with {len(items) if items else 0} items")
-    print(f"Items to save: {items}")
-
     if not items:
         return jsonify({'error': 'No items to save.'}), 400
 
     db = get_db()
     cursor = db.cursor()
     current_time = datetime.now().isoformat()
-    
-    saved_count = 0
 
     for item in items:
         name = item.get('name')
@@ -850,7 +845,6 @@ def save_items():
         image = item.get('image') # This should be the base64 thumbnail
 
         if not all([name, quantity, image]):
-            print(f"Skipping invalid item: {item}")
             continue # Skip invalid items
 
         storageId = item.get('storageId')
@@ -860,15 +854,11 @@ def save_items():
         if storageId is None:
             storageId, storageDays = get_or_create_storage_info(cursor, name)
         
-        print(f"Inserting item: {name}, quantity: {quantity}, storageId: {storageId}, storageDays: {storageDays}")
-        
         cursor.execute("INSERT INTO foodItems (name, image, quantity, remains, addedAt, storageId, storageDays, frozen) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                        (name, image.encode('utf-8'), quantity, 1.0, current_time, storageId, storageDays, 0))
-        saved_count += 1
     
     db.commit()
     db.close()
-    print(f"Successfully saved {saved_count} items")
     return jsonify({'message': 'Items saved successfully!'}), 200
 
 def get_or_create_storage_info(cursor, item_name):
