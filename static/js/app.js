@@ -86,8 +86,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchInventory = async () => {
         try {
+            console.log('Fetching inventory...');
             const response = await fetch('/api/inventory');
             const items = await response.json();
+            console.log('Fetched inventory items:', items);
             
             // Store items for sorting
             currentInventoryItems = items;
@@ -619,6 +621,8 @@ document.addEventListener('DOMContentLoaded', () => {
             saveBtn.disabled = true;
             saveBtn.textContent = '저장 중...';
             
+            console.log('Saving items:', analyzedItems);
+            
             const response = await fetch('/api/save-items', {
                 method: 'POST',
                 headers: {
@@ -627,6 +631,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ items: analyzedItems }),
             });
             const data = await response.json();
+            console.log('Save response:', data);
+            
             if (data.error) {
                 alert(`저장 중 오류가 발생했습니다: ${data.error}`);
             } else {
@@ -641,7 +647,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 3000);
                 
                 closeModalFunction();
-                fetchInventory(); // Refresh inventory after saving
+                console.log('Refreshing inventory...');
+                await fetchInventory(); // Refresh inventory after saving
+                console.log('Inventory refreshed');
             }
         } catch (error) {
             console.error('Error saving items:', error);
