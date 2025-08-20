@@ -1504,7 +1504,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (response.ok) {
                 closeEditModalFunction();
-                fetchInventory(); // Refresh inventory list
+                // Refresh both inventory and frozen lists
+                fetchInventory();
+                fetchFrozen();
             } else {
                 alert('업데이트에 실패했습니다.');
             }
@@ -1533,12 +1535,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (response.ok) {
                 closeEditModalFunction();
-                // Refresh appropriate list based on current tab
-                if (currentTab === 'current') {
-                    fetchInventory();
-                } else if (currentTab === 'frozen') {
-                    fetchFrozen();
-                }
+                // Refresh both inventory and frozen lists
+                fetchInventory();
+                fetchFrozen();
             } else {
                 alert('냉동 처리에 실패했습니다.');
             }
@@ -1571,7 +1570,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (response.ok) {
                 closeEditModalFunction();
-                fetchInventory(); // Refresh inventory list
+                // Refresh both inventory and frozen lists
+                fetchInventory();
+                fetchFrozen();
             } else {
                 alert('업데이트에 실패했습니다.');
             }
