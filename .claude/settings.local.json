@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npm run type-check:*)",
+      "WebSearch",
+      "WebFetch(domain:gwfh.mranftl.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl:*)",
+      "Bash(npx expo install:*)",
+      "Bash(cat:*)",
+      "Bash(EXPO_PUBLIC_SUPABASE_URL=\"https://fwoykfbumwsbodrconeo.supabase.co\" EXPO_PUBLIC_SUPABASE_ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3lrZmJ1bXdzYm9kcmNvbmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5MTQxMDEsImV4cCI6MjA3MTQ5MDEwMX0.rxwnJK2xqYSqohmaRJq0x5n9RMOGEchF4r7XifqO2h0\" npm test -- SupabaseClient.test.ts)",
+      "Bash(npx tsc:*)",
+      "Bash(npx expo start:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
