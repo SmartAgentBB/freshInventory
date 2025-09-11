@@ -376,7 +376,7 @@ export const ItemDetailScreen: React.FC = () => {
               <IconButton
                 icon="minus"
                 mode="contained"
-                containerColor={Colors.primary.main}
+                containerColor={isFrozen ? '#4A90E2' : Colors.primary.main}
                 iconColor="white"
                 size={20}
                 onPress={() => {
@@ -386,14 +386,17 @@ export const ItemDetailScreen: React.FC = () => {
                 disabled={currentRemains <= 0}
               />
               <View style={styles.percentageContainer}>
-                <Text variant="titleLarge" style={styles.percentText}>
+                <Text variant="titleLarge" style={[styles.percentText, isFrozen && { color: '#4A90E2' }]}>
                   {currentRemains}%
                 </Text>
                 <View style={styles.progressBarContainer}>
                   <View 
                     style={[
                       styles.progressBar,
-                      { width: `${currentRemains}%` }
+                      { 
+                        width: `${currentRemains}%`,
+                        backgroundColor: isFrozen ? '#4A90E2' : Colors.primary.main
+                      }
                     ]} 
                   />
                 </View>
@@ -401,7 +404,7 @@ export const ItemDetailScreen: React.FC = () => {
               <IconButton
                 icon="plus"
                 mode="contained"
-                containerColor={Colors.primary.main}
+                containerColor={isFrozen ? '#4A90E2' : Colors.primary.main}
                 iconColor="white"
                 size={20}
                 onPress={() => {

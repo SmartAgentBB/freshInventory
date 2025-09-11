@@ -64,10 +64,23 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
 
   const formattedDate = format(item.addedDate, 'MM/dd', { locale: ko });
   const remainsPercent = (item.remains || 1) * 100;
+  const isFrozen = item.status === 'frozen';
 
   // Calculate days until expiry using storageDays if available
   const today = new Date();
   today.setHours(0, 0, 0, 0); // 날짜만 비교하기 위해 시간 초기화
+  
+  // Calculate frozen date and days if frozen
+  let frozenDate: Date | null = null;
+  let frozenDays = 0;
+  let formattedFrozenDate = '';
+  
+  if (isFrozen) {
+    frozenDate = item.frozenDate ? new Date(item.frozenDate) : new Date(item.addedDate);
+    frozenDate.setHours(0, 0, 0, 0);
+    frozenDays = Math.floor((today.getTime() - frozenDate.getTime()) / (1000 * 60 * 60 * 24));
+    formattedFrozenDate = format(frozenDate, 'MM/dd', { locale: ko });
+  }
   
   let expiryDate: Date;
   if (item.storageDays && item.addedDate) {
@@ -164,19 +177,30 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
               {item.name}
             </Text>
             
-            {/* Registration Date and D-day Row */}
+            {/* Registration/Frozen Date and D-day/Frozen days Row */}
             <View style={styles.infoRow}>
               <Text variant="bodySmall" style={styles.infoText}>
-                등록: {formattedDate}
+                {isFrozen ? `냉동: ${formattedFrozenDate}` : `등록: ${formattedDate}`}
               </Text>
-              <View style={[styles.dDayBadge, { backgroundColor: dDayBackgroundColor }]}>
-                <Text 
-                  variant="bodySmall" 
-                  style={[styles.dDayText, { color: dDayTextColor }]}
-                >
-                  {dDayText}
-                </Text>
-              </View>
+              {isFrozen ? (
+                <View style={[styles.dDayBadge, { backgroundColor: '#4A90E2' }]}>
+                  <Text 
+                    variant="bodySmall" 
+                    style={[styles.dDayText, { color: '#FFFFFF' }]}
+                  >
+                    {frozenDays}일
+                  </Text>
+                </View>
+              ) : (
+                <View style={[styles.dDayBadge, { backgroundColor: dDayBackgroundColor }]}>
+                  <Text 
+                    variant="bodySmall" 
+                    style={[styles.dDayText, { color: dDayTextColor }]}
+                  >
+                    {dDayText}
+                  </Text>
+                </View>
+              )}
             </View>
             
             {/* Quantity and Remains Row */}
@@ -192,7 +216,7 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
             {/* Progress Bar */}
             <ProgressBar 
               progress={item.remains || 1} 
-              color={Colors.primary.main}
+              color={isFrozen ? '#4A90E2' : Colors.primary.main}
               style={styles.progressBar}
             />
           </View>

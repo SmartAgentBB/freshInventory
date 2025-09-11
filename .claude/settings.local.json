@@ -99,7 +99,8 @@
       "Read(/C:\\Users\\shiny\\github\\ez2cook\\src\\screens/**)",
       "Read(/C:\\Users\\shiny\\github\\ez2cook\\src\\screens/**)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
