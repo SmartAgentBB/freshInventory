@@ -5,13 +5,16 @@ import { Colors } from '../constants/colors';
 import { getTranslation } from '../constants/translations';
 import { ShoppingItem } from '../models/ShoppingItem';
 import { ShoppingService } from '../services/ShoppingService';
+import { supabaseClient } from '../services/supabaseClient';
 import { ShoppingItemCard } from '../components/ShoppingItemCard';
+import { useAuth } from '../hooks/useAuth';
 
 interface ShoppingScreenProps {
   onStatusChange?: (itemId: string, newTodoStatus: boolean) => void;
 }
 
 export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ onStatusChange }) => {
+  const { user } = useAuth();
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,11 +22,16 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ onStatusChange }
     const loadData = async () => {
       setLoading(true);
       
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+      
       try {
-        const shoppingService = new ShoppingService();
-        const userId = 'test-user-1'; // In real app, this would come from auth context
+        const shoppingService = new ShoppingService(supabaseClient);
+        const userId = user.id;
         
-        const todoItems = await shoppingService.getItemsByTodoStatus(userId, true);
+        const todoItems = await shoppingService.getTodoItems(userId);
         setShoppingItems(todoItems);
       } catch (error) {
         console.error('Error loading shopping data:', error);
@@ -34,7 +42,7 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ onStatusChange }
     };
 
     loadData();
-  }, []);
+  }, [user]);
 
   const handleStatusChange = (itemId: string, newTodoStatus: boolean) => {
     onStatusChange?.(itemId, newTodoStatus);
@@ -43,28 +51,29 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ onStatusChange }
   };
 
   return (
-    <Surface 
+    <View 
       style={{ 
         flex: 1, 
-        backgroundColor: Colors.background.default,
-        padding: 16
+        backgroundColor: Colors.background.default
       }}
       testID="shopping-screen"
     >
-      {/* Header */}
-      <Text 
-        variant="headlineSmall" 
-        style={{ 
-          color: Colors.text.primary,
-          marginBottom: 16,
-          fontFamily: 'OpenSans-Bold',
-          textAlign: 'center'
-        }}
-      >
-        장보기 목록
-      </Text>
+      {/* Header - Fixed at top */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <Text 
+          variant="headlineSmall" 
+          style={{ 
+            color: Colors.text.primary,
+            marginBottom: 16,
+            fontFamily: 'OpenSans-Bold',
+            textAlign: 'center'
+          }}
+        >
+          장보기 목록
+        </Text>
+      </View>
 
-      {/* Content */}
+      {/* Content - Scrollable */}
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator 
@@ -77,6 +86,7 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ onStatusChange }
       ) : (
         <ScrollView 
           style={{ flex: 1 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
         >
           {shoppingItems.length === 0 ? (
@@ -103,6 +113,6 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ onStatusChange }
           )}
         </ScrollView>
       )}
-    </Surface>
+    </View>
   );
 };

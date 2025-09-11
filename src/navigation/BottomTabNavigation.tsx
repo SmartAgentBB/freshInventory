@@ -1,134 +1,82 @@
-import React, { useState } from 'react';
-import { View } from 'react-native';
-import { Surface, TouchableRipple, Text } from 'react-native-paper';
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../constants/colors';
 import { getTranslation } from '../constants/translations';
-import { InventoryScreen } from '../screens/InventoryScreen';
+import { InventoryStackNavigator } from './InventoryStackNavigator';
 import { CookingScreen } from '../screens/CookingScreen';
 import { ShoppingScreen } from '../screens/ShoppingScreen';
 
-type TabType = 'inventory' | 'cooking' | 'shopping';
+const Tab = createBottomTabNavigator();
 
 export const BottomTabNavigation = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('inventory');
-
-  const renderScreen = () => {
-    switch (activeTab) {
-      case 'inventory':
-        return <InventoryScreen />;
-      case 'cooking':
-        return <CookingScreen />;
-      case 'shopping':
-        return <ShoppingScreen />;
-      default:
-        return <InventoryScreen />;
-    }
-  };
-
-  const getTabStyle = (tab: TabType) => ({
-    flex: 1, 
-    justifyContent: 'center' as const, 
-    alignItems: 'center' as const,
-    paddingVertical: 8,
-    backgroundColor: activeTab === tab ? Colors.primary.container : 'transparent'
-  });
-
-  const getIconName = (tab: TabType) => {
-    switch (tab) {
-      case 'inventory':
-        return 'fridge-outline';
-      case 'cooking':
-        return 'chef-hat';
-      case 'shopping':
-        return 'cart-outline';
-      default:
-        return 'home';
-    }
-  };
-
   return (
-    <View style={{ flex: 1 }} testID="bottom-tab-navigation-outer-layer">
-      {renderScreen()}
-      
-      <Surface 
-        style={{ 
-          flexDirection: 'row', 
-          height: 72, 
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
           backgroundColor: Colors.background.paper,
-          elevation: 2 
+          borderTopColor: Colors.border.light,
+          borderTopWidth: 1,
+          height: 84,
+          paddingBottom: 20,
+          paddingTop: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+          elevation: 10,
+        },
+        tabBarActiveTintColor: Colors.primary.main,  // 선택된 탭: 민트색 포인트
+        tabBarInactiveTintColor: Colors.text.secondary, // 선택 안된 탭: 회색
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontFamily: 'OpenSans-Medium',
+        },
+      }}
+    >
+      <Tab.Screen
+        name="Inventory"
+        component={InventoryStackNavigator}
+        options={{
+          tabBarLabel: getTranslation('navigation.inventory'),
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons 
+              name="fridge-outline" 
+              size={size || 24} 
+              color={color} 
+            />
+          ),
         }}
-        testID="bottom-tab-navigation"
-      >
-        <TouchableRipple
-          style={getTabStyle('inventory')}
-          testID="inventory-tab"
-          onPress={() => setActiveTab('inventory')}
-        >
-          <View style={{ alignItems: 'center' }}>
-            <MaterialCommunityIcons
-              name={getIconName('inventory')}
-              size={24}
-              color={activeTab === 'inventory' ? Colors.primary.main : Colors.text.secondary}
+      />
+      <Tab.Screen
+        name="Cooking"
+        component={CookingScreen}
+        options={{
+          tabBarLabel: getTranslation('navigation.cooking'),
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons 
+              name="chef-hat" 
+              size={size || 24} 
+              color={color} 
             />
-            <Text 
-              variant="labelSmall" 
-              style={{ 
-                color: activeTab === 'inventory' ? Colors.primary.main : Colors.text.secondary,
-                marginTop: 4
-              }}
-            >
-              {getTranslation('navigation.inventory')}
-            </Text>
-          </View>
-        </TouchableRipple>
-        
-        <TouchableRipple
-          style={getTabStyle('cooking')}
-          testID="cooking-tab"
-          onPress={() => setActiveTab('cooking')}
-        >
-          <View style={{ alignItems: 'center' }}>
-            <MaterialCommunityIcons
-              name={getIconName('cooking')}
-              size={24}
-              color={activeTab === 'cooking' ? Colors.primary.main : Colors.text.secondary}
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Shopping"
+        component={ShoppingScreen}
+        options={{
+          tabBarLabel: getTranslation('navigation.shopping'),
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons 
+              name="cart-outline" 
+              size={size || 24} 
+              color={color} 
             />
-            <Text 
-              variant="labelSmall" 
-              style={{ 
-                color: activeTab === 'cooking' ? Colors.primary.main : Colors.text.secondary,
-                marginTop: 4
-              }}
-            >
-              {getTranslation('navigation.cooking')}
-            </Text>
-          </View>
-        </TouchableRipple>
-        
-        <TouchableRipple
-          style={getTabStyle('shopping')}
-          testID="shopping-tab"
-          onPress={() => setActiveTab('shopping')}
-        >
-          <View style={{ alignItems: 'center' }}>
-            <MaterialCommunityIcons
-              name={getIconName('shopping')}
-              size={24}
-              color={activeTab === 'shopping' ? Colors.primary.main : Colors.text.secondary}
-            />
-            <Text 
-              variant="labelSmall" 
-              style={{ 
-                color: activeTab === 'shopping' ? Colors.primary.main : Colors.text.secondary,
-                marginTop: 4
-              }}
-            >
-              {getTranslation('navigation.shopping')}
-            </Text>
-          </View>
-        </TouchableRipple>
-      </Surface>
-    </View>
+          ),
+        }}
+      />
+    </Tab.Navigator>
   );
 };

@@ -7,7 +7,7 @@ import { Colors } from '../constants/colors';
 import { AuthService } from '../services/AuthService';
 import { LoginScreen } from '../screens/LoginScreen';
 import { SignUpScreen } from '../screens/SignUpScreen';
-import { BottomTabNavigation } from './BottomTabNavigation';
+import { MainNavigator } from './MainNavigator';
 import { User, Session } from '@supabase/supabase-js';
 
 const Stack = createStackNavigator();
@@ -150,15 +150,7 @@ export const AuthFlow: React.FC = () => {
   // Main app navigation for authenticated users
   return (
     <NavigationContainer>
-      <Stack.Navigator 
-        initialRouteName="Main"
-        screenOptions={{
-          headerShown: false,
-          cardStyle: { backgroundColor: Colors.background.default }
-        }}
-      >
-        <Stack.Screen name="Main" component={BottomTabNavigation} />
-      </Stack.Navigator>
+      <MainNavigator />
     </NavigationContainer>
   );
 };

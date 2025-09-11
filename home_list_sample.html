@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fresh Inventory - Modern Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8f9fa;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            background: #ffffff;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            height: 44px;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        
+        /* Header */
+        .header {
+            background: #ffffff;
+            padding: 16px 24px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .header-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+        
+        /* Tabs */
+        .tabs-container {
+            display: flex;
+            background: #ffffff;
+            position: relative;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 16px 8px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 500;
+            color: #8e9297;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab.active {
+            color: #26A69A;
+            font-weight: 600;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 32px;
+            height: 3px;
+            background: linear-gradient(90deg, #26A69A 0%, #4DB6AC 100%);
+            border-radius: 3px;
+        }
+        
+        /* Filters */
+        .filters-section {
+            background: #ffffff;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .filter-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1.5px solid #e8eaed;
+            background: #ffffff;
+            color: #5f6368;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-chip.active {
+            background: #26A69A;
+            border-color: #26A69A;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(38, 166, 154, 0.3);
+        }
+        
+        .search-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #5f6368;
+            font-size: 14px;
+        }
+        
+        .search-icon {
+            width: 18px;
+            height: 18px;
+            opacity: 0.6;
+        }
+        
+        /* Content */
+        .content {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        
+        /* Item Cards */
+        .item-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            border: 1px solid #f1f3f4;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        
+        .item-main {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .item-image {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f9f0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .item-info {
+            flex: 1;
+        }
+        
+        .item-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+        
+        .item-meta {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .meta-item {
+            font-size: 13px;
+            color: #5f6368;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .meta-icon {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+        
+        /* Status Badge */
+        .status-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #26A69A 0%, #4DB6AC 100%);
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(38, 166, 154, 0.3);
+        }
+        
+        .status-badge.warning {
+            background: linear-gradient(135deg, #FFA726 0%, #FFB74D 100%);
+            box-shadow: 0 2px 8px rgba(255, 167, 38, 0.3);
+        }
+        
+        .status-badge.danger {
+            background: linear-gradient(135deg, #EF5350 0%, #F44336 100%);
+            box-shadow: 0 2px 8px rgba(239, 83, 80, 0.3);
+        }
+        
+        /* Delete Button */
+        .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
+            background: #ffffff;
+            border: 2px solid #f1f3f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #8e9297;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .delete-btn:hover {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #dc2626;
+        }
+        
+        /* Progress Section */
+        .progress-section {
+            margin-top: 4px;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .progress-label {
+            font-size: 13px;
+            color: #5f6368;
+            font-weight: 500;
+        }
+        
+        .progress-value {
+            font-size: 13px;
+            color: #26A69A;
+            font-weight: 600;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background: #f1f3f4;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #26A69A 0%, #4DB6AC 100%);
+            border-radius: 3px;
+            transition: width 0.6s ease;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 100%);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-20px); }
+            100% { transform: translateX(20px); }
+        }
+        
+        /* FAB */
+        .fab {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, #26A69A 0%, #4DB6AC 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 300;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(38, 166, 154, 0.4);
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 32px rgba(38, 166, 154, 0.5);
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            background: linear-gradient(180deg, #F8FDFC 0%, #ffffff 100%);
+            height: 84px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            border-top: 1px solid #E0F2F1;
+            padding-bottom: 20px;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active .nav-icon {
+            color: #26A69A;
+        }
+        
+        .nav-item.active .nav-label {
+            color: #26A69A;
+            font-weight: 600;
+        }
+        
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            color: #8e9297;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-label {
+            font-size: 11px;
+            color: #8e9297;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        /* Modern touches */
+        .item-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(38, 166, 154, 0.1) 50%, transparent 100%);
+        }
+        
+        /* Micro-interactions */
+        .filter-chip:active {
+            transform: scale(0.95);
+        }
+        
+        .item-card:active {
+            transform: scale(0.98);
+        }
+        
+        /* Typography improvements */
+        .item-name {
+            line-height: 1.3;
+        }
+        
+        .meta-item {
+            line-height: 1.4;
+        }
+        
+        /* Better spacing */
+        .content {
+            padding-top: 20px;
+        }
+        
+        .item-card:last-child {
+            margin-bottom: 80px; /* Space for FAB */
+        }
+        
+        /* Enhanced visual hierarchy */
+        .header-title {
+            background: linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Subtle animations */
+        .tab {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent 0%, rgba(38, 166, 154, 0.05) 50%, transparent 100%);
+            transition: left 0.6s ease;
+        }
+        
+        .tab:hover::before {
+            left: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            9:41
+        </div>
+        
+        <!-- Header -->
+        <div class="header">
+            <h1 class="header-title">재고 목록</h1>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <button class="tab active">재고목록</button>
+            <button class="tab">냉동보관</button>
+            <button class="tab">지난기록</button>
+        </div>
+        
+        <!-- Filters -->
+        <div class="filters-section">
+            <div class="filters">
+                <button class="filter-chip active">최신순</button>
+                <button class="filter-chip">오래된순</button>
+                <button class="filter-chip">임박순</button>
+            </div>
+            <div class="search-info">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                총 4개
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Item 1 -->
+            <div class="item-card">
+                <div class="delete-btn">×</div>
+                <div class="status-badge">D-7</div>
+                <div class="item-main">
+                    <div class="item-image">🌶️</div>
+                    <div class="item-info">
+                        <div class="item-name">오이맛고추</div>
+                        <div class="item-meta">
+                            <div class="meta-item">
+                                <svg class="meta-icon" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                등록: 09/05
+                            </div>
+                            <div class="meta-item">
+                                <svg class="meta-icon" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                                </svg>
+                                수량: 8개
+                            </div>
+                        </div>
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">신선도</span>
+                                <span class="progress-value">90%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 90%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Item 2 -->
+            <div class="item-card">
+                <div class="delete-btn">×</div>
+                <div class="status-badge">D-7</div>
+                <div class="item-main">
+                    <div class="item-image">🥒</div>
+                    <div class="item-info">
+                        <div class="item-name">애호박</div>
+                        <div class="item-meta">
+                            <div class="meta-item">
+                                <svg class="meta-icon" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                등록: 09/05
+                            </div>
+                            <div class="meta-item">
+                                <svg class="meta-icon" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                                </svg>
+                                수량: 2개
+                            </div>
+                        </div>
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">신선도</span>
+                                <span class="progress-value">90%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 90%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Item 3 -->
+            <div class="item-card">
+                <div class="delete-btn">×</div>
+                <div class="status-badge">D-7</div>
+                <div class="item-main">
+                    <div class="item-image">🥬</div>
+                    <div class="item-info">
+                        <div class="item-name">적상추</div>
+                        <div class="item-meta">
+                            <div class="meta-item">
+                                <svg class="meta-icon" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                등록: 09/05
+                            </div>
+                            <div class="meta-item">
+                                <svg class="meta-icon" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                                </svg>
+                                수량: 1봉
+                            </div>
+                        </div>
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">신선도</span>
+                                <span class="progress-value">100%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- FAB -->
+        <button class="fab">+</button>
+        
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                </svg>
+                <span class="nav-label">재고</span>
+            </div>
+            <div class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2 17h20v2H2zm1.15-4.05L4 11l.85 1.95L6.8 13l-1.95.85L4 15.8l-.85-1.95L1.2 13l1.95-.85zm6.7-6.7L12 2l2.15 4.25L19 7l-4.85.75L12 12l-2.15-4.25L5 7l4.85-.75z"/>
+                </svg>
+                <span class="nav-label">요리</span>
+            </div>
+            <div class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12L8.1 13h7.45c.75 0 1.41-.41 1.75-1.03L21.7 4H5.21l-.94-2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+                <span class="nav-label">장보기</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -2,7 +2,30 @@
 
 Always follow the instructions in plan.md. When I say "go", find the next unmarked test in plan.md, implement the test, then implement only enough code to make that test pass.
 
-**IMPORTANT**: Always reference and follow the React Native Paper UI design system specified in `ui_guide.md` when implementing any UI components or styling.
+## 🎯 UI 구현 핵심 원칙 (MANDATORY)
+
+### 1. 프로토타입 우선 (Prototype-First)
+**IMPORTANT**: 모든 UI 구현은 Flask 프로토타입(`freshInventory/`)을 먼저 분석하고 따라야 합니다:
+- 레이아웃 구조를 프로토타입과 동일하게 유지
+- 상호작용 패턴 그대로 구현 (인라인 편집, +/- 버튼 등)
+- 시각적 계층 구조 유지
+- 네비게이션 위치만 하단으로 변경 가능
+
+### 2. React Native Paper 전용
+- **NEVER** use bare React Native components
+- **ALWAYS** use React Native Paper components
+- Material Design 3 원칙 엄격히 준수
+
+### 3. 한국어 전용 (Korean-Only)
+- 모든 텍스트, 레이블, 메시지는 한국어로 작성
+- 영어 텍스트 사용 금지
+- 한국어 타이포그래피 규칙 적용
+
+### 4. Open Sans 폰트
+- 모든 텍스트에 Open Sans 폰트 적용
+- 폰트 weight 일관성 유지 (Regular, Medium, Bold)
+
+**IMPORTANT**: Always reference and follow the React Native Paper UI design system specified in `ui_guide.md` and prototype layouts in `prototype_ui_guide.md` when implementing any UI components or styling.
 
 # ROLE AND EXPERTISE
 
@@ -127,24 +150,41 @@ Web Route → Mobile Screen
 
 # CODE QUALITY STANDARDS FOR REACT NATIVE PAPER
 
-- **Follow UI Guide Strictly**: All UI components must conform to the React Native Paper design system specified in `ui_guide.md`
-  - Use ONLY React Native Paper components (Text, Button, TextInput, Surface, Card, etc.)
-  - Apply Mint theme colors consistently (#26A69A primary, #B2DFDB containers)
-  - Follow Material Design 3 typography hierarchy and Paper's typography variants
-  - Use Paper's elevation system and spacing guidelines (8dp grid)
-  - Implement proper Paper component patterns (Surface containers, Card content)
-  - Always wrap app with PaperProvider and configure Mint theme
-- Eliminate duplication ruthlessly, especially in component logic
-- Express intent clearly through component and hook naming
-- Make dependencies explicit through proper prop interfaces
-- Keep components small and focused on a single responsibility
-- Minimize state and side effects using proper React patterns
-- Use custom hooks to extract and reuse stateful logic
+## UI 구현 체크리스트 (필수 확인사항)
+모든 컴포넌트 구현 시 다음 순서를 반드시 따르세요:
+
+### 1️⃣ 프로토타입 분석 (FIRST STEP - MANDATORY)
+- [ ] `freshInventory/templates/`에서 해당 화면 HTML 분석
+- [ ] `freshInventory/static/js/app.js`에서 상호작용 로직 분석
+- [ ] 레이아웃 구조 스케치/메모
+- [ ] 주요 상호작용 패턴 식별 (인라인 편집, 버튼 위치 등)
+
+### 2️⃣ React Native Paper 구현
+- [ ] **Use ONLY React Native Paper components** (Text, Button, TextInput, Surface, Card, etc.)
+- [ ] Apply Mint theme colors consistently (#26A69A primary, #B2DFDB containers)
+- [ ] Follow Material Design 3 typography hierarchy and Paper's typography variants
+- [ ] Use Paper's elevation system and spacing guidelines (8dp grid)
+- [ ] Implement proper Paper component patterns (Surface containers, Card content)
+- [ ] Always wrap app with PaperProvider and configure Mint theme
+
+### 3️⃣ 한국어 및 폰트
+- [ ] **모든 텍스트는 한국어로 작성** (영어 사용 금지)
+- [ ] Open Sans 폰트 패밀리 적용
+- [ ] 한국어 타이포그래피 규칙 준수
+
+### 4️⃣ 프로토타입 충실도 검증
+- [ ] 썸네일 표시 여부 확인
+- [ ] 인라인 편집 가능 여부 확인
+- [ ] +/- 버튼 방식 수량 조절 확인
+- [ ] 전체 레이아웃 일치 확인
+
+### 5️⃣ 코드 품질
+- Eliminate duplication ruthlessly
+- Express intent clearly through component naming
+- Keep components small and focused
+- Use custom hooks for stateful logic
 - Follow React Native Paper accessibility guidelines
-- Implement proper error boundaries and loading states with Paper components
-- Use TypeScript strictly with proper type definitions
-- **Component Consistency**: Ensure all components use Paper's design system and Mint theme colors
-- **Korean Localization**: All text must be in Korean following Paper's typography system
+- Implement proper error boundaries and loading states
 
 # REFACTORING GUIDELINES
 
@@ -234,45 +274,53 @@ describe('InventoryService', () => {
 
 When approaching a new feature:
 
-1. **Red Phase**: Write a simple failing test for a small part of the feature
+1. **프로토타입 분석**: Flask 프로토타입에서 해당 기능 찾기
+   ```bash
+   # 1. HTML 템플릿 확인
+   cat freshInventory/templates/index.html
+   
+   # 2. JavaScript 로직 확인
+   cat freshInventory/static/js/app.js
+   ```
+
+2. **Red Phase**: Write a simple failing test for a small part of the feature
    ```typescript
-   it('should display "No items" message when inventory is empty', () => {
+   it('should display "재고가 없습니다" message when inventory is empty', () => {
      render(<InventoryScreen />);
-     expect(screen.getByText(/no items/i)).toBeTruthy();
+     expect(screen.getByText('재고가 없습니다')).toBeTruthy();
    });
    ```
 
-2. **Green Phase**: Implement the bare minimum to make it pass
+3. **Green Phase**: Implement following prototype layout
    ```typescript
-   import { Typography } from '../components/Typography'; // From ui_guide.md
-   import { Colors } from '../constants/colors'; // From ui_guide.md
+   import { Surface, Text } from 'react-native-paper';
+   import { Colors } from '../constants/colors';
    
    export const InventoryScreen = () => {
      return (
-       <View style={{ backgroundColor: Colors.background.default }}>
-         <Typography variant="body1" color={Colors.text.secondary}>
-           No items
-         </Typography>
-       </View>
+       <Surface style={{ flex: 1, backgroundColor: Colors.background.default }}>
+         <Text variant="bodyLarge" style={{ color: Colors.text.secondary }}>
+           재고가 없습니다
+         </Text>
+       </Surface>
      );
    };
    ```
 
-3. **UI Guide Check**: Verify implementation follows `ui_guide.md` specifications
-   - Colors are from approved palette
-   - Typography uses correct variant and font
-   - Spacing follows established constants
-   - Components match ui_guide.md patterns
+4. **프로토타입 검증**: 
+   - [ ] 레이아웃이 프로토타입과 일치하는가?
+   - [ ] 상호작용이 프로토타입과 동일한가?
+   - [ ] React Native Paper 컴포넌트만 사용했는가?
+   - [ ] 모든 텍스트가 한국어인가?
 
-4. **Refactor Phase**: Make structural improvements if needed
-   - Extract components following ui_guide.md patterns
-   - Improve styling with ui_guide.md design tokens
-   - Add proper TypeScript types
-   - Optimize performance if necessary
+5. **Refactor Phase**: Make improvements while keeping prototype layout
+   - Extract components but maintain prototype structure
+   - Add TypeScript types
+   - Optimize performance
 
-5. **Commit**: Commit the working increment
+6. **Commit**: Commit the working increment
 
-6. **Repeat**: Add another test for the next small increment
+7. **Repeat**: Add another test for the next small increment
 
 ## REACT NATIVE PAPER COMPLIANCE CHECKLIST
 

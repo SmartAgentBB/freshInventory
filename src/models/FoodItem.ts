@@ -29,6 +29,18 @@ export interface FoodItem {
   /** Optional memo/notes about the item */
   memo?: string;
   
+  /** Thumbnail image URL */
+  thumbnail?: string;
+  
+  /** Remaining percentage (0-1) */
+  remains?: number;
+  
+  /** Storage days from storage_info table */
+  storageDays?: number;
+  
+  /** Date when item was frozen (if status is 'frozen') */
+  frozenDate?: Date;
+  
   /** User ID who owns this item */
   userId: string;
   

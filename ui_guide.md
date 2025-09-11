@@ -4,239 +4,337 @@
 You are a React Native developer specializing in creating **consistent, simple, and elegant mobile applications** using React Native Paper. Always follow these principles:
 
 ### 📐 Design Philosophy
+- **Prototype-First**: Always reference the Flask prototype (`freshInventory/`) for layout and UX patterns
 - **Simplicity First**: Keep interfaces clean and uncluttered
 - **Consistency**: Use React Native Paper components exclusively for UI elements
 - **Material Design**: Strictly adhere to Material Design 3 principles
+- **Korean-First**: All text and UI labels must be in Korean (한국어)
 - **Accessibility**: Ensure all components are accessible by default
 - **Performance**: Optimize for smooth 60fps performance
 
-## 🔧 Technical Requirements
+### 🎨 Prototype Reference Principle
+**MANDATORY**: Before implementing any screen or component:
+1. Check the corresponding Flask prototype in `freshInventory/templates/*.html`
+2. Analyze the prototype's JavaScript in `freshInventory/static/js/app.js`
+3. Follow the exact layout structure (except navigation placement)
+4. Implement the same interaction patterns (inline editing, +/- buttons, etc.)
+5. Match the visual hierarchy and component spacing
 
-### 📱 Required Dependencies
-Always ensure these dependencies are installed and up-to-date:
-```bash
-npm install react-native-paper react-native-vector-icons react-native-safe-area-context
-```
+## 🎨 Theme Configuration - White Base with Mint Accents
 
-### 🎨 Theme Configuration
-**MANDATORY**: Always wrap the entire app with PaperProvider and configure a consistent theme:
-
+### Colors System
 ```typescript
-import { PaperProvider, MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
-
-const lightTheme = {
-  ...MD3LightTheme,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: '#6750A4',      // Primary brand color
-    onPrimary: '#FFFFFF',    // Text on primary
-    primaryContainer: '#E8DEF8',
-    secondary: '#625B71',    // Secondary actions
-    tertiary: '#7D5260',     // Accent elements
-    surface: '#FFFBFE',      // Card/surface backgrounds
-    background: '#FFFBFE',   // Screen backgrounds
+export const Colors = {
+  // Primary Mint Colors (포인트 색상으로만 사용)
+  primary: {
+    main: '#26A69A',        // Main mint green - buttons, key actions
+    light: '#4DB6AC',       // Light mint - hover states
+    dark: '#00897B',        // Dark mint - pressed states
+    container: '#E8F5F2',   // Light mint for selected/active items
+    onContainer: '#1a1a1a', // Text on primary container
+  },
+  
+  // Soft mint tints for subtle backgrounds
+  background: {
+    default: '#F8FDFC',     // Almost white with subtle mint hint
+    paper: '#FFFFFF',       // Pure white for cards
+    surface: '#F8FDFC',     // Soft mint-tinted surface
+    container: '#F0F9F8',   // Light mint for containers
+    level1: '#FFFFFF',      // Pure white
+    level2: '#F8FDFC',      // Subtle mint tint
+    level3: '#F0F9F8',      // Light mint
+  },
+  
+  // Border and divider colors (mint tinted)
+  border: {
+    light: '#E0F2F1',       // Light mint border
+    medium: '#E8F5F2',      // Very light mint border
+    dark: '#D0E8E6',        // Slightly darker mint border
+  },
+  
+  divider: '#E0F2F1',       // Subtle mint divider line
+  
+  // Text hierarchy (black base)
+  text: {
+    primary: '#1a1a1a',     // Almost black - main text
+    secondary: '#5f6368',   // Medium gray - secondary text
+    disabled: '#9AA0A6',    // Light gray - disabled text
+    onPrimary: '#FFFFFF',   // White text on primary color
+  },
+  
+  // Status colors
+  status: {
+    success: '#4CAF50',     // Green
+    warning: '#FFA726',     // Orange
+    error: '#EF5350',       // Red
+    info: '#26A69A',        // Mint
   },
 };
-
-// Always provide both light and dark themes
 ```
 
-## 🧩 Component Usage Rules
+### 📱 Navigation Structure
 
-### ✅ ALWAYS USE - React Native Paper Components
-**Replace standard React Native components with Paper equivalents:**
-- `Text` → `Text` from react-native-paper
-- `Button` → `Button` from react-native-paper  
-- `TextInput` → `TextInput` from react-native-paper
-- `View` → `Surface` or `Card` from react-native-paper
-- Custom modals → `Dialog` or `Portal` from react-native-paper
-- Icons → Use `Icon` from react-native-paper
-
-### 🚫 AVOID - Standard React Native Components
-- Do NOT use bare React Native `Button`, `TextInput`, etc.
-- Do NOT create custom styled components when Paper equivalents exist
-- Do NOT use third-party UI components that conflict with Material Design
-
-### 📏 Layout Guidelines
-
-#### Container Structure
+#### Bottom Tab Navigation (항상 표시)
 ```typescript
-// ✅ CORRECT: Use Surface for containers
-<Surface style={styles.container}>
-  <Text variant="headlineMedium">Screen Title</Text>
-  <Card style={styles.card}>
-    <Card.Content>
-      // Content here
-    </Card.Content>
-  </Card>
-</Surface>
-
-// ❌ WRONG: Using bare View
-<View style={styles.container}>
-  // Don't do this
-</View>
-```
-
-#### Typography Hierarchy
-**Always use Paper's typography variants:**
-- `displayLarge` - Main headlines
-- `headlineLarge/Medium/Small` - Section headers  
-- `titleLarge/Medium/Small` - Card titles, important text
-- `bodyLarge/Medium/Small` - Body text, descriptions
-- `labelLarge/Medium/Small` - Button labels, captions
-
-#### Spacing System
-Use consistent spacing based on 8dp grid:
-```typescript
-const styles = StyleSheet.create({
-  // Use multiples of 8 for spacing
-  marginSmall: { margin: 8 },
-  marginMedium: { margin: 16 },
-  marginLarge: { margin: 24 },
-  paddingSmall: { padding: 8 },
-  paddingMedium: { padding: 16 },
-  paddingLarge: { padding: 24 },
-});
-```
-
-## 🎯 Component Patterns
-
-### Form Components
-```typescript
-// ✅ CORRECT Form Pattern
-<Surface style={styles.formContainer}>
-  <Text variant="headlineMedium">Form Title</Text>
-  
-  <TextInput
-    mode="outlined"
-    label="Field Label"
-    value={value}
-    onChangeText={setValue}
-    style={styles.input}
-  />
-  
-  <Button 
-    mode="contained" 
-    onPress={handleSubmit}
-    style={styles.submitButton}
-  >
-    Submit
-  </Button>
-</Surface>
-```
-
-### List Components  
-```typescript
-// ✅ CORRECT List Pattern
-<Surface style={styles.container}>
-  <List.Section>
-    <List.Subheader>Section Title</List.Subheader>
-    <List.Item
-      title="Item Title"
-      description="Item description"
-      left={props => <List.Icon {...props} icon="folder" />}
-      onPress={() => {}}
-    />
-  </List.Section>
-</Surface>
-```
-
-### Navigation Components
-```typescript
-// ✅ CORRECT Navigation Pattern
-<Appbar.Header>
-  <Appbar.BackAction onPress={goBack} />
-  <Appbar.Content title="Screen Title" />
-  <Appbar.Action icon="more-vert" onPress={showMenu} />
-</Appbar.Header>
-```
-
-## 🎨 Visual Guidelines
-
-### Color Usage
-- **Primary**: Main actions, key buttons, active states
-- **Secondary**: Secondary actions, less important elements  
-- **Tertiary**: Accent elements, highlights
-- **Surface**: Card backgrounds, elevated content
-- **Background**: Screen backgrounds, base layer
-
-### Elevation & Depth
-```typescript
-// Use Paper's elevation system
-<Surface elevation={0}>  // Base level
-<Surface elevation={1}>  // Slightly raised (cards)
-<Surface elevation={2}>  // More prominent (app bar)  
-<Surface elevation={3}>  // Floating elements (FAB)
-```
-
-### Interactive States
-Always handle loading, disabled, and error states:
-```typescript
-<Button 
-  mode="contained"
-  loading={isLoading}
-  disabled={!isValid}
-  onPress={handlePress}
->
-  {isLoading ? 'Loading...' : 'Submit'}
-</Button>
-```
-
-## 📱 Screen Structure Template
-
-```typescript
-import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
-import { 
-  Surface, 
-  Appbar, 
-  Text, 
-  Card,
-  useTheme 
-} from 'react-native-paper';
-
-const ScreenName = ({ navigation }) => {
-  const theme = useTheme();
-  
+// 하단 네비게이션은 모든 화면에서 항상 표시됩니다
+const BottomTabNavigation = () => {
   return (
-    <>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="Screen Title" />
-      </Appbar.Header>
+    <Tab.Navigator
+      screenOptions={{
+        tabBarStyle: {
+          backgroundColor: Colors.background.paper,  // 순수 흰색 배경
+          borderTopColor: Colors.border.light,      // 연한 민트 보더
+          height: 84,
+          paddingBottom: 20,
+          paddingTop: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+          elevation: 10,
+        },
+        tabBarActiveTintColor: Colors.primary.main,    // 선택된 탭: 민트색
+        tabBarInactiveTintColor: Colors.text.secondary, // 선택 안된 탭: 회색
+      }}
+    >
+      <Tab.Screen name="Inventory" component={InventoryStackNavigator} />
+      <Tab.Screen name="Cooking" component={CookingScreen} />
+      <Tab.Screen name="Shopping" component={ShoppingScreen} />
+    </Tab.Navigator>
+  );
+};
+```
+
+## 🧩 Component Patterns
+
+### Modern Food Item Card (home_list_sample.html 기반)
+```typescript
+const FoodItemCard = ({ item }) => {
+  return (
+    <Surface style={styles.container} elevation={2}>
+      {/* Delete button - inside card */}
+      <IconButton
+        icon="close"
+        size={20}
+        style={styles.deleteButton}  // position: absolute, top: 8, right: 8
+        iconColor={Colors.text.secondary}
+        onPress={handleDelete}
+      />
       
-      <Surface style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text variant="headlineMedium" style={styles.title}>
-            Main Content
-          </Text>
+      <TouchableOpacity style={styles.content}>
+        {/* Thumbnail - 128x128 */}
+        <View style={styles.thumbnailContainer}>
+          {item.thumbnail ? (
+            <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
+          ) : (
+            <View style={styles.placeholderThumbnail}>
+              <Text style={styles.placeholderText}>{item.name.charAt(0)}</Text>
+            </View>
+          )}
+        </View>
+        
+        {/* Details */}
+        <View style={styles.detailsContainer}>
+          <Text variant="titleMedium" style={styles.name}>{item.name}</Text>
           
-          <Card style={styles.card}>
-            <Card.Content>
-              // Your content here
-            </Card.Content>
-          </Card>
-        </ScrollView>
-      </Surface>
-    </>
+          {/* Registration date and D-day badge */}
+          <View style={styles.infoRow}>
+            <Text variant="bodySmall">등록: {formattedDate}</Text>
+            <View style={[styles.dDayBadge, { backgroundColor: dDayBackgroundColor }]}>
+              <Text style={styles.dDayText}>{dDayText}</Text>
+            </View>
+          </View>
+          
+          {/* Quantity and Percentage */}
+          <View style={styles.infoRow}>
+            <Text variant="bodySmall">수량: {item.quantity}{item.unit}</Text>
+            <Text variant="bodySmall">{Math.round(remainsPercent)}%</Text>
+          </View>
+          
+          {/* Progress Bar */}
+          <ProgressBar 
+            progress={item.remains || 1} 
+            color={Colors.primary.main}
+            style={styles.progressBar}
+          />
+        </View>
+      </TouchableOpacity>
+    </Surface>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    backgroundColor: Colors.background.paper,
+    borderRadius: 16,
+    marginBottom: 2,  // 최소 간격
+    marginHorizontal: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
   },
-  content: {
-    padding: 16,
+  deleteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 1,
   },
-  title: {
-    marginBottom: 16,
+  thumbnail: {
+    width: 128,
+    height: 128,
+    borderRadius: 12,
   },
-  card: {
-    marginBottom: 16,
+  placeholderThumbnail: {
+    backgroundColor: Colors.background.level3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  dDayBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.border.light,
+    marginTop: 8,
+    overflow: 'hidden',
   },
 });
 ```
+
+### Enhanced Visual Effects (그라데이션 효과)
+
+#### FAB Button with Shadow
+```typescript
+const fabStyle = {
+  backgroundColor: Colors.primary.main,
+  shadowColor: Colors.primary.main,  // 민트색 그림자
+  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.4,
+  shadowRadius: 24,
+  elevation: 8,
+};
+```
+
+#### Active Filter Chip
+```typescript
+const activeSortChip = {
+  backgroundColor: Colors.primary.main,
+  borderColor: Colors.primary.main,
+  shadowColor: Colors.primary.main,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 8,
+  elevation: 3,
+};
+```
+
+### Tab Navigation Pattern (강화된 탭)
+```typescript
+const tabStyles = {
+  tabButton: {
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  activeTabButton: {
+    borderBottomColor: Colors.primary.main,
+  },
+  activeTabButtonText: {
+    color: Colors.primary.main,
+    fontFamily: 'OpenSans-Bold',
+    fontWeight: '600',
+  },
+};
+```
+
+## 📏 Spacing System (정밀 조정됨)
+
+```typescript
+export const Spacing = {
+  xs: 4,   // 카드 간 최소 간격 (marginBottom: 2 사용)
+  sm: 8,   // 작은 간격
+  md: 12,  // 중간 간격
+  lg: 16,  // 큰 간격 (패딩)
+  xl: 24,  // 특대 간격
+  xxl: 32, // 최대 간격
+};
+```
+
+### 카드 간격 규칙
+- **카드와 카드 사이**: `marginBottom: 2` (최소 간격)
+- **카드 좌우 여백**: `marginHorizontal: Spacing.sm`
+- **카드 내부 패딩**: `padding: Spacing.lg`
+- **썸네일 크기**: 128x128px 고정
+- **Progress Bar 위 간격**: `marginTop: 8` (적당한 간격)
+
+## 🎨 D-day Badge System (색상 시스템)
+
+```typescript
+// storage_days 대비 남은 비율로 색상 결정
+const getDDayBackgroundColor = (daysUntilExpiry, percentRemaining) => {
+  if (daysUntilExpiry < 0) {
+    return '#F44336';  // Red - 만료됨
+  } else if (daysUntilExpiry === 0) {
+    return '#FF9800';  // Orange - D-Day
+  } else {
+    if (percentRemaining > 50) {
+      return '#4CAF50';  // Green - 신선함
+    } else if (percentRemaining > 20) {
+      return '#FFC107';  // Yellow - 주의
+    } else {
+      return '#FF9800';  // Orange - 경고
+    }
+  }
+};
+
+// 노란색 배경일 때는 검은색 텍스트
+const getDDayTextColor = (backgroundColor) => {
+  return backgroundColor === '#FFC107' ? '#000000' : '#FFFFFF';
+};
+```
+
+## 🔍 Design System Summary
+
+### Visual Hierarchy
+1. **Base**: 흰색 베이스 (#FFFFFF) - 카드, 주요 컨테이너
+2. **Subtle Backgrounds**: 연한 민트 틴트 (#F8FDFC, #F0F9F8) - 배경, 서피스
+3. **Accent Colors**: 민트 그린 (#26A69A) - 버튼, 액티브 상태, 포인트
+4. **Borders**: 매우 연한 민트 (#E0F2F1) - 구분선, 테두리
+
+### Shadow System
+- **카드**: `shadowOpacity: 0.04, shadowRadius: 12` (부드러운 그림자)
+- **FAB**: `shadowOpacity: 0.4, shadowRadius: 24` (강한 그림자, 민트색)
+- **뱃지**: `shadowOpacity: 0.15, shadowRadius: 8` (중간 그림자)
+- **네비게이션**: `shadowOpacity: 0.05, shadowRadius: 10` (상단 그림자)
+
+### Typography (Open Sans)
+- **제목**: OpenSans-Bold, 크기 크게
+- **본문**: OpenSans-Regular, 표준 크기
+- **강조**: OpenSans-SemiBold 또는 Bold
+- **캡션**: OpenSans-Regular, 작은 크기
+
+### Interactive Elements
+- **삭제 버튼**: 카드 내부 우상단 (top: 8, right: 8)
+- **터치 영역**: 카드 전체가 터치 가능
+- **FAB**: 화면 우하단 고정, 민트색 그림자
+- **탭 네비게이션**: 항상 하단에 표시
 
 ## ⚡ Performance Best Practices
 - Always use `useTheme()` hook for dynamic theming
@@ -245,87 +343,79 @@ const styles = StyleSheet.create({
 - Optimize list rendering with `FlatList` and Paper's `List` components
 - Cache theme objects and avoid inline styles
 
-## 🔍 Code Review Checklist
-Before submitting any React Native code, ensure:
-- [ ] All UI components are from react-native-paper
-- [ ] Open Sans font is properly configured and applied
-- [ ] All text content is in Korean (한국어)
-- [ ] **Mint theme colors are consistently applied** (#26A69A primary, #B2DFDB containers)
-- [ ] Korean typography conventions are followed (proper spacing, line height)
-- [ ] Consistent typography variants are used
-- [ ] Proper spacing (8dp grid) is maintained  
-- [ ] Theme colors are used correctly (mint green family)
-- [ ] Accessibility props are included
-- [ ] Loading and error states are handled with Korean labels
-- [ ] Code follows the established patterns above
-- [ ] Korean text layout considerations are addressed
-- [ ] Mint color palette maintains good contrast ratios
+## 🚀 Quick Start Template
 
-## 🌐 Korean Localization Guidelines
-- **Button Labels**: Use clear, actionable Korean verbs
-  - ✅ "저장", "취소", "확인", "삭제"
-  - ❌ "Save", "Cancel", "OK", "Delete"
-- **Form Labels**: Use descriptive Korean nouns
-  - ✅ "이메일 주소", "비밀번호", "사용자명"
-  - ❌ "Email", "Password", "Username"
-- **Messages**: Use polite Korean expressions
-  - ✅ "저장되었습니다", "오류가 발생했습니다"
-  - ❌ "Saved", "Error occurred"
-- **Navigation**: Use clear Korean titles
-  - ✅ "설정", "프로필", "알림"
-  - ❌ "Settings", "Profile", "Notifications"
-
-## 🎨 Mint Theme Color Guidelines
-- **Primary Actions**: Use #26A69A for main buttons and active states
-- **Backgrounds**: Use #E0F2F1 for screen backgrounds, #B2DFDB for containers
-- **Accents**: Use #4DB6AC for highlights, #00695C for deep accents
-- **Text**: Use #004D40 for headings, #00695C for body text
-- **Success States**: Use mint green variations, avoid red except for errors
-- **Progress Indicators**: Use gradient from #26A69A to #4DB6AC
-
-## 🚀 Quick Start Commands
-When creating new components, always start with:
 ```typescript
 import React from 'react';
+import { View, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { 
   Surface, 
   Text, 
   Button, 
-  Card, 
-  TextInput,
+  IconButton,
+  ProgressBar,
   FAB,
   useTheme 
 } from 'react-native-paper';
-import { useFonts, OpenSans_400Regular, OpenSans_500Medium, OpenSans_700Bold } from '@expo-google-fonts/open-sans';
+import { Colors } from '../constants/colors';
+import { Spacing } from '../constants/spacing';
 
-// Korean component example with Mint theme and Open Sans
-const MintThemedComponent = () => {
+const ScreenTemplate = () => {
   const theme = useTheme();
-  const [fontsLoaded] = useFonts({
-    OpenSans_400Regular,
-    OpenSans_500Medium, 
-    OpenSans_700Bold,
-  });
-
-  if (!fontsLoaded) {
-    return null;
-  }
-
+  
   return (
-    <Surface style={{ flex: 1, padding: 16, backgroundColor: '#E0F2F1' }}>
-      <Text variant="headlineMedium" style={{ color: '#00695C' }}>한국어 제목</Text>
-      <Text variant="bodyMedium" style={{ color: '#004D40' }}>본문 내용입니다.</Text>
-      <Button 
-        mode="contained" 
-        buttonColor="#26A69A"
-        textColor="#FFFFFF"
-        style={{ marginTop: 16 }}
-      >
-        민트 테마 버튼
-      </Button>
-    </Surface>
+    <View style={styles.container}>
+      {/* Content */}
+      <ScrollView style={styles.scrollView}>
+        {/* Your components here */}
+      </ScrollView>
+      
+      {/* FAB - Always visible */}
+      <FAB
+        icon="plus"
+        style={styles.fab}
+        onPress={handleAdd}
+        color="white"
+      />
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background.surface,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  fab: {
+    position: 'absolute',
+    margin: Spacing.lg,
+    right: 0,
+    bottom: 20,
+    backgroundColor: Colors.primary.main,
+    shadowColor: Colors.primary.main,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+});
 ```
 
-Remember: **일관성이 핵심입니다 (Consistency is key)**. Every screen should feel like part of the same cohesive Korean application using React Native Paper's design system with **refreshing mint theme colors** and Open Sans font. The mint color palette creates a **modern, fresh, and calming** user experience perfect for everyday applications. 🌿✨
+## 📋 Code Review Checklist
+- [ ] 모든 UI 컴포넌트가 React Native Paper 사용
+- [ ] 흰색 베이스에 민트 포인트 색상 적용
+- [ ] 카드 간격 최소화 (marginBottom: 2)
+- [ ] 썸네일 크기 128x128 유지
+- [ ] 삭제 버튼이 카드 내부에 위치
+- [ ] D-day 뱃지 색상 시스템 적용
+- [ ] FAB 버튼에 민트색 그림자 적용
+- [ ] 하단 네비게이션이 모든 화면에 표시
+- [ ] Open Sans 폰트 적용
+- [ ] 모든 텍스트가 한국어로 작성
+- [ ] 그림자 효과가 적절히 적용됨
+- [ ] Progress Bar 높이 6px 유지
+
+Remember: **일관성이 핵심입니다**. 모든 화면이 동일한 디자인 시스템을 따라야 하며, 흰색 베이스에 민트색 포인트가 조화롭게 어우러진 **모던하고 깔끔한** 인터페이스를 유지해야 합니다. 🌿✨

@@ -2,7 +2,22 @@
 
 TDD를 사용하여 단계적으로 구현할 테스트 목록입니다. 각 테스트를 구현한 후 ✅ 표시를 하세요.
 
-**중요**: 모든 UI 컴포넌트는 React Native Paper를 사용하며, Mint 테마(#26A69A 등)를 적용합니다.
+## 🎯 핵심 구현 원칙
+
+### UI 구현 필수 사항
+1. **프로토타입 우선**: 모든 화면은 `freshInventory/` 폴더의 Flask 프로토타입 레이아웃을 따라야 함
+2. **React Native Paper 전용**: 모든 UI 컴포넌트는 React Native Paper 사용
+3. **한국어 전용**: 모든 텍스트, 레이블, 메시지는 한국어로 작성
+4. **Open Sans 폰트**: 모든 텍스트에 Open Sans 폰트 적용
+5. **Material Design 3**: 엄격한 Material Design 3 원칙 준수
+6. **Mint 테마**: #26A69A (primary), #B2DFDB (container) 등 일관된 색상 사용
+
+### 프로토타입 참조 방법
+각 기능 구현 전:
+1. `freshInventory/templates/*.html`에서 해당 화면 HTML 확인
+2. `freshInventory/static/js/app.js`에서 상호작용 로직 확인
+3. 레이아웃과 동일하게 구현 (네비게이션만 하단으로 이동)
+4. 인라인 편집, +/- 버튼 등 프로토타입의 UX 패턴 그대로 적용
 
 ## Phase 1: 프로젝트 기초 설정
 
@@ -88,6 +103,8 @@ TDD를 사용하여 단계적으로 구현할 테스트 목록입니다. 각 테
 - [✅] **Test**: Database service should handle offline scenarios
 
 ## Phase 3: 재고 관리 기능
+
+**🎨 프로토타입 참조**: `freshInventory/templates/index.html` 레이아웃 필수 확인
 
 ### 3.1 재고 목록 표시
 - [✅] **Test**: InventoryScreen should display "재고 목록" header
@@ -181,25 +198,29 @@ TDD를 사용하여 단계적으로 구현할 테스트 목록입니다. 각 테
 
 ## Phase 6: 이미지 처리 및 AI 통합
 
+**🎨 프로토타입 참조**: 
+- HTML: `freshInventory/templates/index.html` (모달 및 AI 결과 표시)
+- JS: `freshInventory/static/js/app.js` (displayAIResults 함수 - 인라인 편집, +/- 버튼 필수)
+
 ### 6.1 이미지 업로드 기능
-- [ ] **Test**: Should open camera when camera button is pressed
-- [ ] **Test**: Should open gallery when gallery button is pressed
-- [ ] **Test**: Should display selected image preview
-- [ ] **Test**: Should compress image before upload
-- [ ] **Test**: Should upload image to Supabase Storage
+- [✅] **Test**: Should open camera when camera button is pressed
+- [✅] **Test**: Should open gallery when gallery button is pressed
+- [✅] **Test**: Should display selected image preview
+- [✅] **Test**: Should compress image before upload
+- [✅] **Test**: Should upload image to Supabase Storage
 
 ### 6.2 Google AI 재료 인식
-- [ ] **Test**: AIService should initialize Google Generative AI client
-- [ ] **Test**: Should analyze image and extract food items
+- [✅] **Test**: AIService should initialize Google Generative AI client
+- [✅] **Test**: Should analyze image and extract food items
 - [ ] **Test**: Should return structured food item data
 - [ ] **Test**: Should handle AI service errors gracefully
 - [ ] **Test**: Should pre-fill add item form with AI-detected data
 
 ### 6.3 이미지 기반 재료 추가
-- [ ] **Test**: Should show loading indicator during AI analysis
-- [ ] **Test**: Should display detected items for user confirmation
-- [ ] **Test**: Should allow editing AI-detected information
-- [ ] **Test**: Should save corrected information for learning
+- [✅] **Test**: Should show loading indicator during AI analysis
+- [✅] **Test**: Should display detected items for user confirmation
+- [✅] **Test**: Should allow editing AI-detected information
+- [✅] **Test**: Should save corrected information for learning
 
 ## Phase 7: 요리 추천 기능
 

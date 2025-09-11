@@ -3,12 +3,17 @@
  */
 import { SupabaseClient } from '@supabase/supabase-js';
 import { FoodItem, FOOD_CATEGORIES, FOOD_STATUSES } from '../models/FoodItem';
+import { StorageInfoService } from './StorageInfoService';
 
 /**
  * Service class for inventory management operations
  */
 export class InventoryService {
-  constructor(private supabase: SupabaseClient) {}
+  private storageInfoService: StorageInfoService;
+  
+  constructor(private supabase: SupabaseClient, geminiApiKey?: string) {
+    this.storageInfoService = new StorageInfoService(supabase, geminiApiKey);
+  }
 
   /**
    * Fetch all food items for a specific user
@@ -45,6 +50,7 @@ export class InventoryService {
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('Supabase error:', error);
         throw new Error(`Failed to fetch items by status: ${error.message}`);
       }
 
@@ -178,6 +184,128 @@ export class InventoryService {
   }
 
   /**
+   * Add a new item to inventory
+   */
+  async addItem(item: Partial<FoodItem> & { name: string; quantity: number; userId?: string }): Promise<FoodItem | null> {
+    try {
+      if (!item.userId) {
+        console.error('User ID is missing!');
+        throw new Error('User ID is required to add an item');
+      }
+      
+      // Remove duplicate check - allow multiple items with same name
+      // This allows users to track items purchased at different times
+      
+      // Get storage info from storage_info table (with AI generation if needed)
+      let storageDays = 7; // Default 7 days
+      const storageInfo = await this.storageInfoService.getStorageInfo(item.name);
+      
+      if (storageInfo && storageInfo.storage_days) {
+        storageDays = storageInfo.storage_days;
+        console.log(`Using storage days ${storageDays} for ${item.name}`);
+      } else {
+        console.log(`Using default storage days for ${item.name}`);
+      }
+      
+      const now = new Date();
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + storageDays);
+      
+      const newItem = {
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit || '개',
+        category: item.category || 'other',
+        addedDate: now,
+        expiryDate: item.expiryDate || expiryDate,
+        status: 'fresh' as const,
+        memo: item.memo,
+        thumbnail: item.thumbnail,
+        remains: item.remains || 1,
+        storageDays: storageDays, // Save storage_days to food_items table
+        userId: item.userId,
+      };
+
+      const dbItem = this.mapFoodItemToDatabase(newItem);
+      
+      const { data, error } = await this.supabase
+        .from('food_items')
+        .insert([dbItem])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase insert error:', error);
+        throw new Error(`Failed to add item: ${error.message}`);
+      }
+
+      const mapped = this.mapDatabaseItemsToFoodItems([data]);
+      return mapped.length > 0 ? mapped[0] : null;
+    } catch (error) {
+      console.error('Error adding item:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update an existing item
+   */
+  async updateItem(id: string, updates: Partial<FoodItem>): Promise<FoodItem | null> {
+    try {
+      const { data, error } = await this.supabase
+        .from('food_items')
+        .update({
+          name: updates.name,
+          quantity: updates.quantity,
+          unit: updates.unit,
+          category: updates.category,
+          status: updates.status,
+          memo: updates.memo,
+          thumbnail: updates.thumbnail,
+          remains: updates.remains,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to update item: ${error.message}`);
+      }
+
+      const mapped = this.mapDatabaseItemsToFoodItems([data]);
+      return mapped.length > 0 ? mapped[0] : null;
+    } catch (error) {
+      console.error('Error updating item:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Delete an item from inventory
+   */
+  async deleteItem(id: string): Promise<boolean> {
+    console.log('InventoryService.deleteItem called with id:', id);
+    try {
+      const { error } = await this.supabase
+        .from('food_items')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Supabase delete error:', error);
+        throw new Error(`Failed to delete item: ${error.message}`);
+      }
+
+      console.log('Item deleted successfully from database');
+      return true;
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      return false;
+    }
+  }
+
+  /**
    * Get summary statistics for user's inventory
    */
   async getInventoryStats(userId: string): Promise<{
@@ -229,20 +357,38 @@ export class InventoryService {
   private mapDatabaseItemsToFoodItems(databaseItems: any[]): FoodItem[] {
     return databaseItems
       .filter(item => item && item.id && item.name) // Filter out null/invalid items
-      .map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: parseFloat(item.quantity) || 0,
-        unit: item.unit || '',
-        category: item.category || 'other',
-        addedDate: new Date(item.added_date || new Date()),
-        expiryDate: new Date(item.expiry_date || new Date()),
-        status: item.status || 'fresh',
-        memo: item.memo || undefined,
-        userId: item.user_id || '',
-        createdAt: new Date(item.created_at || new Date()),
-        updatedAt: new Date(item.updated_at || new Date())
-      }));
+      .map(item => {
+        // Use expiry_date directly from database
+        let expiryDate = item.expiry_date ? new Date(item.expiry_date) : new Date();
+        
+        // If no expiry_date, calculate from storage_days
+        if (!item.expiry_date && item.storage_days) {
+          expiryDate = new Date(item.added_date || item.created_at || new Date());
+          expiryDate.setDate(expiryDate.getDate() + item.storage_days);
+        } else if (!item.expiry_date) {
+          // Default 7 days if no storage_days either
+          expiryDate = new Date(item.added_date || item.created_at || new Date());
+          expiryDate.setDate(expiryDate.getDate() + 7);
+        }
+        
+        return {
+          id: item.id,
+          name: item.name,
+          quantity: parseFloat(item.quantity) || 0,
+          unit: item.unit || '',
+          category: item.category || 'other',
+          addedDate: new Date(item.added_date || new Date()),
+          expiryDate: expiryDate,
+          status: item.status || 'fresh',
+          memo: item.memo || undefined,
+          thumbnail: item.thumbnail || undefined,
+          remains: item.remains !== undefined ? parseFloat(item.remains) : 1,
+          storageDays: item.storage_days || 7,
+          userId: item.user_id || '',
+          createdAt: new Date(item.created_at || new Date()),
+          updatedAt: new Date(item.updated_at || new Date())
+        };
+      });
   }
 
   /**
@@ -259,6 +405,9 @@ export class InventoryService {
       expiry_date: item.expiryDate.toISOString(),
       status: item.status,
       memo: item.memo || null,
+      thumbnail: item.thumbnail || null,
+      remains: item.remains || 1,
+      storage_days: item.storageDays || 7,
       user_id: item.userId
     };
   }
