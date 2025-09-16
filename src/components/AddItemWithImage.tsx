@@ -15,6 +15,7 @@ import {
   IconButton,
   TextInput,
   Divider,
+  Menu,
 } from 'react-native-paper';
 import { ImageUpload } from './ImageUpload';
 import { AIService, FoodItem } from '../services/AIService';
@@ -54,6 +55,9 @@ const mapKoreanCategory = (koreanCategory: string): string => {
   return categoryMap[koreanCategory] || 'other';
 };
 
+// Available units for food items
+const UNITS = ['개', '팩'];
+
 export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
   onComplete,
   userId,
@@ -65,7 +69,8 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
   const [detectedItems, setDetectedItems] = useState<EditableItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
-  
+  const [unitMenuVisible, setUnitMenuVisible] = useState<{ [key: number]: boolean }>({});
+
   const aiService = new AIService();
   const inventoryService = new InventoryService(supabaseClient);
 
@@ -196,16 +201,40 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
       Alert.alert('알림', '저장할 항목이 없습니다.');
       return;
     }
-    
+
     setIsSaving(true);
-    
+
     try {
-      // Skip thumbnail upload for now - just use local URIs
-      // This avoids timeout issues with multiple uploads
-      const itemsWithUploadedThumbnails = detectedItems;
-      
+      // Upload thumbnails to Supabase if they are blob URLs
+      const itemsWithUploadedThumbnails = await Promise.all(
+        detectedItems.map(async (item) => {
+          // Check if thumbnail is a blob URL or local URI
+          if (item.thumbnail && (item.thumbnail.startsWith('blob:') || item.thumbnail.startsWith('file:'))) {
+            console.log('Uploading thumbnail for item:', item.name);
+            const uploadResult = await uploadImageToSupabase(item.thumbnail, userId);
+
+            if (uploadResult.success && uploadResult.publicUrl) {
+              console.log('Thumbnail uploaded successfully:', uploadResult.publicUrl);
+              return {
+                ...item,
+                thumbnail: uploadResult.publicUrl
+              };
+            } else {
+              console.error('Failed to upload thumbnail for item:', item.name);
+              // Use the main image URL as fallback
+              return {
+                ...item,
+                thumbnail: selectedImageUri
+              };
+            }
+          }
+          // If it's already a Supabase URL, keep it as is
+          return item;
+        })
+      );
+
       // Save each item to inventory with uploaded thumbnail URLs
-      const promises = itemsWithUploadedThumbnails.map(item => 
+      const promises = itemsWithUploadedThumbnails.map(item =>
         inventoryService.addItem({
           name: item.name,
           quantity: item.quantity,
@@ -217,9 +246,9 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
           memo: '', // Optional memo field
         })
       );
-      
+
       const results = await Promise.all(promises);
-      
+
       // Check if any items failed to save
       const failedCount = results.filter(r => r === null).length;
       if (failedCount > 0) {
@@ -228,7 +257,7 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
           `${detectedItems.length - failedCount}개 항목이 저장되었습니다. ${failedCount}개 항목 저장에 실패했습니다.`
         );
       }
-      
+
       // Navigate back to inventory screen
       onComplete();
     } catch (error) {
@@ -285,35 +314,73 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
               testID={`item-${index}-name-input`}
             />
             
-            {/* Quantity row */}
-            <View style={styles.quantityRow}>
-              <Text variant="labelMedium" style={styles.quantityLabel}>
-                수량:
-              </Text>
-              <View style={styles.quantityControls}>
-                <IconButton
-                  icon="minus"
-                  size={18}
-                  mode="contained"
-                  containerColor={Colors.background.container}
-                  iconColor={Colors.text.primary}
-                  onPress={() => handleQuantityChange(index, -1)}
-                  style={styles.quantityButton}
-                  testID={`item-${index}-decrement`}
-                />
-                <Text variant="bodyLarge" style={styles.quantityText}>
-                  {item.quantity || 1}
+            {/* Quantity and Unit section */}
+            <View style={styles.quantitySection}>
+              {/* Quantity row */}
+              <View style={styles.quantityRow}>
+                <Text variant="labelMedium" style={styles.quantityLabel}>
+                  수량
                 </Text>
-                <IconButton
-                  icon="plus"
-                  size={18}
-                  mode="contained"
-                  containerColor={Colors.background.container}
-                  iconColor={Colors.text.primary}
-                  onPress={() => handleQuantityChange(index, 1)}
-                  style={styles.quantityButton}
-                  testID={`item-${index}-increment`}
-                />
+                <View style={styles.quantityControls}>
+                  <IconButton
+                    icon="minus"
+                    size={18}
+                    mode="contained"
+                    containerColor={Colors.background.container}
+                    iconColor={Colors.text.primary}
+                    onPress={() => handleQuantityChange(index, -1)}
+                    style={styles.quantityButton}
+                    testID={`item-${index}-decrement`}
+                  />
+                  <Text variant="bodyLarge" style={styles.quantityText}>
+                    {item.quantity || 1}
+                  </Text>
+                  <IconButton
+                    icon="plus"
+                    size={18}
+                    mode="contained"
+                    containerColor={Colors.background.container}
+                    iconColor={Colors.text.primary}
+                    onPress={() => handleQuantityChange(index, 1)}
+                    style={styles.quantityButton}
+                    testID={`item-${index}-increment`}
+                  />
+                </View>
+              </View>
+
+              {/* Unit row */}
+              <View style={styles.unitRow}>
+                <Text variant="labelMedium" style={styles.unitLabel}>
+                  단위
+                </Text>
+                <Menu
+                  visible={unitMenuVisible[index] || false}
+                  onDismiss={() => setUnitMenuVisible({ ...unitMenuVisible, [index]: false })}
+                  anchor={
+                    <Button
+                      mode="outlined"
+                      onPress={() => setUnitMenuVisible({ ...unitMenuVisible, [index]: true })}
+                      style={styles.unitButton}
+                      compact
+                      icon="chevron-down"
+                      contentStyle={styles.unitButtonContent}
+                      labelStyle={styles.unitButtonLabel}
+                    >
+                      {item.unit || '개'}
+                    </Button>
+                  }
+                >
+                  {UNITS.map((unit) => (
+                    <Menu.Item
+                      key={unit}
+                      onPress={() => {
+                        handleUpdateItem(index, 'unit', unit);
+                        setUnitMenuVisible({ ...unitMenuVisible, [index]: false });
+                      }}
+                      title={unit}
+                    />
+                  ))}
+                </Menu>
               </View>
             </View>
           </View>
@@ -456,11 +523,18 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Regular',
   },
   itemCard: {
-    backgroundColor: Colors.background.surface,
-    borderRadius: 12,
+    backgroundColor: Colors.background.paper,
+    borderRadius: 16,
     marginBottom: Spacing.md,
-    padding: Spacing.md,
+    padding: Spacing.lg,
     position: 'relative',
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
   },
   itemContainer: {
     flexDirection: 'row',
@@ -474,14 +548,19 @@ const styles = StyleSheet.create({
     paddingRight: Spacing.lg, // Space for delete button
   },
   nameInput: {
-    backgroundColor: Colors.background.surface,
-    marginBottom: Spacing.sm,
+    backgroundColor: Colors.background.paper,
+    marginBottom: Spacing.md, // Increased spacing between name and quantity
     height: 40,
   },
   nameInputContent: {
     fontSize: 14,
-    fontFamily: 'OpenSans-Regular',
+    fontFamily: 'OpenSans-Medium',
     paddingVertical: 4,
+    color: Colors.primary.main,
+  },
+  quantitySection: {
+    flexDirection: 'column',
+    gap: 10,
   },
   quantityRow: {
     flexDirection: 'row',
@@ -491,13 +570,37 @@ const styles = StyleSheet.create({
   quantityLabel: {
     color: Colors.text.secondary,
     fontFamily: 'OpenSans-Regular',
-    minWidth: 45, // Ensure label doesn't wrap
+    minWidth: 40,
   },
   quantityControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  unitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  unitLabel: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+    minWidth: 40,
+  },
+  unitButton: {
+    minWidth: 80,
+    height: 36,
+    borderColor: Colors.border.light,
+    backgroundColor: Colors.background.paper,
+  },
+  unitButtonContent: {
+    flexDirection: 'row-reverse',
+    paddingHorizontal: 4,
+  },
+  unitButtonLabel: {
+    fontFamily: 'OpenSans-Medium',
+    color: Colors.primary.main,
+    fontSize: 14,
   },
   quantityButton: {
     margin: 0,
@@ -507,9 +610,10 @@ const styles = StyleSheet.create({
   quantityText: {
     minWidth: 30,
     textAlign: 'center',
-    fontFamily: 'OpenSans-SemiBold',
-    color: Colors.text.primary,
+    fontFamily: 'OpenSans-Medium',
+    color: Colors.primary.main,
     marginHorizontal: Spacing.xs,
+    fontSize: 14,
   },
   deleteButton: {
     position: 'absolute',

@@ -248,10 +248,47 @@ export class InventoryService {
   }
 
   /**
+   * Add history record for an item
+   */
+  async addHistoryRecord(itemId: string, remainBefore: number, remainAfter: number, waste: boolean = false): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from('history')
+        .insert({
+          food_item_id: itemId,
+          remain_before: remainBefore,
+          remain_after: remainAfter,
+          waste: waste,
+          frozen: false
+        });
+
+      if (error) {
+        console.error('Error adding history record:', error);
+      }
+    } catch (error) {
+      console.error('Error adding history record:', error);
+    }
+  }
+
+  /**
    * Update an existing item
    */
   async updateItem(id: string, updates: Partial<FoodItem>): Promise<FoodItem | null> {
     try {
+      // Get current item state for history tracking
+      let currentRemains: number | undefined;
+      if (updates.remains !== undefined) {
+        const { data: currentItem } = await this.supabase
+          .from('food_items')
+          .select('remains')
+          .eq('id', id)
+          .single();
+        
+        if (currentItem) {
+          currentRemains = currentItem.remains;
+        }
+      }
+
       const { data, error } = await this.supabase
         .from('food_items')
         .update({
@@ -347,6 +384,129 @@ export class InventoryService {
         disposedItems: 0,
         categoryCounts: {}
       };
+    }
+  }
+
+  /**
+   * Get cooking ingredients (excluding fruits, sorted by expiry)
+   */
+  async getCookingIngredients(userId: string): Promise<FoodItem[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('food_items')
+        .select('*')
+        .eq('user_id', userId)
+        .gt('remains', 0)  // 재고가 있는 것만
+        .order('expiry_date', { ascending: true });  // 소비기한 임박 순
+
+      if (error) {
+        console.error('Error fetching cooking ingredients:', error);
+        return [];
+      }
+
+      // 과일 제외 필터링 (클라이언트 측에서 처리)
+      console.log('Raw data categories:', (data || []).map(item => ({ name: item.name, category: item.category })));
+      
+      // category가 'fruits' 또는 '과일'인 항목 제외 (대소문자 구분 없이, 공백 제거)
+      const filteredData = (data || []).filter(item => {
+        const category = item.category?.trim().toLowerCase();
+        return category !== '과일' && category !== 'fruit' && category !== 'fruits';
+      });
+      
+      console.log('After filtering fruits:', filteredData.length, 'items');
+      console.log('Filtered items:', filteredData.map(item => ({ name: item.name, category: item.category })));
+      
+      return this.mapDatabaseItemsToFoodItems(filteredData);
+    } catch (error) {
+      console.error('Error fetching cooking ingredients:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get history items (consumed items with remains = 0)
+   * Returns up to 10 unique items sorted by consumption date
+   */
+  async getHistoryItems(userId: string): Promise<FoodItem[]> {
+    try {
+      // First approach: Get items with remains = 0 directly
+      const { data: consumedItems, error: consumedError } = await this.supabase
+        .from('food_items')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('remains', 0)
+        .order('updated_at', { ascending: false });
+
+      if (consumedError) {
+        console.error('Error fetching consumed items:', consumedError);
+        return [];
+      }
+
+      if (!consumedItems || consumedItems.length === 0) {
+        console.log('No consumed items found for user:', userId);
+        return [];
+      }
+
+      // Group by name and get the most recent one for each
+      const itemMap = new Map<string, any>();
+      
+      consumedItems.forEach(item => {
+        if (!itemMap.has(item.name)) {
+          itemMap.set(item.name, item);
+        }
+      });
+
+      // Convert to array and limit to 10 items
+      const uniqueItems = Array.from(itemMap.values()).slice(0, 10);
+
+      // Try to get history data if available
+      const itemIds = uniqueItems.map(item => item.id);
+      const { data: historyData } = await this.supabase
+        .from('history')
+        .select('*')
+        .in('food_item_id', itemIds)
+        .order('updated_at', { ascending: false });
+
+      // Merge history data if available
+      const historyMap = new Map<string, any>();
+      if (historyData) {
+        historyData.forEach(entry => {
+          if (!historyMap.has(entry.food_item_id)) {
+            historyMap.set(entry.food_item_id, {
+              total_used: 0,
+              total_wasted: 0,
+              last_update: entry.updated_at
+            });
+          }
+          const stats = historyMap.get(entry.food_item_id);
+          const usage = (entry.remain_before || 0) - (entry.remain_after || 0);
+          if (entry.waste) {
+            stats.total_wasted += usage;
+          } else {
+            stats.total_used += usage;
+          }
+        });
+      }
+
+      // Map to FoodItem format with consumed status
+      return uniqueItems.map(item => {
+        const stats = historyMap.get(item.id) || {
+          total_used: 1, // Default to 100% used if no history
+          total_wasted: 0,
+          last_update: item.updated_at
+        };
+        
+        return {
+          ...this.mapDatabaseItemsToFoodItems([item])[0],
+          status: 'consumed' as const,
+          consumedAt: new Date(stats.last_update || item.updated_at),
+          totalUsed: stats.total_used,
+          totalWasted: stats.total_wasted
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching history items:', error);
+      return [];
     }
   }
 

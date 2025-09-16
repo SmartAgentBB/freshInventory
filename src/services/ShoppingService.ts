@@ -1,327 +1,322 @@
-/**
- * Shopping Service for managing shopping list items in the database
- */
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ShoppingItem, SHOPPING_CATEGORIES, SHOPPING_PRIORITIES } from '../models/ShoppingItem';
 
-/**
- * Service class for shopping list management operations
- */
+export interface ShoppingItem {
+  id: string;
+  user_id: string;
+  name: string;
+  todo: boolean;
+  memo: string | null;
+  insert_date: string;
+  update_date: string;
+}
+
 export class ShoppingService {
   constructor(private supabase: SupabaseClient) {}
 
-  /**
-   * Fetch all todo shopping items for a specific user (todo = true)
-   */
-  async getTodoItems(userId: string): Promise<ShoppingItem[]> {
+  // 전체 쇼핑 목록 가져오기
+  async getShoppingList(userId: string): Promise<ShoppingItem[]> {
     try {
       const { data, error } = await this.supabase
-        .from('shopping_items')
+        .from('shopping_list')
+        .select('*')
+        .eq('user_id', userId)
+        .order('update_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching shopping list:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Failed to fetch shopping list:', error);
+      return [];
+    }
+  }
+
+  // 활성 쇼핑 목록 (todo = true)
+  async getActiveItems(userId: string): Promise<ShoppingItem[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('shopping_list')
         .select('*')
         .eq('user_id', userId)
         .eq('todo', true)
-        .order('created_at', { ascending: false });
+        .order('update_date', { ascending: false });
 
       if (error) {
-        throw new Error(`Failed to fetch todo shopping items: ${error.message}`);
+        console.error('Error fetching active items:', error);
+        return [];
       }
 
-      return this.mapDatabaseItemsToShoppingItems(data || []);
+      return data || [];
     } catch (error) {
-      console.error('Error fetching todo shopping items:', error);
+      console.error('Failed to fetch active items:', error);
       return [];
     }
   }
 
-  /**
-   * Fetch all completed shopping items for a specific user (todo = false)
-   */
+  // 완료한 쇼핑 목록 (todo = false)
   async getCompletedItems(userId: string): Promise<ShoppingItem[]> {
     try {
       const { data, error } = await this.supabase
-        .from('shopping_items')
+        .from('shopping_list')
         .select('*')
         .eq('user_id', userId)
         .eq('todo', false)
-        .order('completed_at', { ascending: false });
+        .order('update_date', { ascending: false })
+        .limit(5); // 최근 5개만
 
       if (error) {
-        throw new Error(`Failed to fetch completed shopping items: ${error.message}`);
+        console.error('Error fetching completed items:', error);
+        return [];
       }
 
-      return this.mapDatabaseItemsToShoppingItems(data || []);
+      return data || [];
     } catch (error) {
-      console.error('Error fetching completed shopping items:', error);
+      console.error('Failed to fetch completed items:', error);
       return [];
     }
   }
 
-  /**
-   * Fetch items filtered by priority
-   */
-  async getItemsByPriority(userId: string, priority: ShoppingItem['priority']): Promise<ShoppingItem[]> {
+  // 히스토리 데이터 (월별)
+  async getHistoryByMonth(userId: string, year: number, month: number): Promise<ShoppingItem[]> {
     try {
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+
       const { data, error } = await this.supabase
-        .from('shopping_items')
+        .from('shopping_list')
         .select('*')
         .eq('user_id', userId)
-        .eq('priority', priority)
-        .order('created_at', { ascending: false });
+        .eq('todo', false)
+        .gte('update_date', startDate.toISOString())
+        .lte('update_date', endDate.toISOString())
+        .order('update_date', { ascending: false });
 
       if (error) {
-        throw new Error(`Failed to fetch items by priority: ${error.message}`);
+        console.error('Error fetching history:', error);
+        return [];
       }
 
-      return this.mapDatabaseItemsToShoppingItems(data || []);
+      return data || [];
     } catch (error) {
-      console.error('Error fetching items by priority:', error);
+      console.error('Failed to fetch history:', error);
       return [];
     }
   }
 
-  /**
-   * Fetch items filtered by category
-   */
-  async getItemsByCategory(userId: string, category: ShoppingItem['category']): Promise<ShoppingItem[]> {
+  // 아이템 추가
+  async addItem(userId: string, name: string, memo?: string): Promise<{ success: boolean; item?: ShoppingItem; error?: string }> {
     try {
-      const { data, error } = await this.supabase
-        .from('shopping_items')
+      // 이미 활성 상태로 존재하는지 확인
+      const { data: existing } = await this.supabase
+        .from('shopping_list')
         .select('*')
         .eq('user_id', userId)
-        .eq('category', category)
-        .order('created_at', { ascending: false });
+        .eq('name', name)
+        .eq('todo', true)
+        .single();
 
-      if (error) {
-        throw new Error(`Failed to fetch items by category: ${error.message}`);
+      if (existing) {
+        return { success: false, error: '이미 쇼핑 목록에 있습니다.' };
       }
 
-      return this.mapDatabaseItemsToShoppingItems(data || []);
-    } catch (error) {
-      console.error('Error fetching items by category:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Fetch a single item by ID
-   */
-  async getItemById(id: string): Promise<ShoppingItem | null> {
-    try {
       const { data, error } = await this.supabase
-        .from('shopping_items')
-        .select('*')
-        .eq('id', id)
+        .from('shopping_list')
+        .insert({
+          user_id: userId,
+          name,
+          memo,
+          todo: true
+        })
+        .select()
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // Item not found
-          return null;
-        }
-        throw new Error(`Failed to fetch shopping item by ID: ${error.message}`);
+        console.error('Error adding item:', error);
+        return { success: false, error: error.message };
       }
 
-      const mapped = this.mapDatabaseItemsToShoppingItems([data]);
-      return mapped.length > 0 ? mapped[0] : null;
+      return { success: true, item: data };
     } catch (error) {
-      console.error('Error fetching shopping item by ID:', error);
-      return null;
+      console.error('Failed to add item:', error);
+      return { success: false, error: '아이템 추가에 실패했습니다.' };
     }
   }
 
-  /**
-   * Search items by name
-   */
-  async searchItems(userId: string, searchTerm: string): Promise<ShoppingItem[]> {
+  // 아이템 상태 토글 (완료/미완료)
+  async toggleItem(itemId: string, todo: boolean): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await this.supabase
-        .from('shopping_items')
-        .select('*')
-        .eq('user_id', userId)
-        .ilike('name', `%${searchTerm}%`)
-        .order('created_at', { ascending: false });
+      const { error } = await this.supabase
+        .from('shopping_list')
+        .update({
+          todo,
+          update_date: new Date().toISOString()
+        })
+        .eq('id', itemId);
 
       if (error) {
-        throw new Error(`Failed to search shopping items: ${error.message}`);
+        console.error('Error toggling item:', error);
+        return { success: false, error: error.message };
       }
 
-      return this.mapDatabaseItemsToShoppingItems(data || []);
+      return { success: true };
     } catch (error) {
-      console.error('Error searching shopping items:', error);
-      return [];
+      console.error('Failed to toggle item:', error);
+      return { success: false, error: '상태 변경에 실패했습니다.' };
     }
   }
 
-  /**
-   * Get items sorted by priority (urgent first, then high, normal, low)
-   */
-  async getItemsSortedByPriority(userId: string): Promise<ShoppingItem[]> {
+  // 아이템 삭제
+  async deleteItem(itemId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await this.supabase
-        .from('shopping_items')
-        .select('*')
-        .eq('user_id', userId)
-        .order('priority', { ascending: true }); // Assuming database stores priorities as ordered values
+      const { error } = await this.supabase
+        .from('shopping_list')
+        .delete()
+        .eq('id', itemId);
 
       if (error) {
-        throw new Error(`Failed to fetch items sorted by priority: ${error.message}`);
+        console.error('Error deleting item:', error);
+        return { success: false, error: error.message };
       }
 
-      const items = this.mapDatabaseItemsToShoppingItems(data || []);
-      
-      // Custom sort by priority order (urgent > high > normal > low)
-      const priorityOrder = { urgent: 0, high: 1, normal: 2, low: 3 };
-      return items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+      return { success: true };
     } catch (error) {
-      console.error('Error fetching items sorted by priority:', error);
-      return [];
+      console.error('Failed to delete item:', error);
+      return { success: false, error: '삭제에 실패했습니다.' };
     }
   }
 
-  /**
-   * Get items filtered by store
-   */
-  async getItemsByStore(userId: string, store: string): Promise<ShoppingItem[]> {
+  // 메모 업데이트
+  async updateMemo(itemId: string, memo: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await this.supabase
-        .from('shopping_items')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('store', store)
-        .order('created_at', { ascending: false });
+      const { error } = await this.supabase
+        .from('shopping_list')
+        .update({
+          memo,
+          update_date: new Date().toISOString()
+        })
+        .eq('id', itemId);
 
       if (error) {
-        throw new Error(`Failed to fetch items by store: ${error.message}`);
+        console.error('Error updating memo:', error);
+        return { success: false, error: error.message };
       }
 
-      return this.mapDatabaseItemsToShoppingItems(data || []);
+      return { success: true };
     } catch (error) {
-      console.error('Error fetching items by store:', error);
-      return [];
+      console.error('Failed to update memo:', error);
+      return { success: false, error: '메모 수정에 실패했습니다.' };
     }
   }
 
-  /**
-   * Get recently completed items (limited by count)
-   */
-  async getRecentlyCompleted(userId: string, limit: number = 10): Promise<ShoppingItem[]> {
+  // 아이템 업데이트 (이름 또는 메모)
+  async updateItem(itemId: string, updates: { name?: string; memo?: string }): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await this.supabase
-        .from('shopping_items')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('todo', false)
-        .not('completed_at', 'is', null)
-        .order('completed_at', { ascending: false })
-        .limit(limit);
+      const { error } = await this.supabase
+        .from('shopping_list')
+        .update({
+          ...updates,
+          update_date: new Date().toISOString()
+        })
+        .eq('id', itemId);
 
       if (error) {
-        throw new Error(`Failed to fetch recently completed items: ${error.message}`);
+        console.error('Error updating item:', error);
+        return { success: false, error: error.message };
       }
 
-      return this.mapDatabaseItemsToShoppingItems(data || []);
+      return { success: true };
     } catch (error) {
-      console.error('Error fetching recently completed items:', error);
-      return [];
+      console.error('Failed to update item:', error);
+      return { success: false, error: '수정에 실패했습니다.' };
     }
   }
 
-  /**
-   * Get comprehensive shopping statistics for user
-   */
-  async getShoppingStats(userId: string): Promise<{
-    totalItems: number;
-    todoItems: number;
-    completedItems: number;
-    priorityCounts: Record<string, number>;
-    categoryCounts: Record<string, number>;
-  }> {
+  // 활성 아이템 개수
+  async getActiveCount(userId: string): Promise<number> {
     try {
-      // Get all items for the user
-      const todoItems = await this.getTodoItems(userId);
-      const completedItems = await this.getCompletedItems(userId);
-      const allItems = [...todoItems, ...completedItems];
-      
-      const stats = {
-        totalItems: allItems.length,
-        todoItems: todoItems.length,
-        completedItems: completedItems.length,
-        priorityCounts: {} as Record<string, number>,
-        categoryCounts: {} as Record<string, number>
-      };
+      const { count, error } = await this.supabase
+        .from('shopping_list')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('todo', true);
 
-      // Count items by priority
-      SHOPPING_PRIORITIES.forEach(priority => {
-        stats.priorityCounts[priority] = allItems.filter(item => item.priority === priority).length;
-      });
+      if (error) {
+        console.error('Error getting count:', error);
+        return 0;
+      }
 
-      // Count items by category
-      SHOPPING_CATEGORIES.forEach(category => {
-        stats.categoryCounts[category] = allItems.filter(item => item.category === category).length;
-      });
-
-      return stats;
+      return count || 0;
     } catch (error) {
-      console.error('Error fetching shopping stats:', error);
+      console.error('Failed to get count:', error);
+      return 0;
+    }
+  }
+
+  // 소비 완료 탭에서 재구매를 위해 아이템 추가
+  async addFromHistory(userId: string, name: string): Promise<{ success: boolean; error?: string }> {
+    return this.addItem(userId, name);
+  }
+
+  // 여러 아이템을 한 번에 추가 (레시피에서 사용)
+  async addBulkItems(
+    userId: string,
+    items: Array<{ name: string; memo?: string }>
+  ): Promise<{ success: boolean; added: number; errors: string[] }> {
+    const errors: string[] = [];
+    let added = 0;
+
+    try {
+      // 이미 존재하는 활성 아이템들 조회
+      const { data: existingItems } = await this.supabase
+        .from('shopping_list')
+        .select('name')
+        .eq('user_id', userId)
+        .eq('todo', true);
+
+      const existingNames = new Set(existingItems?.map(item => item.name) || []);
+
+      // 중복되지 않는 아이템만 필터링
+      const newItems = items.filter(item => !existingNames.has(item.name));
+
+      if (newItems.length === 0) {
+        return { success: false, added: 0, errors: ['모든 아이템이 이미 쇼핑 목록에 있습니다.'] };
+      }
+
+      // 새 아이템들 추가
+      const { data, error } = await this.supabase
+        .from('shopping_list')
+        .insert(
+          newItems.map(item => ({
+            user_id: userId,
+            name: item.name,
+            memo: item.memo,
+            todo: true
+          }))
+        )
+        .select();
+
+      if (error) {
+        console.error('Error adding bulk items:', error);
+        errors.push(error.message);
+      } else {
+        added = data?.length || 0;
+      }
+
       return {
-        totalItems: 0,
-        todoItems: 0,
-        completedItems: 0,
-        priorityCounts: {},
-        categoryCounts: {}
+        success: added > 0,
+        added,
+        errors
+      };
+    } catch (error) {
+      console.error('Failed to add bulk items:', error);
+      return {
+        success: false,
+        added: 0,
+        errors: ['대량 추가에 실패했습니다.']
       };
     }
   }
-
-  /**
-   * Map database items to ShoppingItem model
-   * Handles the conversion from database snake_case to TypeScript camelCase
-   */
-  private mapDatabaseItemsToShoppingItems(databaseItems: any[]): ShoppingItem[] {
-    return databaseItems
-      .filter(item => item && item.id && item.name) // Filter out null/invalid items
-      .map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: parseFloat(item.quantity) || 0,
-        unit: item.unit || '',
-        category: item.category || 'other',
-        priority: item.priority || 'normal',
-        todo: Boolean(item.todo),
-        memo: item.memo || undefined,
-        store: item.store || undefined,
-        price: item.price ? parseFloat(item.price) : undefined,
-        userId: item.user_id || '',
-        createdAt: new Date(item.created_at || new Date()),
-        updatedAt: new Date(item.updated_at || new Date()),
-        completedAt: item.completed_at ? new Date(item.completed_at) : null
-      }));
-  }
-
-  /**
-   * Map ShoppingItem to database format
-   * Handles the conversion from TypeScript camelCase to database snake_case
-   */
-  private mapShoppingItemToDatabase(item: Omit<ShoppingItem, 'id' | 'createdAt' | 'updatedAt'>): any {
-    return {
-      name: item.name,
-      quantity: item.quantity,
-      unit: item.unit,
-      category: item.category,
-      priority: item.priority,
-      todo: item.todo,
-      memo: item.memo || null,
-      store: item.store || null,
-      price: item.price || null,
-      user_id: item.userId,
-      completed_at: item.completedAt ? item.completedAt.toISOString() : null
-    };
-  }
-}
-
-/**
- * Initialize ShoppingService with the given Supabase client
- */
-export function createShoppingService(supabase: SupabaseClient): ShoppingService {
-  return new ShoppingService(supabase);
 }

@@ -33,7 +33,7 @@ export async function compressImage(
     const originalInfo = await new Promise<{ width: number; height: number }>((resolve, reject) => {
       Image.getSize(
         imageUri,
-        (width, height) => resolve({ width, height }),
+        (width: number, height: number) => resolve({ width, height }),
         reject
       );
     });
@@ -77,7 +77,7 @@ export async function compressImage(
       const fallbackInfo = await new Promise<{ width: number; height: number }>((resolve, reject) => {
         Image.getSize(
           imageUri,
-          (width, height) => resolve({ width, height }),
+          (width: number, height: number) => resolve({ width, height }),
           reject
         );
       });
@@ -137,7 +137,7 @@ export async function cropImageToBoundingBox(
       const imageInfo = await new Promise<{ width: number; height: number }>((resolve, reject) => {
         Image.getSize(
           imageUri,
-          (width, height) => resolve({ width, height }),
+          (width: number, height: number) => resolve({ width, height }),
           reject
         );
       });

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, StyleSheet, Image, Dimensions, Platform, Alert, TouchableOpacity } from 'react-native';
-import { 
-  Surface, 
-  Text, 
-  IconButton, 
-  Button, 
-  Portal, 
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { RecipeCard } from '../components/RecipeCard';
+import {
+  Surface,
+  Text,
+  IconButton,
+  Button,
+  Portal,
   Dialog,
   Paragraph,
   useTheme
@@ -14,11 +16,14 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { FoodItem } from '../models/FoodItem';
 import { InventoryService } from '../services/InventoryService';
 import { StorageInfoService } from '../services/StorageInfoService';
+import { RecipeService } from '../services/RecipeService';
+import { Recipe, AIService } from '../services/AIService';
 import { supabaseClient } from '../services/supabaseClient';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useAuth } from '../hooks/useAuth';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -26,20 +31,29 @@ export const ItemDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const theme = useTheme();
+  const { user } = useAuth();
   const [item, setItem] = useState<FoodItem | null>(null);
   const [currentRemains, setCurrentRemains] = useState(100);
   const [storageInfoModalVisible, setStorageInfoModalVisible] = useState(false);
   const [storageInfo, setStorageInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [relatedRecipes, setRelatedRecipes] = useState<Recipe[]>([]);
+  const [isRecommending, setIsRecommending] = useState(false);
 
   const inventoryService = useRef(new InventoryService(
-    supabaseClient, 
+    supabaseClient,
     process.env.EXPO_PUBLIC_GEMINI_API_KEY
   )).current;
-  
+
   const storageInfoService = useRef(new StorageInfoService(
     supabaseClient,
     process.env.EXPO_PUBLIC_GEMINI_API_KEY
+  )).current;
+
+  const recipeService = useRef(new RecipeService()).current;
+
+  const aiService = useRef(new AIService(
+    process.env.EXPO_PUBLIC_GEMINI_API_KEY || ''
   )).current;
 
   useEffect(() => {
@@ -48,8 +62,11 @@ export const ItemDetailScreen: React.FC = () => {
       setItem(params.item);
       setCurrentRemains(Math.round((params.item.remains || 1) * 100));
       loadStorageInfo(params.item.name);
+      if (user?.id) {
+        loadRelatedRecipes(params.item.name);
+      }
     }
-  }, [route.params]);
+  }, [route.params, user]);
 
   const loadStorageInfo = async (itemName: string) => {
     try {
@@ -60,8 +77,83 @@ export const ItemDetailScreen: React.FC = () => {
     }
   };
 
+  const loadRelatedRecipes = async (itemName: string) => {
+    if (!user?.id) {
+      return;
+    }
+
+    try {
+      // Get all bookmarked recipes
+      const bookmarkedRecipes = await recipeService.getBookmarkedRecipes(user.id);
+
+      // Filter recipes that contain this ingredient
+      const related = bookmarkedRecipes.filter(recipe => {
+        const hasIngredient = recipe.ingredients.some(ingredient => {
+          // Extract just the ingredient name (remove quantity and unit)
+          // e.g., "표고버섯 2개" -> "표고버섯"
+          const ingredientName = ingredient.split(/\s+\d+/)[0].trim();
+
+          // Remove spaces and special characters for better matching
+          const normalizedIngredient = ingredientName.replace(/\s+/g, '').toLowerCase();
+          const normalizedItemName = itemName.replace(/\s+/g, '').toLowerCase();
+
+          const matches = normalizedIngredient.includes(normalizedItemName) ||
+                         normalizedItemName.includes(normalizedIngredient) ||
+                         ingredientName.toLowerCase().includes(itemName.toLowerCase()) ||
+                         itemName.toLowerCase().includes(ingredientName.toLowerCase());
+
+          return matches;
+        });
+        return hasIngredient;
+      });
+
+      // Convert SavedRecipe to Recipe format
+      const recipes: Recipe[] = related.map(r => ({
+        name: r.name,
+        ingredients: r.ingredients,
+        difficulty: r.difficulty,
+        cookingTime: r.cookingTime,
+        instructions: r.instructions || []
+      }));
+
+      setRelatedRecipes(recipes);
+    } catch (error) {
+      console.error('Error loading related recipes:', error);
+    }
+  };
+
   const handleBack = () => {
     navigation.goBack();
+  };
+
+  const handleGetRecommendations = async () => {
+    if (!item) return;
+
+    setIsRecommending(true);
+    try {
+      // Get recipe recommendations for this specific ingredient
+      const result = await aiService.generateRecipeSuggestions([item.name]);
+      const recommendations = result.success ? result.recipes : [];
+
+      if (recommendations && recommendations.length > 0) {
+        // Navigate to Cooking screen with recommendations
+        navigation.navigate('Cooking' as never, {
+          screen: 'CookingMain',
+          params: {
+            showRecommendations: true,
+            recommendations: recommendations,
+            fromIngredient: item.name
+          }
+        } as never);
+      } else {
+        Alert.alert('알림', '추천 레시피를 가져올 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('Error getting recommendations:', error);
+      Alert.alert('오류', '레시피 추천 중 오류가 발생했습니다.');
+    } finally {
+      setIsRecommending(false);
+    }
   };
 
   const handleSliderChange = (value: number) => {
@@ -77,8 +169,22 @@ export const ItemDetailScreen: React.FC = () => {
     
     setIsLoading(true);
     try {
+      const newRemains = currentRemains / 100;
+      const oldRemains = item.remains || 1;
+      
+      // Add history record if remains changed
+      if (Math.abs(oldRemains - newRemains) > 0.01) {
+        await inventoryService.addHistoryRecord(
+          item.id,
+          oldRemains,     // remain_before
+          newRemains,     // remain_after
+          false           // waste = false for normal consumption
+        );
+      }
+      
+      // Update item
       await inventoryService.updateItem(item.id, {
-        remains: currentRemains / 100
+        remains: newRemains
       });
       
       // Navigate back with updated item
@@ -122,6 +228,14 @@ export const ItemDetailScreen: React.FC = () => {
     
     setIsLoading(true);
     try {
+      // Add history record for consumption
+      await inventoryService.addHistoryRecord(
+        item.id,
+        item.remains || 1,  // remain_before
+        0,                   // remain_after (consumed)
+        false                // waste = false for normal consumption
+      );
+      
       // Update item status to consumed and set remains to 0
       await inventoryService.updateItem(item.id, {
         status: 'consumed',
@@ -186,6 +300,15 @@ export const ItemDetailScreen: React.FC = () => {
     
     setIsLoading(true);
     try {
+      // Add history record for disposal
+      await inventoryService.addHistoryRecord(
+        item.id,
+        item.remains || 1,  // remain_before
+        0,                   // remain_after (disposed)
+        true                 // waste = true for disposal
+      );
+      
+      // Update item status
       await inventoryService.updateItem(item.id, {
         status: 'disposed',
         remains: 0
@@ -255,7 +378,7 @@ export const ItemDetailScreen: React.FC = () => {
           size={24}
           onPress={handleBack}
         />
-        <Text variant="titleLarge" style={styles.headerTitle}>
+        <Text variant="titleMedium" style={styles.headerTitle}>
           {item.name}
         </Text>
         <View style={{ width: 48 }} />
@@ -325,23 +448,27 @@ export const ItemDetailScreen: React.FC = () => {
                       </View>
                     </>
                   ) : (
-                    <>
+                    <View style={styles.expiryContent}>
                       <Text variant="bodySmall" style={styles.expiryDateText}>
                         {format(expiryDate, 'MM/dd', { locale: ko })}까지
                       </Text>
-                      <View style={styles.dDayContainer}>
+                      <View style={styles.dDayWithIcon}>
                         <Text variant="bodyLarge" style={styles.dataText}>
                           {dDayText}
                         </Text>
-                        <IconButton
-                          icon="help-circle-outline"
-                          size={16}
+                        <TouchableOpacity
                           onPress={() => setStorageInfoModalVisible(true)}
-                          style={styles.helpIconSmall}
-                          iconColor={Colors.text.secondary}
-                        />
+                          style={styles.helpButton}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <MaterialCommunityIcons
+                            name="help-circle-outline"
+                            size={16}
+                            color={Colors.text.secondary}
+                          />
+                        </TouchableOpacity>
                       </View>
-                    </>
+                    </View>
                   )}
                 </View>
               </View>
@@ -357,15 +484,23 @@ export const ItemDetailScreen: React.FC = () => {
         {/* Remains Card */}
         <Surface style={styles.remainsCard} elevation={1}>
           <View style={styles.cardHeader}>
-            <Text variant="titleMedium" style={styles.cardTitle}>
+            <Text variant="labelMedium" style={styles.headerText}>
               남은 양
             </Text>
             <Button
-              mode="contained"
+              mode="outlined"
               onPress={handleUpdateRemains}
               loading={isLoading}
               disabled={isLoading || currentRemains >= Math.round((item.remains || 1) * 100)}
-              style={styles.updateButton}
+              style={[
+                styles.updateButton,
+                currentRemains < Math.round((item.remains || 1) * 100) && styles.updateButtonActive
+              ]}
+              labelStyle={[
+                styles.updateButtonLabel,
+                currentRemains < Math.round((item.remains || 1) * 100) && styles.updateButtonLabelActive
+              ]}
+              contentStyle={styles.updateButtonContent}
               compact
             >
               업데이트
@@ -386,7 +521,7 @@ export const ItemDetailScreen: React.FC = () => {
                 disabled={currentRemains <= 0}
               />
               <View style={styles.percentageContainer}>
-                <Text variant="titleLarge" style={[styles.percentText, isFrozen && { color: '#4A90E2' }]}>
+                <Text variant="titleMedium" style={[styles.percentText, isFrozen && { color: '#4A90E2' }]}>
                   {currentRemains}%
                 </Text>
                 <View style={styles.progressBarContainer}>
@@ -420,44 +555,80 @@ export const ItemDetailScreen: React.FC = () => {
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={[styles.actionCard, styles.freezeCard]}
+          <Button
+            mode="outlined"
             onPress={handleFreeze}
+            icon="snowflake"
+            style={[styles.actionButton, styles.freezeButton]}
+            contentStyle={styles.actionButtonContent}
             disabled={isLoading || isFrozen}
-            activeOpacity={isFrozen ? 0.3 : 0.7}
+            labelStyle={[styles.freezeButtonLabel, isFrozen && styles.disabledButtonLabel]}
           >
-            <Surface style={[styles.actionCardContent, styles.freezeCardContent, isFrozen && styles.disabledCard]} elevation={2}>
-              <IconButton
-                icon="snowflake"
-                size={28}
-                iconColor={isFrozen ? "#CCCCCC" : "#2196F3"}
-                style={styles.actionIcon}
-              />
-              <Text variant="labelMedium" style={[styles.actionText, { color: isFrozen ? "#CCCCCC" : "#2196F3" }]}>
-                {isFrozen ? "냉동중" : "냉동"}
-              </Text>
-            </Surface>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionCard, styles.disposeCard]}
+            {isFrozen ? "냉동중" : "냉동"}
+          </Button>
+
+          <Button
+            mode="outlined"
             onPress={handleDispose}
+            icon="trash-can-outline"
+            style={[styles.actionButton, styles.disposeButton]}
+            contentStyle={styles.actionButtonContent}
             disabled={isLoading}
-            activeOpacity={0.7}
+            labelStyle={styles.disposeButtonLabel}
+            textColor="#F44336"
           >
-            <Surface style={[styles.actionCardContent, styles.disposeCardContent]} elevation={2}>
-              <IconButton
-                icon="trash-can-outline"
-                size={28}
-                iconColor="#757575"
-                style={styles.actionIcon}
-              />
-              <Text variant="labelMedium" style={[styles.actionText, { color: '#757575' }]}>
-                폐기
-              </Text>
-            </Surface>
-          </TouchableOpacity>
+            폐기
+          </Button>
         </View>
+
+        {/* Recipe Recommendation Button */}
+        <View style={styles.recommendSection}>
+          <View style={styles.recommendButtonContainer}>
+            <Button
+              mode="contained"
+              onPress={handleGetRecommendations}
+              icon="chef-hat"
+              style={styles.recommendButton}
+              contentStyle={styles.recommendButtonContent}
+              loading={isRecommending}
+              disabled={isRecommending}
+            >
+              요리 추천받기
+            </Button>
+          </View>
+        </View>
+
+        {/* Related Recipes Section */}
+        {relatedRecipes.length > 0 && (
+          <>
+            <View style={styles.recipesDivider} />
+            <View style={styles.recipesHeader}>
+              <Text variant="titleMedium" style={styles.recipesTitle}>
+                이 재료로 만들 수 있는 요리
+              </Text>
+              <Text variant="bodySmall" style={styles.recipesSubtitle}>
+                요리책에 저장된 레시피 중 이 재료를 사용하는 요리
+              </Text>
+            </View>
+            <View style={styles.recipesContainer}>
+              {relatedRecipes.map((recipe, index) => (
+                <RecipeCard
+                  key={index}
+                  recipe={recipe}
+                  ingredients={[]}  // Don't show ingredient status in this context
+                  compact={true}
+                  onPress={() => {
+                    // Navigate to recipe detail screen from Cooking stack
+                    navigation.navigate('Cooking' as never, {
+                      screen: 'RecipeDetail',
+                      params: { recipe, fromItemDetail: true }
+                    } as never);
+                  }}
+                />
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {/* Storage Info Modal */}
@@ -534,7 +705,7 @@ const styles = StyleSheet.create({
     flex: 3,
   },
   tableCellLarge: {
-    flex: 4,
+    flex: 5,
   },
   tableCellBorder: {
     borderLeftWidth: 1,
@@ -559,20 +730,29 @@ const styles = StyleSheet.create({
   expiryCell: {
     alignItems: 'center',
     justifyContent: 'center',
+    flex: 1,
   },
-  dDayContainer: {
+  expiryContent: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dDayWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 4,
+    gap: 4,
   },
   dDayInTable: {
     color: Colors.primary.main,
     fontFamily: 'OpenSans-Medium',
     textAlign: 'center',
   },
-  helpIconSmall: {
-    margin: 0,
-    marginLeft: -4,
+  helpButton: {
+    padding: 1,
+    backgroundColor: Colors.background.paper,
+    borderRadius: 8,
   },
   remainsCard: {
     backgroundColor: Colors.background.paper,
@@ -580,7 +760,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,  // Reduced from Spacing.lg to reduce card height by 30%
+    paddingVertical: Spacing.sm,  // Reduced to 80% of original height
     borderWidth: 1,
     borderColor: Colors.border.light,
     shadowColor: '#000',
@@ -593,7 +773,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.sm,  // Reduced spacing to make card more compact
+    marginBottom: Spacing.xs,  // Further reduced spacing
   },
   cardTitle: {
     color: Colors.text.primary,
@@ -604,18 +784,40 @@ const styles = StyleSheet.create({
   },
   updateButton: {
     minWidth: 80,
+    height: 36,
+    borderColor: Colors.border.light,
+    borderRadius: 20,  // Pill shape
+  },
+  updateButtonActive: {
+    borderColor: Colors.primary.main,
+    backgroundColor: Colors.primary.main,
+  },
+  updateButtonContent: {
+    height: 36,
+    paddingHorizontal: 16,
+  },
+  updateButtonLabel: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-SemiBold',
+    fontSize: 14,
+  },
+  updateButtonLabelActive: {
+    color: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.sm,
+    paddingTop: 44,  // Same as RecipeDetailScreen
+    paddingBottom: Spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: Colors.divider,
     backgroundColor: Colors.background.paper,
   },
   headerTitle: {
+    flex: 1,  // Same as RecipeDetailScreen
+    textAlign: 'center',  // Same as RecipeDetailScreen
     color: Colors.text.primary,
     fontFamily: 'OpenSans-Bold',
   },
@@ -666,7 +868,7 @@ const styles = StyleSheet.create({
   percentText: {
     color: Colors.primary.main,
     fontFamily: 'OpenSans-Bold',
-    marginBottom: Spacing.xs,  // Reduced spacing to compress height
+    marginBottom: 4,  // Further reduced to make card more compact
   },
   progressBarContainer: {
     width: '100%',
@@ -681,55 +883,77 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: Spacing.md,
     marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
-  actionCard: {
+  actionButton: {
     flex: 1,
+    borderRadius: 24,  // Pill shape
   },
-  actionCardContent: {
-    backgroundColor: Colors.primary.light,
-    borderRadius: 16,
-    paddingVertical: Spacing.md,  // Reduced from Spacing.lg to 70% height
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: Colors.primary.main,
-    shadowColor: Colors.primary.main,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+  actionButtonContent: {
+    paddingVertical: Spacing.xs,
   },
-  actionIcon: {
-    margin: 0,
-    marginBottom: 2,  // Reduced spacing
+  freezeButton: {
+    borderColor: '#4A90E2',
   },
-  actionText: {
+  freezeButtonLabel: {
+    color: '#4A90E2',
     fontFamily: 'OpenSans-SemiBold',
   },
-  freezeCard: {
-    flex: 1,
+  disposeButton: {
+    borderColor: '#F44336',
   },
-  disposeCard: {
-    flex: 1,
+  disposeButtonLabel: {
+    color: '#F44336',
+    fontFamily: 'OpenSans-SemiBold',
   },
-  freezeCardContent: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#2196F3',
-    shadowColor: '#2196F3',
+  disabledButtonLabel: {
+    color: '#CCCCCC',
   },
-  disposeCardContent: {
-    backgroundColor: '#FFF3E0',
-    borderColor: '#FF9800',
-    shadowColor: '#FF9800',
+  recommendSection: {
+    marginTop: Spacing.sm,  // Same spacing as between remains card and action buttons
+    marginBottom: Spacing.sm,  // Same spacing to the divider
   },
-  disabledCard: {
-    backgroundColor: '#F5F5F5',
-    borderColor: '#E0E0E0',
-    shadowOpacity: 0.05,
-    opacity: 0.6,
+  recommendDivider: {
+    height: 1,
+    backgroundColor: Colors.divider,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  recipesDivider: {
+    height: 1,
+    backgroundColor: Colors.divider,
+    marginTop: Spacing.sm,  // Same spacing as other sections
+    marginHorizontal: Spacing.lg,
+  },
+  recipesHeader: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.sm,
+  },
+  recipesTitle: {
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-Bold',
+    marginBottom: Spacing.xs,
+  },
+  recipesSubtitle: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+  },
+  recipesContainer: {
+    paddingBottom: Spacing.lg,
+  },
+  recommendButtonContainer: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  recommendButton: {
+    borderRadius: 24,  // Pill shape
+    backgroundColor: Colors.primary.main,
+  },
+  recommendButtonContent: {
+    paddingVertical: Spacing.xs,
   },
 });

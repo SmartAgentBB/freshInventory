@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
-import { Surface, Text, IconButton, ProgressBar } from 'react-native-paper';
+import { Card, Text, IconButton, ProgressBar } from 'react-native-paper';
 import { FoodItem } from '../models/FoodItem';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
@@ -15,13 +15,15 @@ interface FoodItemCardProps {
   onPress?: (item: FoodItem) => void;
 }
 
-export const FoodItemCard: React.FC<FoodItemCardProps> = ({ 
-  item, 
+export const FoodItemCard: React.FC<FoodItemCardProps> = ({
+  item,
   showControls = true,
   onStatusChange,
   onDelete,
   onPress
 }) => {
+  const [imageError, setImageError] = useState(false);
+
   const handleDelete = (e?: any) => {
     // Prevent event bubbling
     e?.stopPropagation?.();
@@ -69,53 +71,42 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
   // Calculate days until expiry using storageDays if available
   const today = new Date();
   today.setHours(0, 0, 0, 0); // 날짜만 비교하기 위해 시간 초기화
-  
+
   // Calculate frozen date and days if frozen
   let frozenDate: Date | null = null;
   let frozenDays = 0;
   let formattedFrozenDate = '';
-  
+
   if (isFrozen) {
     frozenDate = item.frozenDate ? new Date(item.frozenDate) : new Date(item.addedDate);
     frozenDate.setHours(0, 0, 0, 0);
     frozenDays = Math.floor((today.getTime() - frozenDate.getTime()) / (1000 * 60 * 60 * 24));
     formattedFrozenDate = format(frozenDate, 'MM/dd', { locale: ko });
   }
-  
-  let expiryDate: Date;
-  if (item.storageDays && item.addedDate) {
-    // Calculate expiry date from addedDate + storageDays
-    expiryDate = new Date(item.addedDate);
-    expiryDate.setDate(expiryDate.getDate() + item.storageDays);
-  } else {
-    // Use the provided expiryDate
-    expiryDate = new Date(item.expiryDate);
-  }
-  expiryDate.setHours(0, 0, 0, 0);
-  
-  const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Calculate percentage of storage days remaining
+
+  // Calculate days remaining using storageDays (consistent with CookingScreen)
   const storageDays = item.storageDays || 7;
-  const daysElapsed = Math.floor((today.getTime() - new Date(item.addedDate).getTime()) / (1000 * 60 * 60 * 24));
+  const addedDate = new Date(item.addedDate);
+  addedDate.setHours(0, 0, 0, 0);
+  const daysElapsed = Math.floor((today.getTime() - addedDate.getTime()) / (1000 * 60 * 60 * 24));
   const daysRemaining = storageDays - daysElapsed;
   const percentRemaining = (daysRemaining / storageDays) * 100;
-  
+
   // Format D-day display with color based on percentage
   let dDayText = '';
   let dDayBackgroundColor = '';
   let dDayTextColor = '#FFFFFF'; // White text on colored background
-  
-  if (daysUntilExpiry < 0) {
+
+  if (daysRemaining < 0) {
     // Expired
-    dDayText = `D+${Math.abs(daysUntilExpiry)}`;
+    dDayText = `D+${Math.abs(daysRemaining)}`;
     dDayBackgroundColor = '#F44336'; // Red
-  } else if (daysUntilExpiry === 0) {
+  } else if (daysRemaining === 0) {
     dDayText = 'D-Day';
     dDayBackgroundColor = '#FF9800'; // Orange
   } else {
-    dDayText = `D-${daysUntilExpiry}`;
-    
+    dDayText = `D-${daysRemaining}`;
+
     if (percentRemaining > 50) {
       // Fresh (> 50%)
       dDayBackgroundColor = '#4CAF50'; // Green
@@ -130,7 +121,7 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
   }
 
   return (
-    <Surface style={styles.container} elevation={1}>
+    <Card style={styles.container} mode="outlined">
       {/* Delete Button - positioned absolutely at top-right */}
       {showControls && (
         <IconButton
@@ -150,11 +141,18 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
         <View style={styles.mainContent}>
           {/* Thumbnail Image */}
           <View style={styles.thumbnailContainer}>
-            {item.thumbnail ? (
+            {item.thumbnail && !imageError ? (
               <Image
                 source={{ uri: item.thumbnail }}
                 style={styles.thumbnail}
                 resizeMode="cover"
+                onError={(e) => {
+                  console.error('Image loading error:', e.nativeEvent.error);
+                  console.log('Failed to load image:', item.thumbnail);
+                  console.log('Image URL type:', item.thumbnail?.startsWith('blob:') ? 'blob URL' :
+                                                  item.thumbnail?.startsWith('http') ? 'HTTP URL' : 'Unknown');
+                  setImageError(true);
+                }}
               />
             ) : (
               <View style={[styles.thumbnail, styles.placeholderThumbnail]}>
@@ -222,23 +220,23 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
           </View>
         </View>
       </TouchableOpacity>
-    </Surface>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.background.paper,
-    borderRadius: 16,
-    marginBottom: 2,
-    marginHorizontal: Spacing.sm,
+    borderRadius: 12,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
     position: 'relative',
     borderWidth: 1,
     borderColor: Colors.border.light,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 12,
+    shadowRadius: 8,
     elevation: 2,
   },
   content: {

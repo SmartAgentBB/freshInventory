@@ -1,39 +1,1461 @@
-import React from 'react';
-import { View } from 'react-native';
-import { Surface, Text } from 'react-native-paper';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { Surface, Text, Button, Chip, ActivityIndicator, FAB, Card, Divider, Searchbar, IconButton, Menu } from 'react-native-paper';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useIsFocused } from '@react-navigation/native';
 import { Colors } from '../constants/colors';
-import { getTranslation } from '../constants/translations';
+import { Spacing } from '../constants/spacing';
+import { InventoryService } from '../services/InventoryService';
+import { FoodItem } from '../models/FoodItem';
+import { supabaseClient } from '../services/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CookingStackParamList } from '../navigation/CookingStackNavigator';
+import { AIService, Recipe } from '../services/AIService';
+import { recipeService } from '../services/RecipeService';
 
-export const CookingScreen = () => {
-  return (
-    <Surface 
-      style={{ 
-        flex: 1, 
-        backgroundColor: Colors.background.default,
-        padding: 16
-      }}
-      testID="cooking-screen"
-    >
-      <Text 
-        variant="headlineSmall" 
-        style={{ 
-          color: Colors.text.primary,
-          marginBottom: 16,
-          fontFamily: 'OpenSans-Bold'
-        }}
-      >
-        요리 추천
-      </Text>
+type TabType = 'recommend' | 'bookmarks';
+
+// 요리 추천 탭
+interface CookingRecommendTabProps {
+  initialRecommendations?: Recipe[] | null;
+  fromIngredient?: string | null;
+}
+
+const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
+  initialRecommendations,
+  fromIngredient
+}) => {
+  const [ingredients, setIngredients] = useState<FoodItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [recommending, setRecommending] = useState(false);
+  const [recommendations, setRecommendations] = useState<Recipe[]>([]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [bookmarkedRecipes, setBookmarkedRecipes] = useState<Set<string>>(new Set());
+  const [savingRecipe, setSavingRecipe] = useState<string | null>(null);
+  const { user } = useAuth();
+  const isFocused = useIsFocused();
+
+  // useMemo를 사용하여 서비스 인스턴스들을 한 번만 생성
+  const inventoryService = useMemo(() => {
+    console.log('Creating InventoryService with supabaseClient:', !!supabaseClient);
+    return new InventoryService(supabaseClient);
+  }, []);
+
+  const aiService = useMemo(() => {
+    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
+                   process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    return new AIService();
+  }, []);
+
+  // Handle initial recommendations from ItemDetailScreen
+  useEffect(() => {
+    if (initialRecommendations && initialRecommendations.length > 0) {
+      setRecommendations(initialRecommendations);
+      setShowRecommendations(true);
+    }
+  }, [initialRecommendations]);
+
+  // Load bookmarked recipes status
+  useEffect(() => {
+    if (user?.id && recommendations.length > 0) {
+      loadBookmarkedStatus();
+    }
+  }, [user?.id, recommendations]);
+
+  const loadBookmarkedStatus = async () => {
+    if (!user?.id || recommendations.length === 0) return;
+
+    try {
+      // Get all bookmarked recipes at once to avoid multiple API calls
+      const bookmarkedList = await recipeService.getBookmarkedRecipes(user.id);
+      const bookmarkedNames = new Set(bookmarkedList.map(r => r.name));
+
+      // Check which of the recommendations are bookmarked
+      const bookmarked = new Set<string>();
+      for (const recipe of recommendations) {
+        if (bookmarkedNames.has(recipe.name)) {
+          bookmarked.add(recipe.name);
+        }
+      }
+      setBookmarkedRecipes(bookmarked);
+    } catch (error) {
+      console.error('Error checking bookmark status:', error);
+      // If there's an error, just set empty bookmarks
+      setBookmarkedRecipes(new Set());
+    }
+  };
+
+  const handleToggleBookmark = async (recipe: Recipe) => {
+    if (!user?.id) return;
+
+    setSavingRecipe(recipe.name);
+    const result = await recipeService.toggleBookmark(user.id, recipe);
+
+    if (result.success) {
+      const newBookmarked = new Set(bookmarkedRecipes);
+      if (result.bookmarked) {
+        newBookmarked.add(recipe.name);
+      } else {
+        newBookmarked.delete(recipe.name);
+      }
+      setBookmarkedRecipes(newBookmarked);
+    }
+    setSavingRecipe(null);
+  };
+
+  // 화면에 포커스가 올 때마다 데이터를 다시 로드
+  useEffect(() => {
+    if (isFocused && user?.id) {
+      console.log('CookingScreen focused - reloading ingredients');
+      loadIngredients();
+    }
+  }, [isFocused, user?.id]);
+
+  // Supabase 실시간 구독 설정
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log('Setting up real-time subscription for cooking ingredients');
+
+    const subscription = supabaseClient
+      .channel('cooking-ingredients-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE 모두 감지
+          schema: 'public',
+          table: 'food_items',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Real-time update received in CookingScreen:', payload);
+          // 데이터 변경 감지 시 재로드
+          loadIngredients();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up real-time subscription');
+      subscription.unsubscribe();
+    };
+  }, [user?.id]);
+
+  const loadIngredients = async () => {
+    try {
+      setLoading(true);
       
-      <Text 
-        variant="bodyMedium"
-        style={{ 
-          color: Colors.text.secondary,
-          fontFamily: 'OpenSans-Regular'
-        }}
-      >
-        추천 요리가 없습니다
-      </Text>
-    </Surface>
+      if (!user?.id) {
+        console.log('No user ID available');
+        setIngredients([]);
+        return;
+      }
+      
+      console.log('Loading ingredients for user:', user.id);
+      
+      // 과일 제외하고 재고가 있는 항목만 가져오기 (이미 정렬됨)
+      const items = await inventoryService.getCookingIngredients(user.id);
+      console.log('Loaded ingredients:', items.length, 'items');
+      console.log('Ingredients:', items.map(i => ({ name: i.name, category: i.category, remains: i.remains })));
+      setIngredients(items);
+    } catch (error) {
+      console.error('Failed to load ingredients:', error);
+      setIngredients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getExpiryColor = (item: FoodItem): string => {
+    // 냉동 상태는 파란색 계열
+    if (item.status === 'frozen') {
+      return '#4A90E2'; // 파란색 - 냉동 (재고목록과 동일)
+    }
+
+    if (!item.storageDays) return Colors.background.level2;
+
+    // 재고목록과 동일한 계산 방식 사용
+    const today = new Date();
+    const addedDate = new Date(item.addedDate);
+    const daysElapsed = Math.floor((today.getTime() - addedDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysRemaining = item.storageDays - daysElapsed;
+    const percentRemaining = (daysRemaining / item.storageDays) * 100;
+
+    // 재고목록과 동일한 색상 시스템
+    if (daysRemaining < 0) {
+      return '#F44336'; // 빨간색 - 만료
+    } else if (daysRemaining === 0) {
+      return '#FF9800'; // 주황색 - D-Day
+    } else {
+      // 비율 기반 색상
+      if (percentRemaining > 50) {
+        return '#4CAF50'; // 초록색 - 신선 (> 50%)
+      } else if (percentRemaining > 20) {
+        return '#FFC107'; // 노란색 - 주의 (20-50%)
+      } else {
+        return '#FF9800'; // 주황색 - 경고 (<= 20%)
+      }
+    }
+  };
+
+  // 재료를 카테고리별로 분류하는 함수
+  const categorizeIngredients = (items: FoodItem[]) => {
+    const frozen: FoodItem[] = [];
+    const refrigerated: FoodItem[] = [];
+    const normal: FoodItem[] = [];
+
+    items.forEach(item => {
+      if (item.status === 'frozen') {
+        frozen.push(item);
+      } else if (item.category === 'dairy' || item.category === 'meat' || item.category === 'vegetables') {
+        refrigerated.push(item);
+      } else {
+        normal.push(item);
+      }
+    });
+
+    // 임박도 순으로 정렬하는 함수 (재고목록과 동일한 로직)
+    const sortByUrgency = (a: FoodItem, b: FoodItem) => {
+      const today = new Date();
+
+      // Calculate remaining percentage for item A
+      const addedDateA = new Date(a.addedDate);
+      const daysElapsedA = Math.floor((today.getTime() - addedDateA.getTime()) / (1000 * 60 * 60 * 24));
+      const daysRemainingA = (a.storageDays || 7) - daysElapsedA;
+      const percentRemainingA = (daysRemainingA / (a.storageDays || 7)) * 100;
+
+      // Calculate remaining percentage for item B
+      const addedDateB = new Date(b.addedDate);
+      const daysElapsedB = Math.floor((today.getTime() - addedDateB.getTime()) / (1000 * 60 * 60 * 24));
+      const daysRemainingB = (b.storageDays || 7) - daysElapsedB;
+      const percentRemainingB = (daysRemainingB / (b.storageDays || 7)) * 100;
+
+      // Sort by percentage remaining (lower percentage = more urgent = should come first)
+      return percentRemainingA - percentRemainingB;
+    };
+
+    // 모든 카테고리를 임박도 순으로 정렬
+    refrigerated.sort(sortByUrgency);
+    normal.sort(sortByUrgency);
+    frozen.sort(sortByUrgency);
+
+    return { frozen, refrigerated, normal };
+  };
+
+  const handleRecommend = async () => {
+    try {
+      setRecommending(true);
+      console.log('Getting recommendations for ingredients:', ingredients.length);
+
+      // Sort ingredients by expiry urgency and prepare for AI service
+      const sortedIngredients = [...ingredients].sort((a, b) => {
+        // Prioritize items closer to expiry
+        const getDaysRemaining = (item: FoodItem) => {
+          if (!item.expiryDate) return 999;
+          const today = new Date();
+          const expiry = new Date(item.expiryDate);
+          return Math.floor((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        };
+        return getDaysRemaining(a) - getDaysRemaining(b);
+      });
+
+      // Create prioritized ingredient list with expiry info
+      const ingredientInfo = sortedIngredients.map(item => {
+        const daysRemaining = item.expiryDate
+          ? Math.floor((new Date(item.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+          : null;
+
+        if (daysRemaining !== null && daysRemaining <= 3) {
+          return `${item.name}(임박)`;
+        } else if (daysRemaining !== null && daysRemaining <= 7) {
+          return `${item.name}(주의)`;
+        }
+        return item.name;
+      });
+
+      // AI 추천 API 호출
+      const result = await aiService.generateRecipeSuggestions(ingredientInfo);
+      console.log('Received recommendations result:', result);
+
+      if (result.success && result.recipes.length > 0) {
+        setRecommendations(result.recipes);
+        setShowRecommendations(true);
+      } else {
+        // Log the error for debugging
+        console.error('Recipe generation failed:', {
+          success: result.success,
+          error: result.error,
+          recipesCount: result.recipes?.length || 0
+        });
+
+        setRecommendations([]);
+
+        // Show more specific error message
+        if (result.error) {
+          alert(`레시피 생성 실패: ${result.error}\n\n잠시 후 다시 시도해주세요.`);
+        } else if (ingredientInfo.length === 0) {
+          alert('사용 가능한 재료가 없습니다.\n재료를 먼저 등록해주세요.');
+        } else {
+          alert('레시피를 생성할 수 없습니다.\n잠시 후 다시 시도해주세요.');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get recommendations:', error);
+      // Show error message
+      alert('레시피 추천 중 오류가 발생했습니다.');
+    } finally {
+      setRecommending(false);
+    }
+  };
+  
+  const handleYouTubeSearch = (query: string) => {
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    Linking.openURL(url);
+  };
+
+  // Check if user has an ingredient
+  const hasIngredient = (ingredientName: string): boolean => {
+    return ingredients.some(item =>
+      ingredientName.toLowerCase().includes(item.name.toLowerCase()) ||
+      item.name.toLowerCase().includes(ingredientName.toLowerCase())
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={Colors.primary.main} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* 안내 메시지 및 색상 범례 */}
+        <Surface style={styles.infoCard} elevation={1}>
+          <Text variant="bodySmall" style={styles.infoText}>
+            보유 재료로 AI가 추천하는 요리를 만들어보세요.
+          </Text>
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendColor, { backgroundColor: '#F44336' }]} />
+              <Text variant="bodySmall">만료</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendColor, { backgroundColor: '#FF9800' }]} />
+              <Text variant="bodySmall">임박</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendColor, { backgroundColor: '#FFC107' }]} />
+              <Text variant="bodySmall">주의</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendColor, { backgroundColor: '#4CAF50' }]} />
+              <Text variant="bodySmall">신선</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendColor, { backgroundColor: '#2196F3' }]} />
+              <Text variant="bodySmall">냉동</Text>
+            </View>
+          </View>
+        </Surface>
+
+        {/* 재료 칩 목록 - 카테고리별로 분류 */}
+        {ingredients.length > 0 ? (
+          <>
+            {/* 냉동 재료와 신선 재료를 분리하여 표시 */}
+            {(() => {
+              const { frozen, refrigerated, normal } = categorizeIngredients(ingredients);
+              // 냉장 재료와 일반 재료를 합침 후 임박도 순으로 재정렬
+              const freshIngredients = [...refrigerated, ...normal].sort((a, b) => {
+                const today = new Date();
+
+                // Calculate remaining percentage for item A
+                const addedDateA = new Date(a.addedDate);
+                const daysElapsedA = Math.floor((today.getTime() - addedDateA.getTime()) / (1000 * 60 * 60 * 24));
+                const daysRemainingA = (a.storageDays || 7) - daysElapsedA;
+                const percentRemainingA = (daysRemainingA / (a.storageDays || 7)) * 100;
+
+                // Calculate remaining percentage for item B
+                const addedDateB = new Date(b.addedDate);
+                const daysElapsedB = Math.floor((today.getTime() - addedDateB.getTime()) / (1000 * 60 * 60 * 24));
+                const daysRemainingB = (b.storageDays || 7) - daysElapsedB;
+                const percentRemainingB = (daysRemainingB / (b.storageDays || 7)) * 100;
+
+                // Sort by percentage remaining (lower percentage = more urgent = should come first)
+                return percentRemainingA - percentRemainingB;
+              });
+
+              return (
+                <>
+                  {/* 신선 재료 섹션 (냉장 + 일반) */}
+                  {freshIngredients.length > 0 && (
+                    <>
+                      <Text variant="titleMedium" style={styles.sectionTitle}>
+                        🥬 신선 재료 ({freshIngredients.length}개)
+                      </Text>
+                      <View style={styles.chipContainer}>
+                        {freshIngredients.map((item) => (
+                          <Chip
+                            key={item.id}
+                            style={[
+                              styles.ingredientChip,
+                              { backgroundColor: getExpiryColor(item) }
+                            ]}
+                            textStyle={styles.chipText}
+                            mode="flat"
+                            compact
+                          >
+                            {item.name}
+                          </Chip>
+                        ))}
+                      </View>
+                    </>
+                  )}
+
+                  {/* 냉동 재료 섹션 */}
+                  {frozen.length > 0 && (
+                    <>
+                      <Text variant="titleMedium" style={styles.sectionTitle}>
+                        ❄️ 냉동 재료 ({frozen.length}개)
+                      </Text>
+                      <View style={styles.chipContainer}>
+                        {frozen.map((item) => (
+                          <Chip
+                            key={item.id}
+                            style={[
+                              styles.ingredientChip,
+                              { backgroundColor: getExpiryColor(item) }
+                            ]}
+                            textStyle={styles.chipText}
+                            mode="flat"
+                            compact
+                          >
+                            {item.name}
+                          </Chip>
+                        ))}
+                      </View>
+                    </>
+                  )}
+                </>
+              );
+            })()}
+
+            {/* 요리 추천받기 버튼 */}
+            {ingredients.length > 0 && !showRecommendations && (
+              <View style={styles.recommendButtonContainer}>
+                <Button
+                  mode="contained"
+                  onPress={handleRecommend}
+                  loading={recommending}
+                  icon="chef-hat"
+                  style={styles.recommendButton}
+                  contentStyle={styles.recommendButtonContent}
+                >
+                  요리 추천받기
+                </Button>
+              </View>
+            )}
+
+            {/* 다시 추천받기 버튼 */}
+            {showRecommendations && (
+              <View style={styles.recommendButtonContainer}>
+                <Button
+                  mode="outlined"
+                  onPress={() => {
+                    setShowRecommendations(false);
+                    setRecommendations([]);
+                  }}
+                  icon="refresh"
+                  style={styles.recommendButton}
+                  contentStyle={styles.recommendButtonContent}
+                >
+                  다시 추천받기
+                </Button>
+              </View>
+            )}
+
+            {/* 추천 레시피 카드 목록 */}
+            {showRecommendations && recommendations.length > 0 && (
+              <>
+                <Text variant="titleMedium" style={styles.sectionTitle}>
+                  🍳 {fromIngredient ? `${fromIngredient}을(를) 활용한 추천 레시피` : '추천 레시피'}
+                </Text>
+                {recommendations.map((recipe, index) => (
+                  <Card key={index} style={styles.recipeCard} mode="outlined">
+                    <Card.Content>
+                      <Text variant="titleMedium" style={styles.recipeTitle}>
+                        {recipe.name}
+                      </Text>
+
+                      <View style={styles.recipeInfo}>
+                        <Text variant="bodyMedium" style={styles.difficultyText}>
+                          난이도: {recipe.difficulty}
+                        </Text>
+                        <Text variant="bodyMedium" style={styles.timeText}>
+                          ⏰ {recipe.cookingTime}분
+                        </Text>
+                      </View>
+
+                      <Divider style={styles.divider} />
+
+                      <Text variant="labelLarge" style={styles.sectionLabel}>
+                        필요한 재료
+                      </Text>
+                      <View style={styles.ingredientsList}>
+                        {recipe.ingredients.map((ingredient, idx) => {
+                          const have = hasIngredient(ingredient);
+                          return (
+                            <View key={idx} style={styles.ingredientRow}>
+                              <Text
+                                variant="bodyMedium"
+                                style={[
+                                  styles.ingredientItem,
+                                  have ? styles.hasIngredient : styles.missingIngredient
+                                ]}
+                              >
+                                • {ingredient}
+                              </Text>
+                              {have && (
+                                <Chip
+                                  mode="flat"
+                                  style={styles.hasChip}
+                                  textStyle={styles.hasChipText}
+                                >
+                                  보유
+                                </Chip>
+                              )}
+                            </View>
+                          );
+                        })}
+                      </View>
+
+                      {recipe.instructions && recipe.instructions.length > 0 && (
+                        <>
+                          <Divider style={styles.divider} />
+                          <Text variant="labelLarge" style={styles.sectionLabel}>
+                            조리 방법
+                          </Text>
+                          <View style={styles.ingredientsList}>
+                            {recipe.instructions.map((instruction, idx) => {
+                              // Remove existing numbering from instruction if it exists
+                              const cleanInstruction = instruction.replace(/^\d+\.\s*/, '');
+                              return (
+                                <Text key={idx} variant="bodyMedium" style={styles.ingredientItem}>
+                                  {idx + 1}. {cleanInstruction}
+                                </Text>
+                              );
+                            })}
+                          </View>
+                        </>
+                      )}
+                    </Card.Content>
+
+                    <Card.Actions style={styles.cardActions}>
+                      <Button
+                        mode="outlined"
+                        onPress={() => handleYouTubeSearch(recipe.name)}
+                        icon="youtube"
+                        style={styles.youtubeButton}
+                      >
+                        유튜브 검색
+                      </Button>
+                      <Button
+                        mode={bookmarkedRecipes.has(recipe.name) ? "contained" : "outlined"}
+                        onPress={() => handleToggleBookmark(recipe)}
+                        icon={bookmarkedRecipes.has(recipe.name) ? "bookmark" : "bookmark-outline"}
+                        style={[
+                          styles.bookmarkButton,
+                          bookmarkedRecipes.has(recipe.name) && styles.bookmarkButtonActive
+                        ]}
+                        loading={savingRecipe === recipe.name}
+                        disabled={savingRecipe === recipe.name}
+                      >
+                        {bookmarkedRecipes.has(recipe.name) ? "저장됨" : "저장"}
+                      </Button>
+                    </Card.Actions>
+                  </Card>
+                ))}
+              </>
+            )}
+          </>
+        ) : (
+          <Surface style={styles.emptyCard} elevation={1}>
+            <Text variant="bodyLarge" style={styles.emptyText}>
+              재료가 없습니다
+            </Text>
+            <Text variant="bodyMedium" style={styles.emptySubText}>
+              재고 관리에서 재료를 추가해주세요
+            </Text>
+          </Surface>
+        )}
+      </ScrollView>
+    </View>
   );
 };
+
+// 요리책 탭
+const BookmarksTab = () => {
+  const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
+  const [displayedRecipes, setDisplayedRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [ingredients, setIngredients] = useState<FoodItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [sortBy, setSortBy] = useState<'recent' | 'ingredients'>('recent');
+  const { user } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<CookingStackParamList>>();
+
+  // Service instances
+  const inventoryService = useMemo(() => {
+    return new InventoryService(supabaseClient);
+  }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadSavedRecipes();
+      loadIngredients();
+    }
+  }, [user?.id]);
+
+  const loadIngredients = async () => {
+    if (!user?.id) return;
+
+    try {
+      const items = await inventoryService.getCookingIngredients(user.id);
+      setIngredients(items);
+    } catch (error) {
+      console.error('Failed to load ingredients:', error);
+      setIngredients([]);
+    }
+  };
+
+  const loadSavedRecipes = async () => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    try {
+      const recipes = await recipeService.getBookmarkedRecipes(user.id);
+      const mappedRecipes = recipes.map(r => ({
+        name: r.name,
+        ingredients: r.ingredients,
+        difficulty: r.difficulty,
+        cookingTime: r.cookingTime,
+        instructions: r.instructions
+      }));
+      setSavedRecipes(mappedRecipes);
+      sortAndFilterRecipes(mappedRecipes, sortBy, searchQuery);
+    } catch (error) {
+      console.error('Failed to load saved recipes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sort and filter recipes
+  const sortAndFilterRecipes = (recipes: Recipe[], sort: string, search: string) => {
+    let filtered = [...recipes];
+
+    // Apply search filter
+    if (search) {
+      filtered = filtered.filter(recipe =>
+        recipe.name.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    switch (sort) {
+      case 'ingredients':
+        // Sort by number of owned ingredients (descending)
+        filtered.sort((a, b) => {
+          const aCount = getAvailableCount(a.ingredients);
+          const bCount = getAvailableCount(b.ingredients);
+          return bCount - aCount;
+        });
+        break;
+      case 'recent':
+      default:
+        // Keep original order (most recent first)
+        break;
+    }
+
+    setDisplayedRecipes(filtered);
+  };
+
+  // Update displayed recipes when search or sort changes
+  useEffect(() => {
+    sortAndFilterRecipes(savedRecipes, sortBy, searchQuery);
+  }, [sortBy, searchQuery, savedRecipes]);
+
+
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={Colors.primary.main} />
+      </View>
+    );
+  }
+
+  if (savedRecipes.length === 0) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text variant="headlineSmall" style={styles.emptyText}>
+          저장된 레시피가 없습니다
+        </Text>
+        <Text variant="bodyMedium" style={styles.emptySubText}>
+          추천받은 요리를 북마크하면 여기에 표시됩니다
+        </Text>
+      </View>
+    );
+  }
+
+  const handleCardPress = (recipe: Recipe) => {
+    navigation.navigate('RecipeDetail', { recipe });
+  };
+
+  // Extract ingredient names with check marks for owned items
+  const getIngredientNames = (recipeIngredients: string[]): React.ReactNode => {
+    const displayIngredients = recipeIngredients.slice(0, 5);
+    const hasMore = recipeIngredients.length > 5;
+
+    return (
+      <View style={styles.ingredientPreviewContainer}>
+        {displayIngredients.map((ing, idx) => {
+          const ingredientName = ing.split(' ')[0];
+          const have = hasIngredient(ing);
+          return (
+            <View key={idx} style={styles.ingredientPreviewItem}>
+              {have && (
+                <MaterialCommunityIcons
+                  name="check-circle"
+                  size={12}
+                  color={Colors.primary.main}
+                  style={styles.checkIcon}
+                />
+              )}
+              <Text
+                variant="bodySmall"
+                style={[
+                  styles.ingredientPreviewText,
+                  have && styles.hasIngredientText
+                ]}
+              >
+                {ingredientName}
+                {idx < displayIngredients.length - 1 || hasMore ? ', ' : ''}
+              </Text>
+            </View>
+          );
+        })}
+        {hasMore && (
+          <Text variant="bodySmall" style={styles.ingredientPreviewText}>
+            외
+          </Text>
+        )}
+      </View>
+    );
+  };
+
+  // Check if user has an ingredient
+  const hasIngredient = (ingredientName: string): boolean => {
+    return ingredients.some(item =>
+      ingredientName.toLowerCase().includes(item.name.toLowerCase()) ||
+      item.name.toLowerCase().includes(ingredientName.toLowerCase())
+    );
+  };
+
+  // Count how many ingredients user has for a recipe
+  const getAvailableCount = (recipeIngredients: string[]): number => {
+    return recipeIngredients.filter(ing => hasIngredient(ing)).length;
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Search Bar */}
+      {showSearch && (
+        <View style={styles.searchContainer}>
+          <Searchbar
+            placeholder="요리명을 입력하세요..."
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={styles.searchBar}
+            onIconPress={() => {
+              setShowSearch(false);
+              setSearchQuery('');
+            }}
+            icon="close"
+          />
+        </View>
+      )}
+
+      {/* Sort and Count Bar */}
+      <View style={styles.sortContainer}>
+        <View style={styles.sortButtons}>
+          <Chip
+            mode={sortBy === 'recent' ? 'flat' : 'outlined'}
+            onPress={() => setSortBy('recent')}
+            style={[
+              styles.sortChip,
+              sortBy === 'recent' && styles.activeSortChip
+            ]}
+            textStyle={[
+              styles.sortChipText,
+              sortBy === 'recent' && styles.activeSortChipText
+            ]}
+          >
+            최신순
+          </Chip>
+          <Chip
+            mode={sortBy === 'ingredients' ? 'flat' : 'outlined'}
+            onPress={() => setSortBy('ingredients')}
+            style={[
+              styles.sortChip,
+              sortBy === 'ingredients' && styles.activeSortChip
+            ]}
+            textStyle={[
+              styles.sortChipText,
+              sortBy === 'ingredients' && styles.activeSortChipText
+            ]}
+          >
+            보유재료순
+          </Chip>
+        </View>
+        <View style={styles.countContainer}>
+          <Text variant="bodySmall" style={styles.countText}>
+            총 {displayedRecipes.length}개
+          </Text>
+          <IconButton
+            icon="magnify"
+            size={20}
+            onPress={() => setShowSearch(!showSearch)}
+          />
+        </View>
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingVertical: Spacing.md }}>
+          {displayedRecipes.map((recipe, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleCardPress(recipe)}
+              activeOpacity={0.7}
+            >
+              <Card style={styles.simpleRecipeCard} mode="outlined">
+                <Card.Content>
+                  <Text variant="titleMedium" style={styles.recipeTitle}>
+                    {recipe.name}
+                  </Text>
+
+                  <View style={styles.simpleRecipeInfo}>
+                    <View style={styles.recipeInfoLeft}>
+                      <View style={styles.recipeInfoItem}>
+                        <Text variant="bodySmall" style={styles.recipeInfoLabel}>
+                          난이도:
+                        </Text>
+                        <Text variant="bodyMedium" style={styles.recipeInfoValue}>
+                          {recipe.difficulty}
+                        </Text>
+                      </View>
+                      <Text variant="bodyMedium" style={styles.timeText}>
+                        ⏰ {recipe.cookingTime}분
+                      </Text>
+                    </View>
+                    {getAvailableCount(recipe.ingredients) > 0 && (
+                      <View style={styles.availabilityContainer}>
+                        <Text variant="bodySmall" style={styles.availabilityLabel}>
+                          보유 재료
+                        </Text>
+                        <Text variant="bodyMedium" style={styles.availabilityCount}>
+                          {getAvailableCount(recipe.ingredients)}종
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.ingredientPreviewRow}>
+                    <Text variant="bodySmall" style={styles.ingredientLabel}>
+                      재료:
+                    </Text>
+                    {getIngredientNames(recipe.ingredients)}
+                  </View>
+                </Card.Content>
+              </Card>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+export const CookingScreen = () => {
+  const route = useRoute();
+  const [activeTab, setActiveTab] = useState<TabType>('bookmarks');
+  const [passedRecommendations, setPassedRecommendations] = useState<Recipe[] | null>(null);
+  const [fromIngredient, setFromIngredient] = useState<string | null>(null);
+
+  // Check if we're coming from ItemDetailScreen with recommendations
+  useEffect(() => {
+    const params = route.params as any;
+    if (params?.showRecommendations) {
+      setActiveTab('recommend');
+      setPassedRecommendations(params.recommendations || null);
+      setFromIngredient(params.fromIngredient || null);
+    }
+  }, [route.params]);
+
+  const TabButton: React.FC<{ tab: TabType; label: string }> = ({ tab, label }) => (
+    <TouchableOpacity
+      onPress={() => setActiveTab(tab)}
+      style={[
+        styles.tabButton,
+        activeTab === tab && styles.activeTabButton
+      ]}
+    >
+      <Text
+        variant="labelLarge"
+        style={[
+          styles.tabButtonText,
+          activeTab === tab && styles.activeTabButtonText
+        ]}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.mainContainer}>
+      {/* Tabs */}
+      <View style={styles.tabContainer}>
+        <TabButton tab="bookmarks" label="요리책" />
+        <TabButton tab="recommend" label="요리 추천" />
+      </View>
+
+      {/* Tab Content */}
+      {activeTab === 'bookmarks' ? (
+        <BookmarksTab />
+      ) : (
+        <CookingRecommendTab
+          initialRecommendations={passedRecommendations}
+          fromIngredient={fromIngredient}
+        />
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: Colors.background.default,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background.default,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.background.default,
+  },
+  infoCard: {
+    margin: Spacing.md,
+    padding: Spacing.lg,
+    backgroundColor: Colors.background.paper,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  infoText: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+    lineHeight: 22,
+    marginBottom: Spacing.sm,
+  },
+  sectionTitle: {
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-SemiBold',
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  ingredientChip: {
+    marginVertical: 2,
+    marginHorizontal: 1,
+    height: 26,
+    paddingHorizontal: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 26,
+  },
+  chipText: {
+    color: '#FFFFFF',
+    fontFamily: 'OpenSans-Medium',
+    fontSize: 10,
+    lineHeight: 26,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    marginTop: 0,
+    marginBottom: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+  emptyCard: {
+    margin: Spacing.md,
+    padding: Spacing.xl,
+    backgroundColor: Colors.background.paper,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Medium',
+    marginBottom: Spacing.xs,
+  },
+  emptySubText: {
+    color: Colors.text.disabled,
+    fontFamily: 'OpenSans-Regular',
+    textAlign: 'center',
+  },
+  recommendButtonContainer: {
+    marginTop: Spacing.sm,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  recommendButton: {
+    borderRadius: 24,  // Pill shape design
+  },
+  recommendButtonContent: {
+    paddingVertical: Spacing.xs,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+    marginHorizontal: Spacing.md,
+    paddingTop: 44,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+    position: 'relative' as const,
+  },
+  activeTabButton: {
+    borderBottomColor: Colors.primary.main,
+    borderBottomWidth: 3,
+  },
+  tabButtonText: {
+    textAlign: 'center' as const,
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Medium',
+  },
+  activeTabButtonText: {
+    color: Colors.primary.main,
+    fontFamily: 'OpenSans-Bold',
+    fontWeight: '600' as const,
+  },
+  modalContainer: {
+    backgroundColor: Colors.background.paper,
+    margin: Spacing.lg,
+    borderRadius: 16,
+    maxHeight: '80%',
+    padding: Spacing.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  modalTitle: {
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-Bold',
+  },
+  closeButton: {
+    margin: 0,
+  },
+  recipeCard: {
+    marginBottom: Spacing.md,
+    marginHorizontal: Spacing.md,
+    backgroundColor: Colors.background.paper,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  recipeTitle: {
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-Bold',
+    marginBottom: Spacing.xs,
+  },
+  recipeDescription: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+    marginBottom: Spacing.sm,
+    lineHeight: 20,
+  },
+  recipeInfo: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  difficultyBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  easyBadge: {
+    backgroundColor: '#4CAF50',
+  },
+  normalBadge: {
+    backgroundColor: '#FF9800',
+  },
+  hardBadge: {
+    backgroundColor: '#F44336',
+  },
+  badgeText: {
+    fontSize: 12,
+    fontFamily: 'OpenSans-Bold',
+  },
+  easyBadgeText: {
+    color: '#FFFFFF',
+  },
+  normalBadgeText: {
+    color: '#FFFFFF',
+  },
+  hardBadgeText: {
+    color: '#FFFFFF',
+  },
+  timeBadge: {
+    backgroundColor: Colors.background.level2,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  timeBadgeText: {
+    color: Colors.text.primary,
+    fontSize: 12,
+    fontFamily: 'OpenSans-SemiBold',
+  },
+  infoChip: {
+    height: 28,
+    borderColor: Colors.border.light,
+  },
+  easyChip: {
+    backgroundColor: '#E8F5E9',
+    borderColor: '#4CAF50',
+  },
+  normalChip: {
+    backgroundColor: '#FFF3E0',
+    borderColor: '#FF9800',
+  },
+  hardChip: {
+    backgroundColor: '#FFEBEE',
+    borderColor: '#F44336',
+  },
+  divider: {
+    marginVertical: Spacing.sm,
+    backgroundColor: Colors.border.light,
+  },
+  sectionLabel: {
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-SemiBold',
+    marginBottom: Spacing.xs,
+  },
+  ingredientsList: {
+    marginBottom: Spacing.sm,
+  },
+  ingredientItem: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+    marginBottom: 4,
+    flex: 1,
+  },
+  ingredientRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  hasIngredient: {
+    color: Colors.primary.main,
+    fontFamily: 'OpenSans-Medium',
+  },
+  missingIngredient: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+    opacity: 0.7,
+  },
+  hasChip: {
+    backgroundColor: '#E8F5E9',
+    height: 24,
+    marginLeft: Spacing.xs,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 0,
+  },
+  hasChipText: {
+    fontSize: 11,
+    color: '#4CAF50',
+    fontFamily: 'OpenSans-SemiBold',
+    lineHeight: 24,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+  },
+  missingChip: {
+    backgroundColor: '#FFF3E0',
+    height: 24,
+    marginLeft: Spacing.xs,
+  },
+  missingChipText: {
+    fontSize: 11,
+    color: '#FF9800',
+    fontFamily: 'OpenSans-SemiBold',
+  },
+  youtubeButton: {
+    borderColor: Colors.primary.main,
+    flex: 1,
+    marginRight: Spacing.xs,
+  },
+  cardActions: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  bookmarkButton: {
+    flex: 1,
+    marginLeft: Spacing.xs,
+  },
+  bookmarkButtonActive: {
+    backgroundColor: Colors.primary.main,
+  },
+  legendCard: {
+    margin: Spacing.md,
+    padding: Spacing.md,
+    backgroundColor: Colors.background.paper,
+    borderRadius: 8,
+  },
+  legendTitle: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-SemiBold',
+    marginBottom: Spacing.xs,
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginTop: Spacing.xs,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  legendColor: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+  },
+  // Simple bookmark card styles
+  simpleRecipeCard: {
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+    backgroundColor: Colors.background.paper,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  simpleRecipeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  recipeInfoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  simpleDifficultyChip: {
+    height: 24,
+  },
+  simpleChipText: {
+    fontSize: 12,
+    color: Colors.background.paper,
+  },
+  easyChipSimple: {
+    backgroundColor: Colors.status.success,
+  },
+  normalChipSimple: {
+    backgroundColor: Colors.status.warning,
+  },
+  hardChipSimple: {
+    backgroundColor: '#F44336',
+  },
+  recipeInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  recipeInfoLabel: {
+    color: Colors.text.disabled,
+    fontFamily: 'OpenSans-Regular',
+  },
+  recipeInfoValue: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+  },
+  timeText: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+  },
+  ingredientPreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.xs,
+  },
+  ingredientLabel: {
+    color: Colors.text.disabled,
+    fontFamily: 'OpenSans-Regular',
+    marginRight: Spacing.xs,
+  },
+  ingredientPreviewContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    flex: 1,
+  },
+  ingredientPreviewItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ingredientPreviewText: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+  },
+  hasIngredientText: {
+    color: Colors.primary.main,
+    fontFamily: 'OpenSans-Medium',
+  },
+  checkIcon: {
+    marginRight: 2,
+  },
+  availabilityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  availabilityLabel: {
+    color: Colors.text.disabled,
+    fontFamily: 'OpenSans-Regular',
+  },
+  availabilityCount: {
+    color: Colors.primary.main,
+    fontFamily: 'OpenSans-Bold',
+  },
+  searchContainer: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.background.paper,
+  },
+  searchBar: {
+    backgroundColor: Colors.background.level1,
+    elevation: 0,
+  },
+  sortContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    backgroundColor: Colors.background.paper,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+    height: 40,
+  },
+  sortButtons: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+  },
+  sortChip: {
+    marginRight: Spacing.xs,
+    backgroundColor: Colors.background.paper,
+    borderWidth: 1.5,
+    borderColor: Colors.border.light,
+    height: 28,
+    paddingHorizontal: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activeSortChip: {
+    backgroundColor: Colors.primary.main,
+    borderColor: Colors.primary.main,
+    shadowColor: Colors.primary.main,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  sortChipText: {
+    color: Colors.text.primary,
+    fontSize: 10,
+    lineHeight: 28,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    fontFamily: 'OpenSans-Regular',
+  },
+  activeSortChipText: {
+    color: Colors.text.onPrimary,
+  },
+  countContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  countText: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.md,
+  },
+  modalButton: {
+    flex: 1,
+  },
+});

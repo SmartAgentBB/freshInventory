@@ -41,6 +41,15 @@ export interface FoodItem {
   /** Date when item was frozen (if status is 'frozen') */
   frozenDate?: Date;
   
+  /** Date when item was consumed (for history items) */
+  consumedAt?: Date;
+  
+  /** Total amount used (for history items) */
+  totalUsed?: number;
+  
+  /** Total amount wasted (for history items) */
+  totalWasted?: number;
+  
   /** User ID who owns this item */
   userId: string;
   
