@@ -12,9 +12,57 @@ export interface SavedRecipe extends Recipe {
 
 export class RecipeService {
   /**
+   * Convert Korean difficulty to English for database
+   */
+  private convertDifficultyToEnglish(difficulty: string | undefined | null): string {
+    // Log the incoming difficulty value for debugging
+    console.log('Converting difficulty:', difficulty, 'Type:', typeof difficulty);
+
+    // Handle null, undefined, or empty string
+    if (!difficulty) {
+      console.log('Difficulty is null/undefined/empty, defaulting to medium');
+      return 'medium';
+    }
+
+    // Normalize the input: trim whitespace and convert to lowercase
+    const normalizedDifficulty = difficulty.toString().trim().toLowerCase();
+
+    const difficultyMap: { [key: string]: string } = {
+      '쉬움': 'easy',
+      '보통': 'medium',
+      '어려움': 'hard',
+      '매우 쉬움': 'easy',
+      '매우 어려움': 'hard',
+      '매우쉬움': 'easy',
+      '매우어려움': 'hard',
+      // Also handle English values in case they're already in English
+      'easy': 'easy',
+      'medium': 'medium',
+      'hard': 'hard'
+    };
+
+    // Check for mapped value
+    const mappedValue = difficultyMap[normalizedDifficulty];
+
+    if (mappedValue) {
+      console.log('Mapped difficulty:', normalizedDifficulty, '->', mappedValue);
+      return mappedValue;
+    }
+
+    // If no match found, log warning and default to 'medium'
+    console.warn('Unknown difficulty value:', difficulty, '- defaulting to medium');
+    return 'medium';
+  }
+
+  /**
    * Save or update a recipe bookmark
    */
   async toggleBookmark(userId: string, recipe: Recipe): Promise<{ success: boolean; bookmarked: boolean; error?: string }> {
+    console.log('=== RecipeService.toggleBookmark ===');
+    console.log('Recipe received:', JSON.stringify(recipe, null, 2));
+    console.log('Recipe difficulty type:', typeof recipe.difficulty);
+    console.log('Recipe difficulty value:', recipe.difficulty);
+
     try {
       // Check if recipe already exists for this user
       const { data: existingRecipe, error: checkError } = await supabaseClient
@@ -44,6 +92,22 @@ export class RecipeService {
 
         return { success: true, bookmarked: newBookmarkStatus };
       } else {
+        // Store the original difficulty value if it's already in English
+        // Otherwise convert Korean to English
+        let finalDifficulty = recipe.difficulty || 'medium';
+
+        // Check if it's already a valid English value
+        const validDifficulties = ['easy', 'medium', 'hard'];
+        if (!validDifficulties.includes(finalDifficulty.toLowerCase())) {
+          // It's not valid English, so convert it
+          finalDifficulty = this.convertDifficultyToEnglish(finalDifficulty);
+        } else {
+          // Make sure it's lowercase
+          finalDifficulty = finalDifficulty.toLowerCase();
+        }
+
+        console.log('Final difficulty for insert:', finalDifficulty);
+
         // Insert new recipe
         const { error: insertError } = await supabaseClient
           .from('saved_recipes')
@@ -51,7 +115,7 @@ export class RecipeService {
             user_id: userId,
             name: recipe.name,
             ingredients: recipe.ingredients,
-            difficulty: recipe.difficulty,
+            difficulty: finalDifficulty,
             cooking_time: recipe.cookingTime,
             instructions: recipe.instructions,
             youtube_query: recipe.name,
@@ -82,7 +146,7 @@ export class RecipeService {
         .select('*')
         .eq('user_id', userId)
         .eq('bookmarked', true)
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false });
 
       if (error) throw error;
 
@@ -96,7 +160,7 @@ export class RecipeService {
         instructions: item.instructions,
         bookmarked: item.bookmarked,
         createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at),
+        updatedAt: new Date(item.updated_at || item.created_at),
         youtubeQuery: item.youtube_query
       }));
     } catch (error) {

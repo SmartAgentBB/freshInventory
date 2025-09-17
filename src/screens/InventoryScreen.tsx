@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Text, ActivityIndicator, FAB, Searchbar, Chip, IconButton } from 'react-native-paper';
+import { View, ScrollView, TouchableOpacity, StyleSheet, Platform, RefreshControl } from 'react-native';
+import { Text, ActivityIndicator, FAB, Chip, IconButton, Surface, TextInput } from 'react-native-paper';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Colors } from '../constants/colors';
@@ -35,11 +35,18 @@ export const InventoryScreen: React.FC = () => {
   const [selectedImageUri, setSelectedImageUri] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [sortType, setSortType] = useState<SortType>('newest');
+  const [freshSortType, setFreshSortType] = useState<SortType>('newest');
+  const [frozenSortType, setFrozenSortType] = useState<SortType>('newest');
   const [shoppingListItems, setShoppingListItems] = useState<string[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (isRefreshing = false) => {
+    console.log('LoadData called with isRefreshing:', isRefreshing);
+    if (isRefreshing) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     
     if (!user?.id) {
       setLoading(false);
@@ -71,8 +78,17 @@ export const InventoryScreen: React.FC = () => {
       setFrozenItems([]);
       setHistoryItems([]);
     }
-    
-    setLoading(false);
+
+    if (isRefreshing) {
+      setRefreshing(false);
+    } else {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    console.log('Pull to refresh triggered');
+    loadData(true);
   };
 
   useEffect(() => {
@@ -200,9 +216,10 @@ export const InventoryScreen: React.FC = () => {
 
     // Apply sorting
     if (activeTab === 'fresh' || activeTab === 'frozen') {
-      switch (sortType) {
+      const currentSortType = activeTab === 'fresh' ? freshSortType : frozenSortType;
+      switch (currentSortType) {
         case 'newest':
-          items = [...items].sort((a, b) => 
+          items = [...items].sort((a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
           break;
@@ -213,20 +230,41 @@ export const InventoryScreen: React.FC = () => {
           break;
         case 'urgent':
           items = [...items].sort((a, b) => {
-            // Calculate remaining percentage for item A
             const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Calculate expiry dates
             const addedDateA = new Date(a.addedDate);
-            const daysElapsedA = Math.floor((today.getTime() - addedDateA.getTime()) / (1000 * 60 * 60 * 24));
-            const daysRemainingA = (a.storageDays || 7) - daysElapsedA;
-            const percentRemainingA = (daysRemainingA / (a.storageDays || 7)) * 100;
+            addedDateA.setHours(0, 0, 0, 0);
+            const expiryDateA = new Date(addedDateA);
+            expiryDateA.setDate(expiryDateA.getDate() + (a.storageDays || 7));
 
-            // Calculate remaining percentage for item B
             const addedDateB = new Date(b.addedDate);
-            const daysElapsedB = Math.floor((today.getTime() - addedDateB.getTime()) / (1000 * 60 * 60 * 24));
-            const daysRemainingB = (b.storageDays || 7) - daysElapsedB;
-            const percentRemainingB = (daysRemainingB / (b.storageDays || 7)) * 100;
+            addedDateB.setHours(0, 0, 0, 0);
+            const expiryDateB = new Date(addedDateB);
+            expiryDateB.setDate(expiryDateB.getDate() + (b.storageDays || 7));
 
-            // Sort by percentage remaining (lower percentage = more urgent = should come first)
+            // Calculate days remaining (negative if expired)
+            const daysRemainingA = Math.floor((expiryDateA.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            const daysRemainingB = Math.floor((expiryDateB.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+            // First priority: Expired items (more negative = longer expired = comes first)
+            if (daysRemainingA < 0 && daysRemainingB < 0) {
+              // Both expired: sort by how long they've been expired (more expired first)
+              return daysRemainingA - daysRemainingB;
+            }
+
+            // One expired, one not: expired comes first
+            if (daysRemainingA < 0) return -1;
+            if (daysRemainingB < 0) return 1;
+
+            // Both not expired: sort by remaining percentage
+            const daysElapsedA = Math.floor((today.getTime() - addedDateA.getTime()) / (1000 * 60 * 60 * 24));
+            const daysElapsedB = Math.floor((today.getTime() - addedDateB.getTime()) / (1000 * 60 * 60 * 24));
+            const percentRemainingA = ((a.storageDays || 7) - daysElapsedA) / (a.storageDays || 7) * 100;
+            const percentRemainingB = ((b.storageDays || 7) - daysElapsedB) / (b.storageDays || 7) * 100;
+
+            // Lower percentage = more urgent = comes first
             return percentRemainingA - percentRemainingB;
           });
           break;
@@ -283,17 +321,36 @@ export const InventoryScreen: React.FC = () => {
         {/* Search Bar (Fresh and Frozen tabs) */}
         {(activeTab === 'fresh' || activeTab === 'frozen') && showSearch && (
           <View style={styles.searchContainer}>
-            <Searchbar
-              placeholder="재료명을 입력하세요..."
-              onChangeText={setSearchQuery}
-              value={searchQuery}
-              style={styles.searchBar}
-              onIconPress={() => {
-                setShowSearch(false);
-                setSearchQuery('');
-              }}
-              icon="close"
-            />
+            <View style={styles.searchInputWrapper}>
+              <TextInput
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="검색할 재료 이름을 입력하세요"
+                placeholderTextColor="#9E9E9E"
+                mode="outlined"
+                style={styles.searchInput}
+                dense
+                contentStyle={styles.searchInputContent}
+                left={<TextInput.Icon icon="magnify" color={Colors.text.secondary} />}
+                right={searchQuery ? (
+                  <TextInput.Icon
+                    icon="close"
+                    color={Colors.text.secondary}
+                    onPress={() => setSearchQuery('')}
+                  />
+                ) : null}
+              />
+              <IconButton
+                icon="close"
+                size={20}
+                iconColor={Colors.text.secondary}
+                onPress={() => {
+                  setShowSearch(false);
+                  setSearchQuery('');
+                }}
+                style={styles.searchCloseButton}
+              />
+            </View>
           </View>
         )}
 
@@ -302,30 +359,30 @@ export const InventoryScreen: React.FC = () => {
           <View style={styles.sortContainer}>
             <View style={styles.sortButtons}>
               <Chip
-                mode={sortType === 'newest' ? 'flat' : 'outlined'}
-                onPress={() => setSortType('newest')}
+                mode={(activeTab === 'fresh' ? freshSortType : frozenSortType) === 'newest' ? 'flat' : 'outlined'}
+                onPress={() => activeTab === 'fresh' ? setFreshSortType('newest') : setFrozenSortType('newest')}
                 style={[
                   styles.sortChip,
-                  sortType === 'newest' && styles.activeSortChip
+                  (activeTab === 'fresh' ? freshSortType : frozenSortType) === 'newest' && styles.activeSortChip
                 ]}
                 textStyle={[
                   styles.sortChipText,
-                  sortType === 'newest' && styles.activeSortChipText
+                  (activeTab === 'fresh' ? freshSortType : frozenSortType) === 'newest' && styles.activeSortChipText
                 ]}
                 compact
               >
                 최신순
               </Chip>
               <Chip
-                mode={sortType === 'oldest' ? 'flat' : 'outlined'}
-                onPress={() => setSortType('oldest')}
+                mode={(activeTab === 'fresh' ? freshSortType : frozenSortType) === 'oldest' ? 'flat' : 'outlined'}
+                onPress={() => activeTab === 'fresh' ? setFreshSortType('oldest') : setFrozenSortType('oldest')}
                 style={[
                   styles.sortChip,
-                  sortType === 'oldest' && styles.activeSortChip
+                  (activeTab === 'fresh' ? freshSortType : frozenSortType) === 'oldest' && styles.activeSortChip
                 ]}
                 textStyle={[
                   styles.sortChipText,
-                  sortType === 'oldest' && styles.activeSortChipText
+                  (activeTab === 'fresh' ? freshSortType : frozenSortType) === 'oldest' && styles.activeSortChipText
                 ]}
                 compact
               >
@@ -333,15 +390,15 @@ export const InventoryScreen: React.FC = () => {
               </Chip>
               {activeTab === 'fresh' && (
                 <Chip
-                  mode={sortType === 'urgent' ? 'flat' : 'outlined'}
-                  onPress={() => setSortType('urgent')}
+                  mode={freshSortType === 'urgent' ? 'flat' : 'outlined'}
+                  onPress={() => setFreshSortType('urgent')}
                   style={[
                     styles.sortChip,
-                    sortType === 'urgent' && styles.activeSortChip
+                    freshSortType === 'urgent' && styles.activeSortChip
                   ]}
                   textStyle={[
                     styles.sortChipText,
-                    sortType === 'urgent' && styles.activeSortChipText
+                    freshSortType === 'urgent' && styles.activeSortChipText
                   ]}
                   compact
                 >
@@ -378,10 +435,20 @@ export const InventoryScreen: React.FC = () => {
       </View>
 
       {/* Content Section with ScrollView */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[Colors.primary.main]} // Android
+            tintColor={Colors.primary.main} // iOS
+            title="당겨서 새로고침" // iOS
+            titleColor={Colors.text.secondary} // iOS
+          />
+        }
       >
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -531,6 +598,25 @@ export const InventoryScreen: React.FC = () => {
       {/* Add Item Modal */}
       {showAddWithImage && (
         <View style={styles.addItemContainer}>
+          {/* Header - Same height as ItemDetailScreen */}
+          <View style={styles.headerSurface}>
+            <IconButton
+              icon="arrow-left"
+              size={24}
+              onPress={() => {
+                setShowAddWithImage(false);
+                setShowImageButtons(false);
+                setSelectedImageUri('');
+              }}
+              style={styles.backButton}
+            />
+            <Text variant="labelLarge" style={styles.headerTitle}>
+              식재료 저장
+            </Text>
+            <View style={{ width: 48 }} />
+          </View>
+
+          {/* Content */}
           <AddItemWithImage
             userId={user?.id || ''}
             onComplete={() => {
@@ -540,16 +626,6 @@ export const InventoryScreen: React.FC = () => {
             }}
             hideImageSelection={true}
             initialImageUri={selectedImageUri}
-          />
-          <FAB
-            icon="close"
-            style={styles.closeFab}
-            onPress={() => {
-              setShowAddWithImage(false);
-              setShowImageButtons(false);
-            }}
-            color={Colors.status.error}
-            small
           />
         </View>
       )}
@@ -576,7 +652,8 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    paddingVertical: Spacing.md,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.md,
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
@@ -594,15 +671,29 @@ const styles = StyleSheet.create({
   activeTabButtonText: {
     color: Colors.primary.main,
     fontFamily: 'OpenSans-Bold',
+    fontWeight: '700',
     fontWeight: '600',
   },
   searchContainer: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
   },
-  searchBar: {
-    elevation: 0,
-    backgroundColor: Colors.background.level2,
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: Colors.background.default,
+    height: 36,
+  },
+  searchInputContent: {
+    paddingVertical: 6,
+    fontSize: 14,
+  },
+  searchCloseButton: {
+    margin: 0,
+    marginLeft: Spacing.xs,
   },
   sortContainer: {
     flexDirection: 'row',
@@ -610,7 +701,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
-    height: 40,
+    minHeight: 44,
   },
   sortButtons: {
     flexDirection: 'row',
@@ -622,7 +713,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.paper,
     borderWidth: 1.5,
     borderColor: Colors.border.light,
-    height: 28,
+    height: 32,
     paddingHorizontal: 0,
     justifyContent: 'center',
     alignItems: 'center',
@@ -638,14 +729,15 @@ const styles = StyleSheet.create({
   },
   sortChipText: {
     color: Colors.text.primary,
-    fontSize: 10,
-    lineHeight: 28,
+    fontSize: 12,
+    lineHeight: 16,
     textAlign: 'center',
     textAlignVertical: 'center',
     marginTop: 0,
     marginBottom: 0,
     paddingTop: 0,
     paddingBottom: 0,
+    fontFamily: 'OpenSans-SemiBold',
   },
   activeSortChipText: {
     color: Colors.text.onPrimary,
@@ -746,6 +838,32 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: Colors.background.surface,
     zIndex: 1000,
+  },
+  headerSurface: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 44,  // Status bar height
+    paddingBottom: 0,  // No bottom padding
+    backgroundColor: Colors.background.paper,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+    marginHorizontal: 0,  // Full width for border
+  },
+  backButton: {
+    marginLeft: Spacing.sm,  // Add some spacing from edge
+    marginRight: 0,
+    marginTop: Spacing.sm,  // Adjust vertical position
+    marginBottom: Spacing.sm,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-Bold',
+    fontSize: 16,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
   },
   imageButtonsContainer: {
     position: 'absolute',

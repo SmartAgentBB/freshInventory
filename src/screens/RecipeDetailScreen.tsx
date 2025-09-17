@@ -20,6 +20,16 @@ import { supabaseClient } from '../services/supabaseClient';
 import { ShoppingService } from '../services/ShoppingService';
 import { useShoppingCount } from '../contexts/ShoppingContext';
 
+// Helper function to convert English difficulty to Korean
+const getDifficultyText = (difficulty: string): string => {
+  const difficultyMap: { [key: string]: string } = {
+    'easy': '쉬움',
+    'medium': '보통',
+    'hard': '어려움'
+  };
+  return difficultyMap[difficulty?.toLowerCase()] || difficulty || '보통';
+};
+
 // Extract ingredient name only (remove quantity and unit)
 // e.g., "양파 1/4개" -> "양파", "토마토 2개" -> "토마토", "소금 약간" -> "소금", "청양고추 1/2개 (선택)" -> "청양고추"
 const extractIngredientName = (fullIngredient: string): string => {
@@ -213,8 +223,9 @@ export const RecipeDetailScreen = () => {
             // Always use goBack() which will return to the previous screen
             navigation.goBack();
           }}
+          style={styles.backButton}
         />
-        <Text variant="titleMedium" style={styles.headerTitle}>
+        <Text variant="labelLarge" style={styles.headerTitle}>
           {recipe.name}
         </Text>
         <View style={{ width: 48 }} />
@@ -228,7 +239,7 @@ export const RecipeDetailScreen = () => {
         <Surface style={styles.infoCard} elevation={1}>
           <View style={styles.infoContainer}>
             <Text variant="bodyMedium" style={styles.infoText}>
-              난이도: {recipe.difficulty}
+              난이도: {getDifficultyText(recipe.difficulty)}
             </Text>
             <Text variant="bodyMedium" style={styles.infoText}>
               ⏰ {recipe.cookingTime}분
@@ -351,18 +362,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 44,
-    paddingBottom: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
+    paddingTop: 44,  // Status bar height
+    paddingBottom: 0,  // No bottom padding
     backgroundColor: Colors.background.paper,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border.light,
+    borderBottomColor: Colors.divider,
+    marginHorizontal: 0,  // Full width for border
+  },
+  backButton: {
+    marginLeft: Spacing.sm,  // Add some spacing from edge
+    marginRight: 0,
+    marginTop: Spacing.sm,  // Adjust vertical position
+    marginBottom: Spacing.sm,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    color: Colors.text.primary,
+    color: Colors.text.primary,  // Black text
     fontFamily: 'OpenSans-Bold',
+    fontWeight: '700',
+    fontSize: 16,  // Same size as ItemDetailScreen
+    paddingTop: Spacing.lg,  // Same as tab
+    paddingBottom: Spacing.md,  // Same as tab
   },
   content: {
     paddingVertical: Spacing.md,
@@ -436,18 +457,20 @@ const styles = StyleSheet.create({
   },
   hasChip: {
     backgroundColor: '#E8F5E9',
-    height: 24,
+    height: 28,
     marginLeft: Spacing.xs,
     alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 0,
+    paddingHorizontal: Spacing.sm,
+    minWidth: 50,
   },
   hasChipText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#4CAF50',
     fontFamily: 'OpenSans-SemiBold',
-    lineHeight: 24,
+    lineHeight: 16,
     textAlignVertical: 'center',
     includeFontPadding: false,
   },

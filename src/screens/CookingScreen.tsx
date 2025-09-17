@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
-import { Surface, Text, Button, Chip, ActivityIndicator, FAB, Card, Divider, Searchbar, IconButton, Menu } from 'react-native-paper';
+import { Surface, Text, Button, Chip, ActivityIndicator, FAB, Card, Divider, TextInput, IconButton, Menu } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useIsFocused } from '@react-navigation/native';
 import { Colors } from '../constants/colors';
@@ -16,6 +16,16 @@ import { AIService, Recipe } from '../services/AIService';
 import { recipeService } from '../services/RecipeService';
 
 type TabType = 'recommend' | 'bookmarks';
+
+// Helper function to convert English difficulty to Korean
+const getDifficultyText = (difficulty: string): string => {
+  const difficultyMap: { [key: string]: string } = {
+    'easy': '쉬움',
+    'medium': '보통',
+    'hard': '어려움'
+  };
+  return difficultyMap[difficulty?.toLowerCase()] || difficulty || '보통';
+};
 
 // 요리 추천 탭
 interface CookingRecommendTabProps {
@@ -34,6 +44,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [bookmarkedRecipes, setBookmarkedRecipes] = useState<Set<string>>(new Set());
   const [savingRecipe, setSavingRecipe] = useState<string | null>(null);
+  const [currentIngredientContext, setCurrentIngredientContext] = useState<string | null>(fromIngredient || null);
   const { user } = useAuth();
   const isFocused = useIsFocused();
 
@@ -54,8 +65,9 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
     if (initialRecommendations && initialRecommendations.length > 0) {
       setRecommendations(initialRecommendations);
       setShowRecommendations(true);
+      setCurrentIngredientContext(fromIngredient || null);
     }
-  }, [initialRecommendations]);
+  }, [initialRecommendations, fromIngredient]);
 
   // Load bookmarked recipes status
   useEffect(() => {
@@ -146,20 +158,22 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   const loadIngredients = async () => {
     try {
       setLoading(true);
-      
+
       if (!user?.id) {
         console.log('No user ID available');
         setIngredients([]);
         return;
       }
-      
+
       console.log('Loading ingredients for user:', user.id);
-      
-      // 과일 제외하고 재고가 있는 항목만 가져오기 (이미 정렬됨)
+
+      // 과일 제외하고 재고가 있는 항목만 가져오기
       const items = await inventoryService.getCookingIngredients(user.id);
       console.log('Loaded ingredients:', items.length, 'items');
-      console.log('Ingredients:', items.map(i => ({ name: i.name, category: i.category, remains: i.remains })));
-      setIngredients(items);
+
+      // 재고목록과 동일한 임박순 정렬 적용
+      const sortedItems = [...items].sort(sortByUrgency);
+      setIngredients(sortedItems);
     } catch (error) {
       console.error('Failed to load ingredients:', error);
       setIngredients([]);
@@ -176,28 +190,88 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
 
     if (!item.storageDays) return Colors.background.level2;
 
-    // 재고목록과 동일한 계산 방식 사용
+    // 재고목록의 FoodItemCard와 완전히 동일한 계산 방식
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const addedDate = new Date(item.addedDate);
+    addedDate.setHours(0, 0, 0, 0);
+    const storageDays = item.storageDays || 7;
     const daysElapsed = Math.floor((today.getTime() - addedDate.getTime()) / (1000 * 60 * 60 * 24));
-    const daysRemaining = item.storageDays - daysElapsed;
-    const percentRemaining = (daysRemaining / item.storageDays) * 100;
+    const daysRemaining = storageDays - daysElapsed;
+    const percentRemaining = (daysRemaining / storageDays) * 100;
 
-    // 재고목록과 동일한 색상 시스템
+    // FoodItemCard와 동일한 색상 시스템
     if (daysRemaining < 0) {
-      return '#F44336'; // 빨간색 - 만료
+      return '#F44336'; // Red - 만료
     } else if (daysRemaining === 0) {
-      return '#FF9800'; // 주황색 - D-Day
+      return '#FF9800'; // Orange - D-Day
     } else {
       // 비율 기반 색상
       if (percentRemaining > 50) {
-        return '#4CAF50'; // 초록색 - 신선 (> 50%)
+        return '#4CAF50'; // Green - 신선 (> 50%)
       } else if (percentRemaining > 20) {
-        return '#FFC107'; // 노란색 - 주의 (20-50%)
+        return '#FFC107'; // Yellow - 주의 (20-50%)
       } else {
-        return '#FF9800'; // 주황색 - 경고 (<= 20%)
+        return '#FF9800'; // Orange - 경고 (<= 20%)
       }
     }
+  };
+
+  // 임박도 순으로 정렬하는 함수 (재고목록과 동일한 로직)
+  // 색상 우선순위 기반 정렬 함수
+  const getColorPriority = (item: FoodItem): number => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const addedDate = new Date(item.addedDate);
+    addedDate.setHours(0, 0, 0, 0);
+
+    const storageDays = item.storageDays || 7;
+    const daysElapsed = Math.floor((today.getTime() - addedDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysRemaining = storageDays - daysElapsed;
+    const percentRemaining = (daysRemaining / storageDays) * 100;
+
+    // 색상별 우선순위 (낮을수록 먼저 표시)
+    if (daysRemaining < 0) {
+      return 1; // 빨강 (만료) - 가장 높은 우선순위
+    } else if (daysRemaining === 0) {
+      return 2; // 주황 (D-Day)
+    } else if (percentRemaining <= 20) {
+      return 3; // 주황 (임박)
+    } else if (percentRemaining <= 50) {
+      return 4; // 노랑 (주의)
+    } else {
+      return 5; // 초록 (신선) - 가장 낮은 우선순위
+    }
+  };
+
+  const sortByUrgency = (a: FoodItem, b: FoodItem) => {
+    // 색상 우선순위로 먼저 비교
+    const priorityA = getColorPriority(a);
+    const priorityB = getColorPriority(b);
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB; // 우선순위가 낮은 것이 먼저 (빨강 -> 주황 -> 노랑 -> 초록)
+    }
+
+    // 같은 색상 그룹 내에서는 남은 기간이 짧은 순으로 정렬
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const addedDateA = new Date(a.addedDate);
+    addedDateA.setHours(0, 0, 0, 0);
+    const expiryDateA = new Date(addedDateA);
+    expiryDateA.setDate(expiryDateA.getDate() + (a.storageDays || 7));
+
+    const addedDateB = new Date(b.addedDate);
+    addedDateB.setHours(0, 0, 0, 0);
+    const expiryDateB = new Date(addedDateB);
+    expiryDateB.setDate(expiryDateB.getDate() + (b.storageDays || 7));
+
+    const daysRemainingA = Math.floor((expiryDateA.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const daysRemainingB = Math.floor((expiryDateB.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    return daysRemainingA - daysRemainingB;
   };
 
   // 재료를 카테고리별로 분류하는 함수
@@ -216,29 +290,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
       }
     });
 
-    // 임박도 순으로 정렬하는 함수 (재고목록과 동일한 로직)
-    const sortByUrgency = (a: FoodItem, b: FoodItem) => {
-      const today = new Date();
-
-      // Calculate remaining percentage for item A
-      const addedDateA = new Date(a.addedDate);
-      const daysElapsedA = Math.floor((today.getTime() - addedDateA.getTime()) / (1000 * 60 * 60 * 24));
-      const daysRemainingA = (a.storageDays || 7) - daysElapsedA;
-      const percentRemainingA = (daysRemainingA / (a.storageDays || 7)) * 100;
-
-      // Calculate remaining percentage for item B
-      const addedDateB = new Date(b.addedDate);
-      const daysElapsedB = Math.floor((today.getTime() - addedDateB.getTime()) / (1000 * 60 * 60 * 24));
-      const daysRemainingB = (b.storageDays || 7) - daysElapsedB;
-      const percentRemainingB = (daysRemainingB / (b.storageDays || 7)) * 100;
-
-      // Sort by percentage remaining (lower percentage = more urgent = should come first)
-      return percentRemainingA - percentRemainingB;
-    };
-
-    // 모든 카테고리를 임박도 순으로 정렬
-    refrigerated.sort(sortByUrgency);
-    normal.sort(sortByUrgency);
+    // 냉동 재료만 정렬 (신선 재료는 합친 후 정렬)
     frozen.sort(sortByUrgency);
 
     return { frozen, refrigerated, normal };
@@ -368,37 +420,24 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
           <>
             {/* 냉동 재료와 신선 재료를 분리하여 표시 */}
             {(() => {
-              const { frozen, refrigerated, normal } = categorizeIngredients(ingredients);
-              // 냉장 재료와 일반 재료를 합침 후 임박도 순으로 재정렬
-              const freshIngredients = [...refrigerated, ...normal].sort((a, b) => {
-                const today = new Date();
+              // 냉동과 신선 재료 분리
+              const frozen = ingredients.filter(item => item.status === 'frozen');
+              const fresh = ingredients.filter(item => item.status !== 'frozen');
 
-                // Calculate remaining percentage for item A
-                const addedDateA = new Date(a.addedDate);
-                const daysElapsedA = Math.floor((today.getTime() - addedDateA.getTime()) / (1000 * 60 * 60 * 24));
-                const daysRemainingA = (a.storageDays || 7) - daysElapsedA;
-                const percentRemainingA = (daysRemainingA / (a.storageDays || 7)) * 100;
-
-                // Calculate remaining percentage for item B
-                const addedDateB = new Date(b.addedDate);
-                const daysElapsedB = Math.floor((today.getTime() - addedDateB.getTime()) / (1000 * 60 * 60 * 24));
-                const daysRemainingB = (b.storageDays || 7) - daysElapsedB;
-                const percentRemainingB = (daysRemainingB / (b.storageDays || 7)) * 100;
-
-                // Sort by percentage remaining (lower percentage = more urgent = should come first)
-                return percentRemainingA - percentRemainingB;
-              });
+              // 각각 임박순 정렬
+              const sortedFrozen = [...frozen].sort(sortByUrgency);
+              const sortedFresh = [...fresh].sort(sortByUrgency);
 
               return (
                 <>
-                  {/* 신선 재료 섹션 (냉장 + 일반) */}
-                  {freshIngredients.length > 0 && (
+                  {/* 신선 재료 섹션 (냉동이 아닌 모든 재료) */}
+                  {sortedFresh.length > 0 && (
                     <>
                       <Text variant="titleMedium" style={styles.sectionTitle}>
-                        🥬 신선 재료 ({freshIngredients.length}개)
+                        🥬 신선 재료 ({sortedFresh.length}개)
                       </Text>
                       <View style={styles.chipContainer}>
-                        {freshIngredients.map((item) => (
+                        {sortedFresh.map((item) => (
                           <Chip
                             key={item.id}
                             style={[
@@ -417,13 +456,13 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                   )}
 
                   {/* 냉동 재료 섹션 */}
-                  {frozen.length > 0 && (
+                  {sortedFrozen.length > 0 && (
                     <>
                       <Text variant="titleMedium" style={styles.sectionTitle}>
-                        ❄️ 냉동 재료 ({frozen.length}개)
+                        ❄️ 냉동 재료 ({sortedFrozen.length}개)
                       </Text>
                       <View style={styles.chipContainer}>
-                        {frozen.map((item) => (
+                        {sortedFrozen.map((item) => (
                           <Chip
                             key={item.id}
                             style={[
@@ -468,6 +507,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                   onPress={() => {
                     setShowRecommendations(false);
                     setRecommendations([]);
+                    setCurrentIngredientContext(null); // Clear the specific ingredient context
                   }}
                   icon="refresh"
                   style={styles.recommendButton}
@@ -482,7 +522,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
             {showRecommendations && recommendations.length > 0 && (
               <>
                 <Text variant="titleMedium" style={styles.sectionTitle}>
-                  🍳 {fromIngredient ? `${fromIngredient}을(를) 활용한 추천 레시피` : '추천 레시피'}
+                  🍳 {currentIngredientContext ? `${currentIngredientContext} 활용 레시피` : '추천 레시피'}
                 </Text>
                 {recommendations.map((recipe, index) => (
                   <Card key={index} style={styles.recipeCard} mode="outlined">
@@ -493,7 +533,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
 
                       <View style={styles.recipeInfo}>
                         <Text variant="bodyMedium" style={styles.difficultyText}>
-                          난이도: {recipe.difficulty}
+                          난이도: {getDifficultyText(recipe.difficulty)}
                         </Text>
                         <Text variant="bodyMedium" style={styles.timeText}>
                           ⏰ {recipe.cookingTime}분
@@ -608,6 +648,7 @@ const BookmarksTab = () => {
   const [sortBy, setSortBy] = useState<'recent' | 'ingredients'>('recent');
   const { user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<CookingStackParamList>>();
+  const isFocused = useIsFocused();
 
   // Service instances
   const inventoryService = useMemo(() => {
@@ -615,11 +656,11 @@ const BookmarksTab = () => {
   }, []);
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && isFocused) {
       loadSavedRecipes();
       loadIngredients();
     }
-  }, [user?.id]);
+  }, [user?.id, isFocused]);
 
   const loadIngredients = async () => {
     if (!user?.id) return;
@@ -678,7 +719,8 @@ const BookmarksTab = () => {
         break;
       case 'recent':
       default:
-        // Keep original order (most recent first)
+        // Sort by newest first (DB already returns in this order, but ensure consistency)
+        // No additional sorting needed as DB returns in updated_at DESC order
         break;
     }
 
@@ -777,17 +819,36 @@ const BookmarksTab = () => {
       {/* Search Bar */}
       {showSearch && (
         <View style={styles.searchContainer}>
-          <Searchbar
-            placeholder="요리명을 입력하세요..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={styles.searchBar}
-            onIconPress={() => {
-              setShowSearch(false);
-              setSearchQuery('');
-            }}
-            icon="close"
-          />
+          <View style={styles.searchInputWrapper}>
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="검색할 요리 이름을 입력하세요"
+              placeholderTextColor="#9E9E9E"
+              mode="outlined"
+              style={styles.searchInput}
+              dense
+              contentStyle={styles.searchInputContent}
+              left={<TextInput.Icon icon="magnify" color={Colors.text.secondary} />}
+              right={searchQuery ? (
+                <TextInput.Icon
+                  icon="close"
+                  color={Colors.text.secondary}
+                  onPress={() => setSearchQuery('')}
+                />
+              ) : null}
+            />
+            <IconButton
+              icon="close"
+              size={20}
+              iconColor={Colors.text.secondary}
+              onPress={() => {
+                setShowSearch(false);
+                setSearchQuery('');
+              }}
+              style={styles.searchCloseButton}
+            />
+          </View>
         </View>
       )}
 
@@ -805,6 +866,7 @@ const BookmarksTab = () => {
               styles.sortChipText,
               sortBy === 'recent' && styles.activeSortChipText
             ]}
+            compact
           >
             최신순
           </Chip>
@@ -819,6 +881,7 @@ const BookmarksTab = () => {
               styles.sortChipText,
               sortBy === 'ingredients' && styles.activeSortChipText
             ]}
+            compact
           >
             보유재료순
           </Chip>
@@ -856,7 +919,7 @@ const BookmarksTab = () => {
                           난이도:
                         </Text>
                         <Text variant="bodyMedium" style={styles.recipeInfoValue}>
-                          {recipe.difficulty}
+                          {getDifficultyText(recipe.difficulty)}
                         </Text>
                       </View>
                       <Text variant="bodyMedium" style={styles.timeText}>
@@ -999,10 +1062,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   ingredientChip: {
-    marginVertical: 2,
-    marginHorizontal: 1,
+    marginVertical: 4,
+    marginHorizontal: 2,
     height: 26,
-    paddingHorizontal: 3,
+    paddingHorizontal: 2.4,
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 26,
@@ -1056,7 +1119,8 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    paddingVertical: Spacing.md,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.md,
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
@@ -1074,6 +1138,7 @@ const styles = StyleSheet.create({
   activeTabButtonText: {
     color: Colors.primary.main,
     fontFamily: 'OpenSans-Bold',
+    fontWeight: '700',
     fontWeight: '600' as const,
   },
   modalContainer: {
@@ -1214,18 +1279,20 @@ const styles = StyleSheet.create({
   },
   hasChip: {
     backgroundColor: '#E8F5E9',
-    height: 24,
+    height: 28,
     marginLeft: Spacing.xs,
     alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 0,
+    paddingHorizontal: Spacing.sm,
+    minWidth: 50,
   },
   hasChipText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#4CAF50',
     fontFamily: 'OpenSans-SemiBold',
-    lineHeight: 24,
+    lineHeight: 16,
     textAlignVertical: 'center',
     includeFontPadding: false,
   },
@@ -1388,11 +1455,23 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.background.paper,
   },
-  searchBar: {
-    backgroundColor: Colors.background.level1,
-    elevation: 0,
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: Colors.background.default,
+    height: 36,
+  },
+  searchInputContent: {
+    paddingVertical: 6,
+    fontSize: 14,
+  },
+  searchCloseButton: {
+    margin: 0,
+    marginLeft: Spacing.xs,
   },
   sortContainer: {
     flexDirection: 'row',
@@ -1403,7 +1482,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.paper,
     borderBottomWidth: 1,
     borderBottomColor: Colors.divider,
-    height: 40,
+    minHeight: 44,
   },
   sortButtons: {
     flexDirection: 'row',
@@ -1414,7 +1493,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.paper,
     borderWidth: 1.5,
     borderColor: Colors.border.light,
-    height: 28,
+    height: 32,
     paddingHorizontal: 0,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1425,16 +1504,20 @@ const styles = StyleSheet.create({
     shadowColor: Colors.primary.main,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowRadius: 8,
+    elevation: 3,
   },
   sortChipText: {
     color: Colors.text.primary,
-    fontSize: 10,
-    lineHeight: 28,
+    fontSize: 12,
+    lineHeight: 16,
     textAlign: 'center',
     textAlignVertical: 'center',
-    fontFamily: 'OpenSans-Regular',
+    marginTop: 0,
+    marginBottom: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+    fontFamily: 'OpenSans-SemiBold',
   },
   activeSortChipText: {
     color: Colors.text.onPrimary,
