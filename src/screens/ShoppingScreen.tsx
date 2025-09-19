@@ -11,6 +11,7 @@ import {
   Card,
   Divider,
 } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { ShoppingService, ShoppingItem } from '../services/ShoppingService';
@@ -108,9 +109,26 @@ const ShoppingListTab = () => {
   };
 
   const handleToggleItem = async (item: ShoppingItem) => {
+    // If trying to uncheck a completed item (make it active again)
+    if (!item.todo) {
+      // Check if the item already exists in active list
+      const existingActiveItem = activeItems.find(
+        activeItem => activeItem.name === item.name && activeItem.todo === true
+      );
+
+      if (existingActiveItem) {
+        // Item already exists in active list, don't toggle and don't show error
+        // Simply ignore the action silently
+        return;
+      }
+    }
+
     const result = await shoppingService.toggleItem(item.id, !item.todo);
     if (result.success) {
       loadShoppingList();
+    } else if (result.error?.includes('duplicate key')) {
+      // If somehow the check above missed it, still handle the duplicate key error silently
+      return;
     }
   };
 
@@ -240,10 +258,21 @@ const ShoppingListTab = () => {
           ) : (
             activeItems.map((item) => (
               <View key={item.id} style={styles.itemRow}>
-                <Checkbox
-                  status={item.todo ? 'unchecked' : 'checked'}
+                <TouchableOpacity
+                  style={[
+                    styles.checkboxWrapper,
+                    !item.todo && styles.checkboxWrapperChecked
+                  ]}
                   onPress={() => handleToggleItem(item)}
-                />
+                  activeOpacity={0.7}
+                >
+                  {!item.todo && (
+                    <Icon name="check" size={20} color="white" />
+                  )}
+                  {item.todo && (
+                    <View style={styles.emptyCheckbox} />
+                  )}
+                </TouchableOpacity>
                 {editingId === item.id ? (
                   <View style={styles.editingContent}>
                     <TextInput
@@ -330,10 +359,20 @@ const ShoppingListTab = () => {
           ) : (
             completedItems.map((item) => (
               <View key={item.id} style={styles.itemRow}>
-                <Checkbox
-                  status="checked"
+                <TouchableOpacity
+                  style={[
+                    styles.checkboxWrapper,
+                    styles.checkboxWrapperChecked
+                  ]}
                   onPress={() => handleToggleItem(item)}
-                />
+                  activeOpacity={0.7}
+                >
+                  <Icon
+                    name="check"
+                    size={20}
+                    color="white"
+                  />
+                </TouchableOpacity>
                 <View style={styles.itemContent}>
                   <Text
                     variant="bodyMedium"
@@ -673,7 +712,8 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    paddingVertical: Spacing.md,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.md,
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
@@ -691,6 +731,7 @@ const styles = StyleSheet.create({
   activeTabButtonText: {
     color: Colors.primary.main,
     fontFamily: 'OpenSans-Bold',
+    fontWeight: '700',
     fontWeight: '600',
   },
   centerContainer: {
@@ -778,7 +819,23 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 2,
+    paddingVertical: Spacing.xs,
+    minHeight: 44,
+  },
+  checkboxWrapper: {
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 4,
+    backgroundColor: 'white',
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#9E9E9E',
+  },
+  checkboxWrapperChecked: {
+    borderColor: Colors.primary.main,
+    backgroundColor: Colors.primary.main,
   },
   itemContent: {
     flex: 1,
@@ -802,7 +859,7 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     fontFamily: 'OpenSans-Regular',
     fontSize: 12,
-    marginRight: Spacing.xs,
+    marginRight: 2,
   },
   calendarHeader: {
     flexDirection: 'row',

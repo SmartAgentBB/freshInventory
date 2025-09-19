@@ -6,6 +6,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import {
   Surface,
@@ -16,11 +17,16 @@ import {
   TextInput,
   Divider,
   Menu,
+  Chip,
+  Checkbox,
 } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ImageUpload } from './ImageUpload';
 import { AIService, FoodItem } from '../services/AIService';
 import { uploadImageToSupabase } from '../services/StorageService';
 import { InventoryService } from '../services/InventoryService';
+import { ShoppingService } from '../services/ShoppingService';
+import { useShoppingCount } from '../contexts/ShoppingContext';
 import { compressImage, cropImageToBoundingBox } from '../utils/imageUtils';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
@@ -68,10 +74,14 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [detectedItems, setDetectedItems] = useState<EditableItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [showManualInput, setShowManualInput] = useState(false);
   const [unitMenuVisible, setUnitMenuVisible] = useState<{ [key: number]: boolean }>({});
+  const [shoppingListItems, setShoppingListItems] = useState<string[]>([]);
+  const [showShoppingNotification, setShowShoppingNotification] = useState(false);
+  const [checkedShoppingItems, setCheckedShoppingItems] = useState<{ [key: string]: boolean }>({});
 
   const aiService = new AIService();
+  const shoppingService = new ShoppingService(supabaseClient);
+  const { refreshCount } = useShoppingCount();
   const inventoryService = new InventoryService(supabaseClient);
 
   const analyzeImage = async (imageUri: string) => {
@@ -89,19 +99,13 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
         format: 'jpeg'
       });
       
-      console.log('=== Image Analysis Start ===');
-      console.log('Compressed image dimensions:', compressed.width, 'x', compressed.height);
-      console.log('Compressed image URI:', compressed.uri);
-      
-      // Upload to Supabase
-      const uploadResult = await uploadImageToSupabase(compressed.uri, userId);
-      console.log('Upload result:', uploadResult);
-      
-      // Store the public URL for display
-      if (uploadResult.success && uploadResult.publicUrl) {
-        setSelectedImageUri(uploadResult.publicUrl);
-      }
-      
+      // Store the compressed URI temporarily for display and cropping
+      // We'll only upload the cropped thumbnails, not the full image
+      setSelectedImageUri(compressed.uri);
+
+      // Store the compressed URI for potential fallback use
+      const fullImageUri = compressed.uri;
+
       // Analyze with AI - AI will receive the same image that we'll crop later
       const analysisResult = await aiService.analyzeImage(compressed.uri);
       
@@ -126,12 +130,11 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
                 );
                 console.log('Generated thumbnail URI:', thumbnail);
               } else {
-                console.warn('Invalid boundingBox format (expected [ymin, xmin, ymax, xmax]):', item.boundingBox);
+                // Invalid boundingBox format, use full image
                 thumbnail = compressed.uri;
               }
             } else {
-              console.log('No bounding box for item:', item.name);
-              // boundingBox가 없으면 전체 이미지를 썸네일로 사용
+              // No bounding box, use full image as thumbnail
               thumbnail = compressed.uri;
             }
             return {
@@ -141,23 +144,62 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
             };
           })
         );
-        
+
         setDetectedItems(itemsWithThumbnails);
-      } else if (analysisResult.items.length === 0) {
-        setShowManualInput(true);
+
+        // Check if any detected items are in the shopping list
+        const detectedNames = itemsWithThumbnails.map(item => item.name);
+        const itemsInShoppingList = await shoppingService.checkItemsInShoppingList(userId, detectedNames);
+
+        if (itemsInShoppingList.length > 0) {
+          setShoppingListItems(itemsInShoppingList);
+          setShowShoppingNotification(true);
+
+          // Initialize all shopping items as checked by default
+          const initialChecked: { [key: string]: boolean } = {};
+          itemsInShoppingList.forEach(name => {
+            initialChecked[name] = true;
+          });
+          setCheckedShoppingItems(initialChecked);
+        }
       } else {
         Alert.alert(
           '분석 실패',
-          'AI 서비스를 사용할 수 없습니다. 수동으로 입력해주세요.'
+          'AI 서비스를 사용할 수 없습니다.'
         );
-        setShowManualInput(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Image analysis error:', error);
-      Alert.alert(
-        '오류',
-        '이미지 분석 중 오류가 발생했습니다.'
-      );
+
+      // Check if it's an overload error (503)
+      if (error?.message?.includes('overloaded') || error?.message?.includes('503')) {
+        Alert.alert(
+          'AI 서버 과부하',
+          'AI 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.',
+          [
+            {
+              text: '다시 시도',
+              onPress: () => {
+                // Retry after a short delay
+                setTimeout(() => {
+                  handleImageSelected(selectedImageUri);
+                }, 2000);
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          '분석 오류',
+          '이미지 분석 중 오류가 발생했습니다.',
+          [
+            {
+              text: '확인',
+              style: 'default',
+            },
+          ]
+        );
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -221,11 +263,22 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
               };
             } else {
               console.error('Failed to upload thumbnail for item:', item.name);
-              // Use the main image URL as fallback
-              return {
-                ...item,
-                thumbnail: selectedImageUri
-              };
+              // Upload full image as fallback if thumbnail upload fails
+              console.log('Uploading full image as fallback for:', item.name);
+              const fallbackUpload = await uploadImageToSupabase(selectedImageUri, userId);
+
+              if (fallbackUpload.success && fallbackUpload.publicUrl) {
+                return {
+                  ...item,
+                  thumbnail: fallbackUpload.publicUrl
+                };
+              } else {
+                console.error('Failed to upload fallback image for item:', item.name);
+                return {
+                  ...item,
+                  thumbnail: null
+                };
+              }
             }
           }
           // If it's already a Supabase URL, keep it as is
@@ -251,11 +304,62 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
 
       // Check if any items failed to save
       const failedCount = results.filter(r => r === null).length;
-      if (failedCount > 0) {
+      const savedItems = results.filter(r => r !== null);
+
+      // Mark shopping list items as completed if they were saved successfully and checked
+      if (shoppingListItems.length > 0 && savedItems.length > 0) {
+        const savedNames = savedItems.map(item => item!.name);
+        // Only complete items that are both saved AND checked
+        const itemsToComplete = shoppingListItems.filter(name =>
+          savedNames.includes(name) && checkedShoppingItems[name]
+        );
+
+        console.log('=== 장보기 완료 처리 디버깅 ===');
+        console.log('Shopping list items:', JSON.stringify(shoppingListItems));
+        console.log('Saved item names:', JSON.stringify(savedNames));
+        console.log('Checked items:', JSON.stringify(checkedShoppingItems));
+        console.log('Items to complete:', JSON.stringify(itemsToComplete));
+
+        if (itemsToComplete.length > 0) {
+          const { completedItems, success } = await shoppingService.markAsCompletedByNames(userId, itemsToComplete);
+          console.log('Marking result - success:', success);
+          console.log('Completed items:', JSON.stringify(completedItems));
+          console.log('Expected to complete:', JSON.stringify(itemsToComplete));
+          console.log('Actually completed:', JSON.stringify(completedItems));
+
+          if (completedItems.length > 0) {
+            // Refresh the shopping badge count
+            await refreshCount();
+
+            // Show success message with completed items
+            const message = failedCount > 0
+              ? `${savedItems.length}개 항목이 저장되었습니다.\n장보기 목록의 ${completedItems.join(', ')}이(가) 완료 처리되었습니다.\n${failedCount}개 항목 저장에 실패했습니다.`
+              : `${savedItems.length}개 항목이 저장되었습니다.\n장보기 목록의 ${completedItems.join(', ')}이(가) 완료 처리되었습니다.`;
+
+            Alert.alert('저장 완료', message);
+          } else if (failedCount > 0) {
+            Alert.alert(
+              '일부 저장 실패',
+              `${savedItems.length}개 항목이 저장되었습니다. ${failedCount}개 항목 저장에 실패했습니다.`
+            );
+          } else {
+            Alert.alert('저장 완료', `${savedItems.length}개 항목이 저장되었습니다.`);
+          }
+        } else if (failedCount > 0) {
+          Alert.alert(
+            '일부 저장 실패',
+            `${savedItems.length}개 항목이 저장되었습니다. ${failedCount}개 항목 저장에 실패했습니다.`
+          );
+        } else {
+          Alert.alert('저장 완료', `${savedItems.length}개 항목이 저장되었습니다.`);
+        }
+      } else if (failedCount > 0) {
         Alert.alert(
           '일부 저장 실패',
-          `${detectedItems.length - failedCount}개 항목이 저장되었습니다. ${failedCount}개 항목 저장에 실패했습니다.`
+          `${savedItems.length}개 항목이 저장되었습니다. ${failedCount}개 항목 저장에 실패했습니다.`
         );
+      } else {
+        Alert.alert('저장 완료', `${savedItems.length}개 항목이 저장되었습니다.`);
       }
 
       // Navigate back to inventory screen
@@ -269,8 +373,11 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
   };
 
   const renderDetectedItem = (item: EditableItem, index: number) => {
+    const isInShoppingList = shoppingListItems.includes(item.name);
+
     return (
-      <Surface key={index} style={styles.itemCard} elevation={1}>
+      <View key={index} style={{ marginBottom: Spacing.sm }}>
+        <Surface style={styles.itemCard} elevation={1}>
         {/* Delete button positioned absolutely at top-right */}
         <IconButton
           icon="close"
@@ -385,7 +492,60 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
             </View>
           </View>
         </View>
+
+        {/* Shopping list checkbox inside the card */}
+        {isInShoppingList && (
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginTop: Spacing.xs,
+            borderTopWidth: 1,
+            borderTopColor: Colors.border.light,
+            paddingTop: Spacing.xs,
+          }}>
+            <IconButton
+              icon="cart-outline"
+              size={20}
+              iconColor={checkedShoppingItems[item.name] ? Colors.primary.main : Colors.text.secondary}
+              style={{ margin: 0, marginLeft: -8, marginRight: -4 }}
+            />
+            <Text
+              variant="bodySmall"
+              style={{
+                flex: 1,
+                color: checkedShoppingItems[item.name] ? Colors.primary.main : Colors.text.secondary,
+                marginLeft: -4,
+                fontFamily: 'OpenSans-Regular',
+                fontSize: 12,
+              }}
+            >
+              장보기 완료하기
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.checkboxWrapper,
+                checkedShoppingItems[item.name] && styles.checkboxWrapperChecked
+              ]}
+              onPress={() => {
+                setCheckedShoppingItems({
+                  ...checkedShoppingItems,
+                  [item.name]: !checkedShoppingItems[item.name],
+                });
+              }}
+              activeOpacity={0.7}
+            >
+              {checkedShoppingItems[item.name] && (
+                <Icon
+                  name="check"
+                  size={18}
+                  color="white"
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
       </Surface>
+    </View>
     );
   };
 
@@ -446,13 +606,27 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
             <Text variant="bodyMedium" style={styles.helpText}>
               아래 항목을 확인하고 수정할 수 있습니다
             </Text>
-            
+
             <View testID="detected-items-list">
               {detectedItems.map((item, index) => renderDetectedItem(item, index))}
             </View>
-            
-            <Divider style={styles.divider} />
-            
+
+            <Divider style={{ marginVertical: Spacing.xs }} />
+
+            {/* Shopping list notification text */}
+            {shoppingListItems.length > 0 && (
+              <View style={{
+                marginBottom: Spacing.xs,
+              }}>
+                <Text variant="bodySmall" style={{ color: Colors.text.secondary, marginBottom: 2 }}>
+                  장보기 목록에 있는 식재료가 감지되었습니다.
+                </Text>
+                <Text variant="bodySmall" style={{ color: Colors.text.secondary }}>
+                  체크된 항목은 저장 시 장보기 완료로 처리됩니다.
+                </Text>
+              </View>
+            )}
+
             <Button
               mode="contained"
               onPress={handleSaveAll}
@@ -471,14 +645,6 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
             <Text variant="bodyLarge" style={styles.noItemsText}>
               식재료를 감지하지 못했습니다
             </Text>
-            <Button
-              mode="outlined"
-              onPress={() => setShowManualInput(true)}
-              style={styles.manualButton}
-              testID="manual-input-button"
-            >
-              수동으로 입력
-            </Button>
           </View>
         )}
       </Surface>
@@ -647,9 +813,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     fontFamily: 'OpenSans-Regular',
   },
-  manualButton: {
-    borderColor: Colors.primary.main,
-  },
   imagePreviewContainer: {
     alignItems: 'center',
     marginBottom: Spacing.lg,
@@ -666,5 +829,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.divider,
     backgroundColor: Colors.background.surface, // 이미지 로드 전 배경
+  },
+  checkboxWrapper: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 4,
+    backgroundColor: 'white',
+    borderWidth: 2,
+    borderColor: '#9E9E9E',
+  },
+  checkboxWrapperChecked: {
+    borderColor: Colors.primary.main,
+    backgroundColor: Colors.primary.main,
   },
 });

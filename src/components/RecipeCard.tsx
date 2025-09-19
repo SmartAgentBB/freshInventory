@@ -6,6 +6,16 @@ import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { Recipe } from '../models/Recipe';
 
+// Helper function to convert English difficulty to Korean
+const getDifficultyText = (difficulty: string): string => {
+  const difficultyMap: { [key: string]: string } = {
+    'easy': '쉬움',
+    'medium': '보통',
+    'hard': '어려움'
+  };
+  return difficultyMap[difficulty?.toLowerCase()] || difficulty || '보통';
+};
+
 interface RecipeCardProps {
   recipe: Recipe;
   onPress?: (recipe: Recipe) => void;
@@ -94,7 +104,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                   난이도:
                 </Text>
                 <Text variant="bodyMedium" style={styles.recipeInfoValue}>
-                  {recipe.difficulty}
+                  {getDifficultyText(recipe.difficulty)}
                 </Text>
               </View>
               <Text variant="bodyMedium" style={styles.timeText}>

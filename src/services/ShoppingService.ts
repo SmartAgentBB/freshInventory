@@ -234,6 +234,104 @@ export class ShoppingService {
     }
   }
 
+  // 이름으로 아이템을 완료 처리
+  async markAsCompletedByNames(userId: string, names: string[]): Promise<{ success: boolean; completedItems: string[]; error?: string }> {
+    try {
+      const completedItems: string[] = [];
+      console.log('=== ShoppingService.markAsCompletedByNames ===');
+      console.log('User ID:', userId);
+      console.log('Names to complete:', JSON.stringify(names));
+
+      for (const name of names) {
+        console.log(`Processing item: "${name}"`);
+
+        // First, find items with case-insensitive matching
+        const { data: matchingItems, error: fetchError } = await this.supabase
+          .from('shopping_list')
+          .select('id, name')
+          .eq('user_id', userId)
+          .eq('todo', true)
+          .ilike('name', name);  // Case-insensitive match
+
+        console.log(`Query result for "${name}":`, JSON.stringify(matchingItems), 'Error:', fetchError);
+
+        if (fetchError) {
+          console.error('Error fetching shopping list item:', fetchError);
+          continue;
+        }
+
+        if (matchingItems && matchingItems.length > 0) {
+          console.log(`Found ${matchingItems.length} matching items for "${name}"`);
+          // Update all matching items (only todo=TRUE items will be found due to the query filter)
+          for (const item of matchingItems) {
+            console.log(`Updating item ID ${item.id} with name "${item.name}" from todo=true to todo=false`);
+            const { error: updateError, data: updateData } = await this.supabase
+              .from('shopping_list')
+              .update({
+                todo: false,
+                update_date: new Date().toISOString()
+              })
+              .eq('id', item.id)
+              .eq('todo', true)  // Extra safety: only update if still todo=true
+              .select();
+
+            console.log(`Update result for ID ${item.id}:`, updateData, 'Error:', updateError);
+
+            if (!updateError && updateData && updateData.length > 0) {
+              completedItems.push(item.name);
+              console.log(`Successfully marked "${item.name}" as completed`);
+            } else if (updateError) {
+              console.error(`Failed to update item ID ${item.id}:`, updateError);
+            } else {
+              console.log(`Item ID ${item.id} was not updated (possibly already completed)`);
+            }
+          }
+        } else {
+          console.log(`No matching items found for "${name}"`);
+        }
+      }
+
+      console.log('=== Final result ===');
+      console.log('Successfully completed items:', JSON.stringify(completedItems));
+      return { success: true, completedItems };
+    } catch (error) {
+      console.error('Failed to mark items as completed:', error);
+      return { success: false, completedItems: [], error: '완료 처리에 실패했습니다.' };
+    }
+  }
+
+  // 활성 쇼핑 목록에서 특정 이름들을 확인
+  async checkItemsInShoppingList(userId: string, names: string[]): Promise<string[]> {
+    try {
+      const itemsInList: string[] = [];
+      console.log('=== ShoppingService.checkItemsInShoppingList ===');
+      console.log('Checking items:', JSON.stringify(names));
+
+      for (const name of names) {
+        const { data, error } = await this.supabase
+          .from('shopping_list')
+          .select('name')
+          .eq('user_id', userId)
+          .ilike('name', name)  // Case-insensitive match
+          .eq('todo', true);
+
+        console.log(`Checking "${name}":`, JSON.stringify(data), 'Error:', error);
+
+        if (data && data.length > 0) {
+          // Return the detected item name (preserving the case from AI detection)
+          itemsInList.push(name);
+          console.log(`Found "${name}" in shopping list`);
+        }
+      }
+
+      console.log('Items found in shopping list:', JSON.stringify(itemsInList));
+      return itemsInList;
+    } catch (error) {
+      console.error('Failed to check items in shopping list:', error);
+      return [];
+    }
+  }
+
   // 활성 아이템 개수
   async getActiveCount(userId: string): Promise<number> {
     try {

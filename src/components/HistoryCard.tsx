@@ -136,7 +136,10 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
             iconColor={isAddedToShopping ? Colors.primary.main : Colors.text.secondary}
             size={24}
             onPress={handleToggleShopping}
-            style={styles.shoppingButton}
+            style={[
+              styles.shoppingButton,
+              !isAddedToShopping && styles.shoppingButtonInactive
+            ]}
           />
           {/* Add/Check Badge */}
           <TouchableOpacity 
@@ -285,6 +288,9 @@ const styles = StyleSheet.create({
     margin: 0,
     width: 48,
     height: 48,
+  },
+  shoppingButtonInactive: {
+    borderColor: Colors.text.secondary,  // Gray border when not selected
   },
   addBadge: {
     position: 'absolute',

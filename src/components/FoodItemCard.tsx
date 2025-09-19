@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, Alert, Platform, Pressable } from 'react-native';
 import { Card, Text, IconButton, ProgressBar } from 'react-native-paper';
 import { FoodItem } from '../models/FoodItem';
 import { Colors } from '../constants/colors';
@@ -24,12 +24,9 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
 }) => {
   const [imageError, setImageError] = useState(false);
 
-  const handleDelete = (e?: any) => {
-    // Prevent event bubbling
-    e?.stopPropagation?.();
-    
+  const handleDelete = () => {
     console.log('Delete button clicked for item:', item.name, item.id);
-    
+
     // For web, use window.confirm as a fallback
     if (Platform.OS === 'web') {
       const confirmDelete = window.confirm(`"${item.name}"을(를) 삭제하시겠습니까?`);
@@ -61,6 +58,7 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
   };
 
   const handlePress = () => {
+    console.log('Card pressed for item:', item.name);
     onPress?.(item);
   };
 
@@ -122,21 +120,10 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
 
   return (
     <Card style={styles.container} mode="outlined">
-      {/* Delete Button - positioned absolutely at top-right */}
-      {showControls && (
-        <IconButton
-          icon="close"
-          size={20}
-          iconColor={Colors.text.secondary}
-          onPress={handleDelete}
-          style={styles.deleteButton}
-        />
-      )}
-      
-      <TouchableOpacity 
+      <Pressable
         style={styles.content}
         onPress={handlePress}
-        activeOpacity={0.7}
+        android_ripple={{ color: 'rgba(0, 0, 0, 0.1)' }}
       >
         <View style={styles.mainContent}>
           {/* Thumbnail Image */}
@@ -166,43 +153,43 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
           {/* Item Details */}
           <View style={styles.detailsContainer}>
             {/* Name Row */}
-            <Text 
-              variant="titleMedium" 
+            <Text
+              variant="titleMedium"
               style={styles.name}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {item.name}
             </Text>
-            
+
             {/* Registration/Frozen Date and D-day/Frozen days Row */}
-            <View style={styles.infoRow}>
+            <View style={[styles.infoRow, { flex: 1, alignItems: 'center' }]}>
               <Text variant="bodySmall" style={styles.infoText}>
                 {isFrozen ? `냉동: ${formattedFrozenDate}` : `등록: ${formattedDate}`}
               </Text>
               {isFrozen ? (
                 <View style={[styles.dDayBadge, { backgroundColor: '#4A90E2' }]}>
-                  <Text 
-                    variant="bodySmall" 
+                  <Text
+                    variant="bodySmall"
                     style={[styles.dDayText, { color: '#FFFFFF' }]}
                   >
                     {frozenDays}일
                   </Text>
                 </View>
-              ) : (
+              ) : dDayText ? (
                 <View style={[styles.dDayBadge, { backgroundColor: dDayBackgroundColor }]}>
-                  <Text 
-                    variant="bodySmall" 
+                  <Text
+                    variant="bodySmall"
                     style={[styles.dDayText, { color: dDayTextColor }]}
                   >
                     {dDayText}
                   </Text>
                 </View>
-              )}
+              ) : null}
             </View>
-            
+
             {/* Quantity and Remains Row */}
-            <View style={[styles.infoRow, { marginBottom: 2 }]}>
+            <View style={styles.infoRow}>
               <Text variant="bodySmall" style={styles.infoText}>
                 수량: {item.quantity}{item.unit}
               </Text>
@@ -212,14 +199,32 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
             </View>
 
             {/* Progress Bar */}
-            <ProgressBar 
-              progress={item.remains || 1} 
+            <ProgressBar
+              progress={item.remains || 1}
               color={isFrozen ? '#4A90E2' : Colors.primary.main}
               style={styles.progressBar}
             />
           </View>
         </View>
-      </TouchableOpacity>
+
+        {/* Delete Button - positioned absolutely but inside Pressable */}
+        {showControls && (
+          <Pressable
+            style={styles.deleteButtonWrapper}
+            onPress={handleDelete}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <IconButton
+              icon="close"
+              size={20}
+              iconColor={Colors.text.secondary}
+              style={styles.deleteButton}
+              disabled={true}
+              pointerEvents="none"
+            />
+          </Pressable>
+        )}
+      </Pressable>
     </Card>
   );
 };
@@ -230,7 +235,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
-    position: 'relative',
     borderWidth: 1,
     borderColor: Colors.border.light,
     shadowColor: '#000',
@@ -243,6 +247,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: Spacing.lg,
+    position: 'relative',
   },
   mainContent: {
     flex: 1,
@@ -274,18 +279,21 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     flex: 1,
-    // Removed paddingRight - the content padding handles the spacing symmetrically
+    paddingRight: 30, // Make room for delete button
+    justifyContent: 'space-between', // Distribute space evenly
+    height: 128, // Match thumbnail height
   },
   name: {
     color: Colors.text.primary,
     fontFamily: 'OpenSans-Bold',
-    marginBottom: Spacing.lg,  // Increased to match and be 1.2x wider
+    marginBottom: 0, // Remove bottom margin
+    marginTop: -2, // Fine tune alignment with thumbnail top
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.lg,  // Same spacing as name for consistency
+    marginBottom: 0, // Remove spacing
   },
   infoText: {
     color: Colors.text.secondary,
@@ -299,12 +307,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     overflow: 'hidden',
   },
-  deleteButton: {
+  deleteButtonWrapper: {
     position: 'absolute',
     top: 8,
     right: 8,
+    zIndex: 10,
+  },
+  deleteButton: {
     margin: 0,
-    zIndex: 1,
   },
   dDayBadge: {
     paddingHorizontal: 12,

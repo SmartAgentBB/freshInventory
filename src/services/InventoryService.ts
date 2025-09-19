@@ -322,22 +322,49 @@ export class InventoryService {
    * Delete an item from inventory
    */
   async deleteItem(id: string): Promise<boolean> {
-    console.log('InventoryService.deleteItem called with id:', id);
     try {
+      // First, fetch the item to get the thumbnail URL
+      const { data: itemData, error: fetchError } = await this.supabase
+        .from('food_items')
+        .select('thumbnail')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        // Continue with deletion even if fetch fails
+      }
+
+      // Delete the item from database
       const { error } = await this.supabase
         .from('food_items')
         .delete()
         .eq('id', id);
 
       if (error) {
-        console.error('Supabase delete error:', error);
         throw new Error(`Failed to delete item: ${error.message}`);
       }
 
-      console.log('Item deleted successfully from database');
+      // If item had a thumbnail, delete it from storage
+      if (itemData?.thumbnail) {
+        try {
+          // Extract file path from URL
+          // URL format: https://fwoykfbumwsbodrconeo.supabase.co/storage/v1/object/public/food-images/userId/filename.jpg
+          const url = itemData.thumbnail;
+          const match = url.match(/food-images\/(.*)/);
+
+          if (match && match[1]) {
+            const filePath = match[1];
+            // Import deleteImageFromSupabase from StorageService
+            const { deleteImageFromSupabase } = await import('./StorageService');
+            await deleteImageFromSupabase(filePath);
+          }
+        } catch (error) {
+          // Don't fail the whole operation if image deletion fails
+        }
+      }
+
       return true;
     } catch (error) {
-      console.error('Error deleting item:', error);
       return false;
     }
   }

@@ -64,13 +64,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     
     try {
       const result = await authService.signInWithPassword(email.trim(), password.trim());
-      
-      if (result.user) {
-        // Navigate to main app
-        navigation.navigate('Main');
-      }
+
+      // AuthFlow will automatically handle navigation when authentication state changes
+      // No need to manually navigate
     } catch (error) {
-      console.error('Login error:', error);
       setLoginError('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
     } finally {
       setLoading(false);
@@ -130,18 +127,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             }}
           >
             로그인
-          </Text>
-
-          <Text 
-            variant="bodyLarge"
-            style={{
-              color: Colors.text.secondary,
-              fontFamily: 'OpenSans-Regular',
-              textAlign: 'center',
-              marginBottom: 32
-            }}
-          >
-            Fresh Inventory에 로그인
           </Text>
 
           {/* Email Input */}
@@ -249,25 +234,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             onPress={handleLogin}
             disabled={loading}
             style={{
-              backgroundColor: loading ? Colors.outline : Colors.primary.main,
-              borderRadius: 8,
+              backgroundColor: Colors.primary.main,
+              borderRadius: 28, // Pill shape
               paddingVertical: 16,
               alignItems: 'center',
               marginBottom: 24,
-              opacity: loading ? 0.6 : 1
+              opacity: loading ? 0.7 : 1
             }}
+            activeOpacity={0.8}
           >
             {loading ? (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ActivityIndicator 
-                  size="small" 
-                  color={Colors.onPrimary}
+                <ActivityIndicator
+                  size="small"
+                  color="#FFFFFF"
                   style={{ marginRight: 8 }}
                 />
                 <Text
                   variant="bodyLarge"
                   style={{
-                    color: Colors.onPrimary,
+                    color: '#FFFFFF',
                     fontFamily: 'OpenSans-SemiBold'
                   }}
                 >
@@ -278,7 +264,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <Text
                 variant="bodyLarge"
                 style={{
-                  color: Colors.onPrimary,
+                  color: '#FFFFFF',
                   fontFamily: 'OpenSans-SemiBold'
                 }}
               >

@@ -371,14 +371,15 @@ export const ItemDetailScreen: React.FC = () => {
 
   return (
     <Surface style={styles.container}>
-      {/* Header */}
+      {/* Header - Same height as InventoryScreen tabs */}
       <View style={styles.header}>
         <IconButton
           icon="arrow-left"
           size={24}
           onPress={handleBack}
+          style={styles.backButton}
         />
-        <Text variant="titleMedium" style={styles.headerTitle}>
+        <Text variant="labelLarge" style={styles.headerTitle}>
           {item.name}
         </Text>
         <View style={{ width: 48 }} />
@@ -808,18 +809,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xs,
-    paddingTop: 44,  // Same as RecipeDetailScreen
-    paddingBottom: Spacing.sm,
+    paddingTop: 44,  // Status bar height
+    paddingBottom: 0,  // No bottom padding
+    backgroundColor: Colors.background.paper,
     borderBottomWidth: 1,
     borderBottomColor: Colors.divider,
-    backgroundColor: Colors.background.paper,
+    marginHorizontal: 0,  // Full width for border
+  },
+  backButton: {
+    marginLeft: Spacing.sm,  // Add some spacing from edge
+    marginRight: 0,
+    marginTop: Spacing.sm,  // Adjust vertical position
+    marginBottom: Spacing.sm,
   },
   headerTitle: {
-    flex: 1,  // Same as RecipeDetailScreen
-    textAlign: 'center',  // Same as RecipeDetailScreen
-    color: Colors.text.primary,
+    flex: 1,
+    textAlign: 'center',
+    color: Colors.text.primary,  // Changed to black
     fontFamily: 'OpenSans-Bold',
+    fontWeight: '700',
+    fontSize: 16,  // Increased from 14
+    paddingTop: Spacing.lg,  // Same as tab
+    paddingBottom: Spacing.md,  // Same as tab
   },
   content: {
     padding: Spacing.lg,

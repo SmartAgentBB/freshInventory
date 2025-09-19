@@ -5,6 +5,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { mintLightTheme } from './src/theme/mintTheme';
 import { Colors } from './src/constants/colors';
 import { AuthFlow } from './src/navigation/AuthFlow';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 // Prevent splash screen from auto hiding
 SplashScreen.preventAutoHideAsync();
@@ -20,6 +23,9 @@ export default function App() {
           'OpenSans-Bold': require('./assets/fonts/OpenSans-Bold.ttf'),
           'OpenSans-SemiBold': require('./assets/fonts/OpenSans-SemiBold.ttf'),
           'OpenSans-Light': require('./assets/fonts/OpenSans-Light.ttf'),
+          ...MaterialCommunityIcons.font,
+          ...MaterialIcons.font,
+          ...Ionicons.font,
         });
       } finally {
         setFontsLoaded(true);

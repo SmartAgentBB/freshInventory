@@ -1,5 +1,7 @@
 import { supabaseClient } from './supabaseClient';
 import { generateImageFileName } from '../utils/imageUtils';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
 
 const BUCKET_NAME = 'food-images';
 
@@ -16,16 +18,53 @@ export interface DeleteResult {
 }
 
 /**
- * Convert image URI to Blob for upload
+ * Convert image URI to base64 string for upload
  */
-async function uriToBlob(uri: string): Promise<Blob> {
+async function uriToBase64(uri: string): Promise<string> {
   try {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    return blob;
+    // Check if uri is already a base64 string
+    if (uri.startsWith('data:image')) {
+      // Extract base64 from data URI
+      const base64 = uri.split(',')[1];
+      return base64;
+    }
+
+    // Try fetch API first (works for blob URLs and many local URIs)
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result && typeof reader.result === 'string') {
+            // Remove the data:image/...;base64, prefix
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+          } else {
+            reject(new Error('Failed to read blob as base64'));
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (fetchError) {
+      // Fallback to FileSystem for file:// URIs
+      console.log('Fetch failed, trying FileSystem:', fetchError);
+
+      try {
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: 'base64' as any,
+        });
+        return base64;
+      } catch (fsError) {
+        console.error('FileSystem also failed:', fsError);
+        throw fsError;
+      }
+    }
   } catch (error) {
-    console.error('Failed to convert URI to blob:', error);
-    throw new Error('Failed to convert image to blob');
+    console.error('Failed to convert URI to base64:', error);
+    throw new Error('Failed to convert image to base64');
   }
 }
 
@@ -45,14 +84,15 @@ export async function uploadImageToSupabase(
       };
     }
 
-    // Convert URI to blob
-    let blob: Blob;
+    // Convert URI to base64
+    let base64: string;
     try {
-      blob = await uriToBlob(imageUri);
+      base64 = await uriToBase64(imageUri);
     } catch (error) {
+      console.error('Base64 conversion error:', error);
       return {
         success: false,
-        error: 'Failed to convert image to blob',
+        error: 'Failed to convert image to base64',
       };
     }
 
@@ -60,10 +100,13 @@ export async function uploadImageToSupabase(
     const fileName = generateImageFileName('img');
     const filePath = `${userId}/${fileName}`;
 
+    // Convert base64 to ArrayBuffer for upload
+    const arrayBuffer = decode(base64);
+
     // Upload to Supabase Storage
     const { data, error } = await supabaseClient.storage
       .from(BUCKET_NAME)
-      .upload(filePath, blob, {
+      .upload(filePath, arrayBuffer, {
         contentType: 'image/jpeg',
         upsert: true,
       });

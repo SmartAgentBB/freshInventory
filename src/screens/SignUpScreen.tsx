@@ -359,25 +359,26 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
             onPress={handleSignUp}
             disabled={loading}
             style={{
-              backgroundColor: loading ? Colors.outline : Colors.primary.main,
-              borderRadius: 8,
+              backgroundColor: Colors.primary.main,
+              borderRadius: 28, // Pill shape
               paddingVertical: 16,
               alignItems: 'center',
               marginBottom: 24,
-              opacity: loading ? 0.6 : 1
+              opacity: loading ? 0.7 : 1
             }}
+            activeOpacity={0.8}
           >
             {loading ? (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ActivityIndicator 
-                  size="small" 
-                  color={Colors.onPrimary}
+                <ActivityIndicator
+                  size="small"
+                  color="#FFFFFF"
                   style={{ marginRight: 8 }}
                 />
                 <Text
                   variant="bodyLarge"
                   style={{
-                    color: Colors.onPrimary,
+                    color: '#FFFFFF',
                     fontFamily: 'OpenSans-SemiBold'
                   }}
                 >
@@ -388,7 +389,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
               <Text
                 variant="bodyLarge"
                 style={{
-                  color: Colors.onPrimary,
+                  color: '#FFFFFF',
                   fontFamily: 'OpenSans-SemiBold'
                 }}
               >
