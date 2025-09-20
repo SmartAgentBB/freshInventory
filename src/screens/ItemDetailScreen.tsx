@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, StyleSheet, Image, Dimensions, Platform, Alert, TouchableOpacity } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { RecipeCard } from '../components/RecipeCard';
+import { CustomSlider } from '../components/CustomSlider';
 import {
   Surface,
   Text,
@@ -465,7 +466,7 @@ export const ItemDetailScreen: React.FC = () => {
                           <MaterialCommunityIcons
                             name="help-circle-outline"
                             size={16}
-                            color={Colors.text.secondary}
+                            color={Colors.primary.main}
                           />
                         </TouchableOpacity>
                       </View>
@@ -526,14 +527,14 @@ export const ItemDetailScreen: React.FC = () => {
                   {currentRemains}%
                 </Text>
                 <View style={styles.progressBarContainer}>
-                  <View 
+                  <View
                     style={[
                       styles.progressBar,
-                      { 
+                      {
                         width: `${currentRemains}%`,
                         backgroundColor: isFrozen ? '#4A90E2' : Colors.primary.main
                       }
-                    ]} 
+                    ]}
                   />
                 </View>
               </View>
@@ -752,7 +753,7 @@ const styles = StyleSheet.create({
   },
   helpButton: {
     padding: 1,
-    backgroundColor: Colors.background.paper,
+    backgroundColor: '#E8F5E9',
     borderRadius: 8,
   },
   remainsCard: {
@@ -966,5 +967,22 @@ const styles = StyleSheet.create({
   },
   recommendButtonContent: {
     paddingVertical: Spacing.xs,
+  },
+  sliderContainer: {
+    width: '100%',
+    paddingVertical: Spacing.sm,
+  },
+  slider: {
+    marginHorizontal: Spacing.md,
+    marginVertical: Spacing.sm,
+  },
+  sliderButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+  },
+  sliderButton: {
+    margin: 0,
   },
 });

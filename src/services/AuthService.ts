@@ -107,15 +107,35 @@ export class AuthService {
       email,
       password
     });
-    
+
     if (error) {
       throw error;
     }
-    
+
     return {
       user: data.user,
       session: data.session
     };
+  }
+
+  /**
+   * Sign up with email and password (alias for signUp)
+   */
+  async signUpWithPassword(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data, error } = await this.supabase.auth.signUp({
+        email,
+        password
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: '회원가입 중 오류가 발생했습니다.' };
+    }
   }
 
   /**

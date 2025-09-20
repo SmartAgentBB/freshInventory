@@ -532,11 +532,6 @@ const HistoryTab = () => {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.historyInfo}>
-        <Text variant="bodySmall" style={styles.historyInfoText}>
-          완료한 장보기 기록을 확인하세요.
-        </Text>
-      </View>
 
       {/* 달력 카드 */}
       <Card style={styles.card} mode="outlined">
@@ -681,6 +676,19 @@ export const ShoppingScreen = () => {
           <TabButton tab="shopping" label="장보기" />
           <TabButton tab="history" label="지난 기록" />
         </View>
+
+        {/* History tab info */}
+        {activeTab === 'history' && (
+          <View style={styles.historyInfoContainer}>
+            <View style={styles.historyInfo}>
+              <View style={styles.historyInfoTextContainer}>
+                <Text style={styles.historyInfoText}>
+                  완료한 장보기 기록을 확인하세요.
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Tab Content */}
@@ -747,13 +755,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border.light,
   },
-  historyInfo: {
+  historyInfoContainer: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: 6,
+    minHeight: 60,
+    justifyContent: 'center',
+  },
+  historyInfo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  historyInfoIcon: {
+    marginRight: Spacing.sm,
+  },
+  historyInfoTextContainer: {
+    flex: 1,
   },
   historyInfoText: {
     color: Colors.text.secondary,
-    marginBottom: Spacing.xs,
+    fontFamily: 'OpenSans-Regular',
+    fontSize: 13,
+    lineHeight: 16,
   },
   historySubText: {
     color: Colors.text.secondary,

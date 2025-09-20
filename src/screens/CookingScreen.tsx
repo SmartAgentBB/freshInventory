@@ -1319,6 +1319,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
   },
   bookmarkButton: {
+    borderColor: Colors.primary.main,
     flex: 1,
     marginLeft: Spacing.xs,
   },

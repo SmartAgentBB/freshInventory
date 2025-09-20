@@ -138,7 +138,8 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
             onPress={handleToggleShopping}
             style={[
               styles.shoppingButton,
-              !isAddedToShopping && styles.shoppingButtonInactive
+              !isAddedToShopping && styles.shoppingButtonInactive,
+              isAddedToShopping && styles.shoppingButtonActive
             ]}
           />
           {/* Add/Check Badge */}
@@ -291,6 +292,10 @@ const styles = StyleSheet.create({
   },
   shoppingButtonInactive: {
     borderColor: Colors.text.secondary,  // Gray border when not selected
+  },
+  shoppingButtonActive: {
+    backgroundColor: '#EAF5F2',  // Light mint background when selected
+    borderColor: Colors.primary.main,
   },
   addBadge: {
     position: 'absolute',

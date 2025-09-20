@@ -83,3 +83,5 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+.mcp.json

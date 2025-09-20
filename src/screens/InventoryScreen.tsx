@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, Platform, RefreshControl } from 'react-native';
 import { Text, ActivityIndicator, FAB, Chip, IconButton, Surface, TextInput } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Colors } from '../constants/colors';
@@ -423,13 +424,17 @@ export const InventoryScreen: React.FC = () => {
 
         {/* History tab info */}
         {activeTab === 'history' && (
-          <View style={styles.historyInfo}>
-            <Text variant="bodySmall" style={styles.historyInfoText}>
-              최근에 소비한 재료를 확인하세요.
-            </Text>
-            <Text variant="bodySmall" style={styles.historySubText}>
-              재구매가 필요한 재료를 장보기 목록에 쉽게 추가하세요.
-            </Text>
+          <View style={styles.historyInfoContainer}>
+            <View style={styles.historyInfo}>
+              <View style={styles.historyInfoTextContainer}>
+                <Text style={styles.historyInfoText}>
+                  최근에 소비한 재료를 확인하세요.
+                </Text>
+                <Text style={styles.historySubText}>
+                  재구매가 필요한 재료를 장보기 목록에 쉽게 추가하세요.
+                </Text>
+              </View>
+            </View>
           </View>
         )}
       </View>
@@ -754,17 +759,35 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     fontSize: 12,
   },
-  historyInfo: {
+  historyInfoContainer: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: 6,
+    minHeight: 60,
+    justifyContent: 'center',
+  },
+  historyInfo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  historyInfoIcon: {
+    marginRight: Spacing.sm,
+    marginTop: 2,
+  },
+  historyInfoTextContainer: {
+    flex: 1,
   },
   historyInfoText: {
     color: Colors.text.secondary,
-    marginBottom: Spacing.xs,
+    fontFamily: 'OpenSans-Regular',
+    marginBottom: 2,
+    fontSize: 13,
+    lineHeight: 16,
   },
   historySubText: {
     color: Colors.text.secondary,
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: 'OpenSans-Regular',
   },
   scrollView: {
     flex: 1,
