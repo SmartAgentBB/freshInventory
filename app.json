@@ -25,7 +25,15 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#26A69A"
-      }
+      },
+      "package": "com.shinysun0.naengpago",
+      "googleServicesFile": "./google-services.json"
+    },
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#26A69A",
+      "androidMode": "default",
+      "androidCollapsedTitle": "냉파고 알림"
     },
     "web": {
       "favicon": "./assets/favicon.png"

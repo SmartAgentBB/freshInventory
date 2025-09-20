@@ -7,6 +7,7 @@ import { getTranslation } from '../constants/translations';
 import { InventoryStackNavigator } from './InventoryStackNavigator';
 import { CookingStackNavigator } from './CookingStackNavigator';
 import { ShoppingScreen } from '../screens/ShoppingScreen';
+import { ProfileStackNavigator } from './ProfileStackNavigator';
 import { useShoppingCount } from '../contexts/ShoppingContext';
 
 const Tab = createBottomTabNavigator();
@@ -111,6 +112,20 @@ export const BottomTabNavigation = () => {
                 </View>
               )}
             </View>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileStackNavigator}
+        options={{
+          tabBarLabel: 'MY',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="account-outline"
+              size={size || 24}
+              color={color}
+            />
           ),
         }}
       />

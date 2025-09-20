@@ -1036,13 +1036,7 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,  // Reduced padding from lg to sm
     backgroundColor: Colors.background.paper,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border.light,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    overflow: 'hidden',
   },
   infoText: {
     color: Colors.text.secondary,

@@ -391,7 +391,7 @@ export const ItemDetailScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Thumbnail Image */}
-        <Surface style={styles.imageCard} elevation={1}>
+        <Surface style={styles.imageCard}>
           {item.thumbnail ? (
             <Image
               source={{ uri: item.thumbnail }}
@@ -408,7 +408,7 @@ export const ItemDetailScreen: React.FC = () => {
         </Surface>
 
         {/* Info Table Card */}
-        <Surface style={styles.infoCard} elevation={1}>
+        <Surface style={styles.infoCard}>
           <View style={styles.tableContainer}>
             {/* Table Header */}
             <View style={styles.tableHeader}>
@@ -484,7 +484,7 @@ export const ItemDetailScreen: React.FC = () => {
         </Surface>
 
         {/* Remains Card */}
-        <Surface style={styles.remainsCard} elevation={1}>
+        <Surface style={styles.remainsCard}>
           <View style={styles.cardHeader}>
             <Text variant="labelMedium" style={styles.headerText}>
               남은 양
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     backgroundColor: Colors.background.paper,
-    borderRadius: 16,
+    borderRadius: 12,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
     padding: 0,
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 12,
+    shadowRadius: 8,
     elevation: 2,
   },
   tableContainer: {
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
   },
   remainsCard: {
     backgroundColor: Colors.background.paper,
-    borderRadius: 16,
+    borderRadius: 12,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
     paddingHorizontal: Spacing.lg,
@@ -768,7 +768,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 12,
+    shadowRadius: 8,
     elevation: 2,
   },
   cardHeader: {
@@ -788,7 +788,9 @@ const styles = StyleSheet.create({
     minWidth: 80,
     height: 36,
     borderColor: Colors.border.light,
-    borderRadius: 20,  // Pill shape
+    borderRadius: 18,  // Pill shape
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   updateButtonActive: {
     borderColor: Colors.primary.main,
@@ -797,11 +799,15 @@ const styles = StyleSheet.create({
   updateButtonContent: {
     height: 36,
     paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   updateButtonLabel: {
     color: Colors.text.secondary,
     fontFamily: 'OpenSans-SemiBold',
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 16,
+    textAlignVertical: 'center',
   },
   updateButtonLabelActive: {
     color: '#FFFFFF',
@@ -839,7 +845,7 @@ const styles = StyleSheet.create({
   imageCard: {
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
-    borderRadius: 16,
+    borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: Colors.background.paper,
     borderWidth: 1,
@@ -847,7 +853,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 12,
+    shadowRadius: 8,
     elevation: 2,
   },
   thumbnail: {

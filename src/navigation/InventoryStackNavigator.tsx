@@ -5,7 +5,7 @@ import { ItemDetailScreen } from '../screens/ItemDetailScreen';
 import { FoodItem } from '../models/FoodItem';
 
 export type InventoryStackParamList = {
-  InventoryList: undefined;
+  InventoryList: { initialSortBy?: 'expiry' } | undefined;
   ItemDetail: { item: FoodItem };
 };
 

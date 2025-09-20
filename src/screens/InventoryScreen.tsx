@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, Platform, RefreshControl } from 'react-native';
 import { Text, ActivityIndicator, FAB, Chip, IconButton, Surface, TextInput } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Colors } from '../constants/colors';
 import { FoodItem } from '../models/FoodItem';
@@ -21,11 +21,13 @@ import { InventoryStackParamList } from '../navigation/InventoryStackNavigator';
 type TabType = 'fresh' | 'frozen' | 'history';
 type SortType = 'newest' | 'oldest' | 'urgent';
 type NavigationProp = StackNavigationProp<InventoryStackParamList, 'InventoryList'>;
+type RouteProps = RouteProp<InventoryStackParamList, 'InventoryList'>;
 
 export const InventoryScreen: React.FC = () => {
   const { user } = useAuth();
   const { refreshCount } = useShoppingCount();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
   const [activeTab, setActiveTab] = useState<TabType>('fresh');
   const [freshItems, setFreshItems] = useState<FoodItem[]>([]);
   const [frozenItems, setFrozenItems] = useState<FoodItem[]>([]);
@@ -40,6 +42,14 @@ export const InventoryScreen: React.FC = () => {
   const [frozenSortType, setFrozenSortType] = useState<SortType>('newest');
   const [shoppingListItems, setShoppingListItems] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+
+  // 알림에서 네비게이션된 경우 임박순 정렬 설정
+  useEffect(() => {
+    if (route.params?.initialSortBy === 'expiry') {
+      setFreshSortType('urgent');
+      setFrozenSortType('urgent');
+    }
+  }, [route.params]);
   
   const loadData = async (isRefreshing = false) => {
     console.log('LoadData called with isRefreshing:', isRefreshing);

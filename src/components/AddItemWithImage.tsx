@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Image,
   TouchableOpacity,
+  Text as RNText,
 } from 'react-native';
 import {
   Surface,
@@ -474,19 +475,33 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
                 </Text>
                 <Menu
                   visible={unitMenuVisible[index] || false}
-                  onDismiss={() => setUnitMenuVisible({ ...unitMenuVisible, [index]: false })}
+                  onDismiss={() => {
+                    const newMenuState = { ...unitMenuVisible };
+                    newMenuState[index] = false;
+                    setUnitMenuVisible(newMenuState);
+                  }}
                   anchor={
-                    <Button
-                      mode="outlined"
-                      onPress={() => setUnitMenuVisible({ ...unitMenuVisible, [index]: true })}
-                      style={styles.unitButton}
-                      compact
-                      icon="chevron-down"
-                      contentStyle={styles.unitButtonContent}
-                      labelStyle={styles.unitButtonLabel}
+                    <TouchableOpacity
+                      onPress={() => {
+                        const newMenuState = { ...unitMenuVisible };
+                        newMenuState[index] = !newMenuState[index];
+                        setUnitMenuVisible(newMenuState);
+                      }}
+                      style={styles.unitTouchable}
+                      activeOpacity={0.7}
                     >
-                      {item.unit || '개'}
-                    </Button>
+                      <View style={styles.unitButtonCustom}>
+                        <RNText style={styles.unitButtonText}>
+                          {item.unit || '개'}
+                        </RNText>
+                        <Icon
+                          name="chevron-down"
+                          size={16}
+                          color={Colors.primary.main}
+                          style={{ marginLeft: 4 }}
+                        />
+                      </View>
+                    </TouchableOpacity>
                   }
                 >
                   {UNITS.map((unit) => (
@@ -494,9 +509,17 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
                       key={unit}
                       onPress={() => {
                         handleUpdateItem(index, 'unit', unit);
-                        setUnitMenuVisible({ ...unitMenuVisible, [index]: false });
+                        const newMenuState = { ...unitMenuVisible };
+                        newMenuState[index] = false;
+                        setUnitMenuVisible(newMenuState);
                       }}
                       title={unit}
+                      style={{ height: 40 }}  // Adjusted height for smaller text
+                      titleStyle={{
+                        fontSize: 11,  // Reduced to ~80% of original 14px
+                        lineHeight: 16,  // Adjusted line height
+                        fontFamily: 'OpenSans-Regular'
+                      }}
                     />
                   ))}
                 </Menu>
@@ -765,20 +788,47 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Regular',
     minWidth: 40,
   },
+  unitTouchable: {
+    minWidth: 80,
+  },
+  unitButtonCustom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    borderRadius: 4,
+    backgroundColor: Colors.background.paper,
+    minHeight: 36,
+  },
+  unitButtonText: {
+    fontFamily: 'OpenSans-Medium',
+    color: Colors.primary.main,
+    fontSize: 13,  // Slightly larger to prevent cutoff
+    lineHeight: 18,  // Proper line height
+    includeFontPadding: false,  // Android specific - removes extra padding
+    textAlignVertical: 'center',
+  },
+  // Keep old styles for backwards compatibility
   unitButton: {
     minWidth: 80,
-    height: 36,
+    height: 38,
     borderColor: Colors.border.light,
     backgroundColor: Colors.background.paper,
   },
   unitButtonContent: {
     flexDirection: 'row-reverse',
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    height: 36,
   },
   unitButtonLabel: {
     fontFamily: 'OpenSans-Medium',
     color: Colors.primary.main,
-    fontSize: 14,
+    fontSize: 11,
+    lineHeight: 16,
   },
   quantityButton: {
     margin: 0,
