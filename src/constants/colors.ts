@@ -1,80 +1,79 @@
-// White Base with Soft Mint Accent Theme
+// Simplified Color Palette - 13 colors total
 export const Colors = {
-  // Primary Mint Colors
+  // Primary Colors (3)
   primary: {
-    main: '#26A69A',        // Main mint green - buttons, key actions
-    light: '#4DB6AC',       // Light mint - hover states
-    dark: '#00897B',        // Dark mint - pressed states
-    container: '#E8F5F2',   // Light mint for selected/active items
+    main: '#26A69A',        // Main mint - buttons, CTA, key actions
+    dark: '#00897B',        // Dark mint - pressed states, headers
+    light: '#E8F5F2',       // Light mint - selected/hover backgrounds, light borders
+    container: '#E8F5F2',   // Same as light for simplicity
     onContainer: '#1a1a1a', // Text on primary container
   },
-  
-  // Secondary colors (subtle mint tints)
-  secondary: {
-    main: '#5f6368',        // Secondary gray
-    light: '#9AA0A6',       // Light gray
-    dark: '#3C4043',        // Dark gray
-    container: '#F0F9F8',   // Very light mint container
-    onContainer: '#1a1a1a', // Text on secondary container
-  },
-  
-  // Tertiary colors (accent)
-  tertiary: {
-    main: '#26A69A',        // Mint accent
-    light: '#E0F2F1',       // Light mint accent
-    dark: '#00897B',        // Dark mint
-    container: '#F8FDFC',   // Almost white with mint hint
-    onContainer: '#1a1a1a', // Text on tertiary container
-  },
-  
-  // Status colors (semantic)
-  status: {
-    success: '#4CAF50',     // Green for success
-    warning: '#FFA726',     // Orange for warning
-    error: '#EF5350',       // Red for error
-    info: '#26A69A',        // Mint for info
-  },
-  
-  // Text hierarchy (black base)
+
+  // Text Colors (3)
   text: {
-    primary: '#1a1a1a',     // Almost black - main text
-    secondary: '#5f6368',   // Medium gray - secondary text
-    disabled: '#9AA0A6',    // Light gray - disabled text
-    hint: '#9AA0A6',        // Hint text
+    primary: '#1a1a1a',     // Main text - titles, body
+    secondary: '#5f6368',   // Secondary text - descriptions, labels
+    disabled: '#9AA0A6',    // Disabled text - inactive, placeholders
+    hint: '#9AA0A6',        // Same as disabled for simplicity
     onPrimary: '#FFFFFF',   // White text on primary color
-    onSecondary: '#1a1a1a', // Dark text on light backgrounds
+    onSecondary: '#1a1a1a', // Same as primary for simplicity
   },
-  
-  // Background colors (white with mint tints)
+
+  // Background & Surface (3)
   background: {
-    default: '#F8FDFC',     // Almost white with subtle mint hint
-    paper: '#FFFFFF',       // Pure white for cards
-    surface: '#F8FDFC',     // Soft mint-tinted surface
-    container: '#F0F9F8',   // Light mint for containers
-    level1: '#FFFFFF',      // Pure white
-    level2: '#F8FDFC',      // Subtle mint tint
-    level3: '#F0F9F8',      // Light mint
+    default: '#F8FDFC',     // App background
+    paper: '#FFFFFF',       // Cards, modals, surfaces
+    surface: '#FFFFFF',     // Same as paper for simplicity
+    container: '#F8FDFC',   // Same as default for simplicity
+    level1: '#FFFFFF',      // Same as paper
+    level2: '#F8FDFC',      // Same as default
+    level3: '#F8FDFC',      // Same as default
   },
-  
-  // Border and divider colors (mint tinted)
+
+  // Border (1)
   border: {
-    light: '#E0F2F1',       // Light mint border
-    medium: '#E8F5F2',      // Very light mint border
-    dark: '#D0E8E6',        // Slightly darker mint border
-    outline: '#E0F2F1',     // Mint outline color
-    outlineVariant: '#F0F9F8', // Lighter mint outline
+    light: '#E8F5F2',       // Same as primary.light
+    medium: '#D0E8E6',      // Main border color
+    dark: '#D0E8E6',        // Same as medium for simplicity
+    outline: '#D0E8E6',     // Same as medium
+    outlineVariant: '#E8F5F2', // Same as light
   },
-  
-  // Simplified divider color
-  divider: '#E0F2F1',       // Subtle mint divider line
-  
-  // Material elevation colors with mint tint
+
+  // Divider - using border color
+  divider: '#D0E8E6',       // Border/divider lines
+
+  // Status Colors (4)
+  status: {
+    success: '#4CAF50',     // Success green
+    warning: '#FFA726',     // Warning orange
+    error: '#EF5350',       // Error red
+    info: '#26A69A',        // Info - same as primary
+  },
+
+  // Simplified elevation using existing colors
   elevation: {
     level0: 'transparent',
-    level1: '#FFFFFF',      // Pure white
-    level2: '#F8FDFC',      // Hint of mint
-    level3: '#F0F9F8',      // Light mint
-    level4: '#E8F5F2',      // Soft mint
-    level5: '#E0F2F1',      // Mint tint
+    level1: '#FFFFFF',      // Surface color
+    level2: '#F8FDFC',      // Background color
+    level3: '#F8FDFC',      // Background color
+    level4: '#E8F5F2',      // Primary light
+    level5: '#E8F5F2',      // Primary light
+  },
+
+  // Legacy mappings for compatibility (will be removed later)
+  secondary: {
+    main: '#5f6368',        // Maps to text.secondary
+    light: '#9AA0A6',       // Maps to text.disabled
+    dark: '#1a1a1a',        // Maps to text.primary
+    container: '#F8FDFC',   // Maps to background.default
+    onContainer: '#1a1a1a', // Maps to text.primary
+  },
+
+  tertiary: {
+    main: '#26A69A',        // Maps to primary.main
+    light: '#E8F5F2',       // Maps to primary.light
+    dark: '#00897B',        // Maps to primary.dark
+    container: '#F8FDFC',   // Maps to background.default
+    onContainer: '#1a1a1a', // Maps to text.primary
   },
 } as const;

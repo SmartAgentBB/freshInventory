@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Regular',
   },
   availableChip: {
-    backgroundColor: Colors.primary.container,
+    backgroundColor: Colors.primary.light,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,

@@ -1,7 +1,7 @@
 {
   "name": "ez2cook",
   "version": "1.0.0",
-  "description": "Fresh Inventory Management App",
+  "description": "냉파고 - 냉장고 파먹기 앱",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",

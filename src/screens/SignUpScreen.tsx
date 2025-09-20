@@ -180,7 +180,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
               marginBottom: 32
             }}
           >
-            Fresh Inventory 회원가입
+            냉파고 회원가입
           </Text>
 
           {/* Email Input */}
@@ -204,10 +204,10 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
               autoComplete="email"
               style={{
                 borderWidth: 1,
-                borderColor: emailError ? Colors.status.error : Colors.border.outline,
+                borderColor: emailError ? Colors.status.error : Colors.primary.main,
                 borderRadius: 8,
                 padding: 12,
-                backgroundColor: Colors.background.surface,
+                backgroundColor: Colors.background.paper,
                 color: Colors.text.primary,
                 fontFamily: 'OpenSans-Regular'
               }}
@@ -246,10 +246,10 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
               autoComplete="password-new"
               style={{
                 borderWidth: 1,
-                borderColor: passwordError ? Colors.status.error : Colors.border.outline,
+                borderColor: passwordError ? Colors.status.error : Colors.primary.main,
                 borderRadius: 8,
                 padding: 12,
-                backgroundColor: Colors.background.surface,
+                backgroundColor: Colors.background.paper,
                 color: Colors.text.primary,
                 fontFamily: 'OpenSans-Regular'
               }}
@@ -302,10 +302,10 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
               autoComplete="password-new"
               style={{
                 borderWidth: 1,
-                borderColor: confirmPasswordError ? Colors.status.error : Colors.border.outline,
+                borderColor: confirmPasswordError ? Colors.status.error : Colors.primary.main,
                 borderRadius: 8,
                 padding: 12,
-                backgroundColor: Colors.background.surface,
+                backgroundColor: Colors.background.paper,
                 color: Colors.text.primary,
                 fontFamily: 'OpenSans-Regular'
               }}
@@ -329,7 +329,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
             <Text 
               variant="bodyMedium"
               style={{
-                color: Colors.error,
+                color: Colors.status.error,
                 fontFamily: 'OpenSans-Regular',
                 textAlign: 'center',
                 marginBottom: 16

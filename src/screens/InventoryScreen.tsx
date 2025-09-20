@@ -636,7 +636,7 @@ export const InventoryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.surface,
+    backgroundColor: Colors.background.default,
   },
   headerSection: {
     backgroundColor: Colors.background.paper,
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: Colors.background.surface,
+    backgroundColor: Colors.background.default,
     zIndex: 1000,
   },
   headerSurface: {

@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     opacity: 0.7, // Slightly faded for consumed items
   },
   placeholderThumbnail: {
-    backgroundColor: Colors.background.level3,
+    backgroundColor: Colors.background.default,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   placeholderThumbnail: {
-    backgroundColor: Colors.background.level3,
+    backgroundColor: Colors.background.default,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

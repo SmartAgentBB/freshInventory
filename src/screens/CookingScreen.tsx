@@ -188,7 +188,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
       return '#4A90E2'; // 파란색 - 냉동 (재고목록과 동일)
     }
 
-    if (!item.storageDays) return Colors.background.level2;
+    if (!item.storageDays) return Colors.background.default;
 
     // 재고목록의 FoodItemCard와 완전히 동일한 계산 방식
     const today = new Date();
@@ -394,23 +394,23 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: '#F44336' }]} />
-              <Text variant="bodySmall">만료</Text>
+              <Text variant="bodySmall" style={{ fontSize: 11 }}>만료</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: '#FF9800' }]} />
-              <Text variant="bodySmall">임박</Text>
+              <Text variant="bodySmall" style={{ fontSize: 11 }}>임박</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: '#FFC107' }]} />
-              <Text variant="bodySmall">주의</Text>
+              <Text variant="bodySmall" style={{ fontSize: 11 }}>주의</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: '#4CAF50' }]} />
-              <Text variant="bodySmall">신선</Text>
+              <Text variant="bodySmall" style={{ fontSize: 11 }}>신선</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: '#2196F3' }]} />
-              <Text variant="bodySmall">냉동</Text>
+              <Text variant="bodySmall" style={{ fontSize: 11 }}>냉동</Text>
             </View>
           </View>
         </Surface>
@@ -1030,8 +1030,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.default,
   },
   infoCard: {
-    margin: Spacing.md,
-    padding: Spacing.lg,
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+    padding: Spacing.sm,  // Reduced padding from lg to sm
     backgroundColor: Colors.background.paper,
     borderRadius: 12,
     borderWidth: 1,
@@ -1045,8 +1047,9 @@ const styles = StyleSheet.create({
   infoText: {
     color: Colors.text.secondary,
     fontFamily: 'OpenSans-Regular',
-    lineHeight: 22,
-    marginBottom: Spacing.sm,
+    fontSize: 12,  // Reduced font size
+    lineHeight: 16,  // Reduced line height
+    marginBottom: Spacing.xs,  // Reduced margin
   },
   sectionTitle: {
     marginHorizontal: Spacing.md,
@@ -1218,7 +1221,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   timeBadge: {
-    backgroundColor: Colors.background.level2,
+    backgroundColor: Colors.background.default,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -1337,17 +1340,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    marginTop: Spacing.xs,
+    marginTop: 4,  // Reduced margin
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,  // Reduced gap
   },
   legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
+    width: 12,  // Reduced size
+    height: 12,  // Reduced size
+    borderRadius: 3,  // Reduced radius
   },
   // Simple bookmark card styles
   simpleRecipeCard: {

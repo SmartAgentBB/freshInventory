@@ -104,7 +104,7 @@ export const AuthFlow: React.FC = () => {
               marginBottom: 24
             }}
           >
-            Fresh Inventory
+            냉파고
           </Text>
           
           <ActivityIndicator 

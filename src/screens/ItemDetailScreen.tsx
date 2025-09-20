@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: Colors.background.level2,
+    backgroundColor: Colors.background.default,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.light,
   },
@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
   },
   placeholderThumbnail: {
-    backgroundColor: Colors.background.level3,
+    backgroundColor: Colors.background.default,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
@@ -884,7 +884,7 @@ const styles = StyleSheet.create({
   progressBarContainer: {
     width: '100%',
     height: 8,
-    backgroundColor: Colors.background.level3,
+    backgroundColor: Colors.background.default,
     borderRadius: 4,
     overflow: 'hidden',
   },

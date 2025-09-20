@@ -7,48 +7,48 @@ export const mintLightTheme = {
     // Primary Mint Colors
     primary: '#26A69A',
     onPrimary: '#FFFFFF',
-    primaryContainer: '#B2DFDB',
-    onPrimaryContainer: '#004D40',
-    
-    // Secondary Colors
-    secondary: '#4DB6AC',
-    onSecondary: '#FFFFFF', 
-    secondaryContainer: '#E0F2F1',
-    onSecondaryContainer: '#00695C',
-    
-    // Tertiary Colors
-    tertiary: '#00695C',
+    primaryContainer: '#E8F5F2',
+    onPrimaryContainer: '#1a1a1a',
+
+    // Secondary Colors (using text colors)
+    secondary: '#5f6368',
+    onSecondary: '#FFFFFF',
+    secondaryContainer: '#E8F5F2',
+    onSecondaryContainer: '#1a1a1a',
+
+    // Tertiary Colors (same as primary)
+    tertiary: '#26A69A',
     onTertiary: '#FFFFFF',
-    tertiaryContainer: '#B2DFDB',
-    onTertiaryContainer: '#004D40',
-    
+    tertiaryContainer: '#E8F5F2',
+    onTertiaryContainer: '#1a1a1a',
+
     // Background Colors
-    background: '#E0F2F1',
-    onBackground: '#004D40',
-    surface: '#FFFBFE',
-    onSurface: '#00695C',
-    surfaceVariant: '#B2DFDB',
-    onSurfaceVariant: '#004D40',
+    background: '#F8FDFC',
+    onBackground: '#1a1a1a',
+    surface: '#FFFFFF',
+    onSurface: '#1a1a1a',
+    surfaceVariant: '#F8FDFC',
+    onSurfaceVariant: '#5f6368',
     
     // Text Colors for Korean content
-    onSurfaceDisabled: '#80CBC4',
-    outline: '#4DB6AC',
-    outlineVariant: '#B2DFDB',
+    onSurfaceDisabled: '#9AA0A6',
+    outline: '#D0E8E6',
+    outlineVariant: '#E8F5F2',
     
     // Success/Error states
-    error: '#FF5252',
+    error: '#EF5350',
     onError: '#FFFFFF',
     errorContainer: '#FFEBEE',
-    onErrorContainer: '#C62828',
+    onErrorContainer: '#1a1a1a',
     
     // Surface elevations
     elevation: {
       level0: 'transparent',
-      level1: '#F1F8F6',
-      level2: '#E8F5F0',
-      level3: '#E0F2F1',
-      level4: '#D4EDDA',
-      level5: '#C8E6C9',
+      level1: '#FFFFFF',
+      level2: '#F8FDFC',
+      level3: '#F8FDFC',
+      level4: '#E8F5F2',
+      level5: '#E8F5F2',
     },
   },
   fonts: {
@@ -169,27 +169,27 @@ export const mintDarkTheme = {
   colors: {
     ...MD3DarkTheme.colors,
     // Primary Mint Colors (adjusted for dark mode)
-    primary: '#4DB6AC',
-    onPrimary: '#00251A',
-    primaryContainer: '#00695C',
-    onPrimaryContainer: '#B2DFDB',
-    
-    // Secondary Colors  
-    secondary: '#80CBC4',
-    onSecondary: '#00251A',
-    secondaryContainer: '#004D40',
-    onSecondaryContainer: '#E0F2F1',
-    
+    primary: '#26A69A',
+    onPrimary: '#FFFFFF',
+    primaryContainer: '#00897B',
+    onPrimaryContainer: '#E8F5F2',
+
+    // Secondary Colors
+    secondary: '#5f6368',
+    onSecondary: '#FFFFFF',
+    secondaryContainer: '#00897B',
+    onSecondaryContainer: '#E8F5F2',
+
     // Background Colors
     background: '#0F1419',
-    onBackground: '#E0F2F1',
+    onBackground: '#E8F5F2',
     surface: '#191C20',
-    onSurface: '#C8E6C9',
-    
+    onSurface: '#E8F5F2',
+
     // Text Colors
-    onSurfaceDisabled: '#4DB6AC',
-    outline: '#80CBC4',
-    outlineVariant: '#00695C',
+    onSurfaceDisabled: '#9AA0A6',
+    outline: '#D0E8E6',
+    outlineVariant: '#00897B',
   },
   fonts: mintLightTheme.fonts,
 };

@@ -92,12 +92,22 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
     setDetectedItems([]);
     
     try {
-      // Compress image with higher quality for better detail
-      const compressed = await compressImage(imageUri, {
-        quality: 0.85,  // 높은 품질 유지
-        maxWidth: 1920,  // 더 큰 원본 이미지 유지
+      // Compress image - dual quality approach
+      // 1. High quality version for cropping thumbnails
+      const highQualityForCrop = await compressImage(imageUri, {
+        quality: 0.8,   // Good quality for cropping
+        maxWidth: 1920, // Keep high resolution for cropping
         format: 'jpeg'
       });
+
+      // 2. Lower quality version for AI analysis (cost reduction)
+      const aiAnalysisVersion = await compressImage(imageUri, {
+        quality: 0.7,   // Lower quality for AI
+        maxWidth: 640,  // Much smaller for API cost reduction
+        format: 'jpeg'
+      });
+
+      const compressed = highQualityForCrop; // Use high quality for display
       
       // Store the compressed URI temporarily for display and cropping
       // We'll only upload the cropped thumbnails, not the full image
@@ -106,8 +116,8 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
       // Store the compressed URI for potential fallback use
       const fullImageUri = compressed.uri;
 
-      // Analyze with AI - AI will receive the same image that we'll crop later
-      const analysisResult = await aiService.analyzeImage(compressed.uri);
+      // Analyze with AI - Use low resolution version for cost reduction
+      const analysisResult = await aiService.analyzeImage(aiAnalysisVersion.uri);
       
       if (analysisResult.success && analysisResult.items.length > 0) {
         // Generate thumbnails for each detected item
@@ -121,12 +131,14 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
               
               // Validate boundingBox format - should be array with 4 values
               if (Array.isArray(item.boundingBox) && item.boundingBox.length === 4) {
-                // Generate higher quality thumbnail for both list and detail view
+                // Note: boundingBox is already in 0-1000 normalized coordinates
+                // cropImageToBoundingBox will handle the conversion to pixels
+                // Use high quality image for cropping to get better thumbnails
                 thumbnail = await cropImageToBoundingBox(
-                  compressed.uri,
-                  item.boundingBox,
-                  512, // 512x512 for better quality in detail view
-                  { width: compressed.width, height: compressed.height } // Pass dimensions
+                  compressed.uri,  // Use high quality image for cropping
+                  item.boundingBox, // Use original boundingBox (0-1000 range)
+                  480, // 480x480 - better quality for detail view
+                  { width: compressed.width, height: compressed.height } // Pass high quality dimensions
                 );
                 console.log('Generated thumbnail URI:', thumbnail);
               } else {
@@ -433,7 +445,7 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
                     icon="minus"
                     size={18}
                     mode="contained"
-                    containerColor={Colors.background.container}
+                    containerColor={Colors.background.default}
                     iconColor={Colors.text.primary}
                     onPress={() => handleQuantityChange(index, -1)}
                     style={styles.quantityButton}
@@ -446,7 +458,7 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
                     icon="plus"
                     size={18}
                     mode="contained"
-                    containerColor={Colors.background.container}
+                    containerColor={Colors.background.default}
                     iconColor={Colors.text.primary}
                     onPress={() => handleQuantityChange(index, 1)}
                     style={styles.quantityButton}
@@ -789,7 +801,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   placeholderThumbnail: {
-    backgroundColor: Colors.background.container,
+    backgroundColor: Colors.background.default,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -828,7 +840,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.divider,
-    backgroundColor: Colors.background.surface, // 이미지 로드 전 배경
+    backgroundColor: Colors.background.default, // 이미지 로드 전 배경
   },
   checkboxWrapper: {
     width: 24,

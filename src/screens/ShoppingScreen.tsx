@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Bold',
   },
   historyDateHeader: {
-    backgroundColor: Colors.background.level2,
+    backgroundColor: Colors.background.default,
     marginHorizontal: -Spacing.md,
     marginTop: -Spacing.md,
     marginBottom: Spacing.md,
@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary.light + '20',
   },
   activityCell: {
-    backgroundColor: Colors.background.level2,
+    backgroundColor: Colors.background.default,
   },
   dayText: {
     color: Colors.text.primary,

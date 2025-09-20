@@ -150,10 +150,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               autoComplete="email"
               style={{
                 borderWidth: 1,
-                borderColor: emailError ? Colors.error : Colors.outline,
+                borderColor: emailError ? Colors.status.error : Colors.primary.main,
                 borderRadius: 8,
                 padding: 12,
-                backgroundColor: Colors.background.surface,
+                backgroundColor: Colors.background.paper,
                 color: Colors.text.primary,
                 fontFamily: 'OpenSans-Regular'
               }}
@@ -162,7 +162,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <Text 
                 variant="bodySmall"
                 style={{
-                  color: Colors.error,
+                  color: Colors.status.error,
                   fontFamily: 'OpenSans-Regular',
                   marginTop: 4
                 }}
@@ -192,10 +192,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               autoComplete="password"
               style={{
                 borderWidth: 1,
-                borderColor: passwordError ? Colors.error : Colors.outline,
+                borderColor: passwordError ? Colors.status.error : Colors.primary.main,
                 borderRadius: 8,
                 padding: 12,
-                backgroundColor: Colors.background.surface,
+                backgroundColor: Colors.background.paper,
                 color: Colors.text.primary,
                 fontFamily: 'OpenSans-Regular'
               }}
@@ -204,7 +204,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <Text 
                 variant="bodySmall"
                 style={{
-                  color: Colors.error,
+                  color: Colors.status.error,
                   fontFamily: 'OpenSans-Regular',
                   marginTop: 4
                 }}

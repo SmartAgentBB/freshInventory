@@ -108,7 +108,7 @@ export interface KoreanTranslations {
 }
 
 export const koreanTranslations = {
-  appName: 'Fresh Inventory',
+  appName: '냉파고',
   loading: '로딩 중...',
   save: '저장',
   cancel: '취소',
