@@ -15,6 +15,9 @@ export interface StorageInfo {
 
 export class StorageInfoService {
   private genAI: GoogleGenerativeAI | null = null;
+  private pendingRequests: Map<string, Promise<StorageInfo | null>> = new Map();
+  private cache: Map<string, { data: StorageInfo; timestamp: number }> = new Map();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 
   constructor(
     private supabase: SupabaseClient,
@@ -29,6 +32,41 @@ export class StorageInfoService {
    * Get storage info for a specific food item
    */
   async getStorageInfo(itemName: string): Promise<StorageInfo | null> {
+    // Check cache first
+    const cached = this.cache.get(itemName);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      console.log(`Returning cached storage info for ${itemName}`);
+      return cached.data;
+    }
+
+    // Check if there's already a pending request for this item
+    const pending = this.pendingRequests.get(itemName);
+    if (pending) {
+      console.log(`Waiting for pending request for ${itemName}`);
+      return await pending;
+    }
+
+    // Create new request
+    const request = this.fetchStorageInfo(itemName);
+    this.pendingRequests.set(itemName, request);
+
+    try {
+      const result = await request;
+      // Cache the result
+      if (result) {
+        this.cache.set(itemName, { data: result, timestamp: Date.now() });
+      }
+      return result;
+    } finally {
+      // Clean up pending request
+      this.pendingRequests.delete(itemName);
+    }
+  }
+
+  /**
+   * Internal method to fetch storage info
+   */
+  private async fetchStorageInfo(itemName: string): Promise<StorageInfo | null> {
     try {
       const { data, error } = await this.supabase
         .from('storage_info')
@@ -64,6 +102,18 @@ export class StorageInfoService {
     }
 
     try {
+      // First, check if storage info was created while we were generating (race condition prevention)
+      const { data: existingData, error: checkError } = await this.supabase
+        .from('storage_info')
+        .select('*')
+        .eq('name', itemName)
+        .single();
+
+      if (!checkError && existingData) {
+        console.log(`Storage info for ${itemName} already exists (created by another request)`);
+        return existingData as StorageInfo;
+      }
+
       const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const prompt = `다음 식재료에 대한 보관 정보를 제공해주세요: "${itemName}"
@@ -81,15 +131,15 @@ JSON만 반환하고 다른 텍스트는 포함하지 마세요.`;
       const result = await model.generateContent(prompt);
       const response = result.response;
       const text = response.text();
-      
+
       // Parse JSON response
       let jsonString = text.trim();
       if (jsonString.startsWith('```json') && jsonString.endsWith('```')) {
         jsonString = jsonString.slice(7, -3).trim();
       }
-      
+
       const storageData = JSON.parse(jsonString);
-      
+
       // Validate response
       if (!storageData.storage_days || typeof storageData.storage_days !== 'number') {
         console.log('Invalid AI response, using default');
@@ -106,25 +156,41 @@ JSON만 반환하고 다른 텍스트는 포함하지 마세요.`;
         '조미료': 'condiments',
         '기타': 'other'
       };
-      
+
       if (storageData.category && categoryMap[storageData.category]) {
         storageData.category = categoryMap[storageData.category];
       }
 
-      // Insert into database
+      // Use upsert to handle duplicate key errors gracefully
       const { data: insertedData, error } = await this.supabase
         .from('storage_info')
-        .insert({
+        .upsert({
           name: itemName,
           category: storageData.category || 'other',
           storage_days: storageData.storage_days,
           storage_desc: storageData.storage_desc,
           storage_method: storageData.storage_method
+        }, {
+          onConflict: 'name',
+          ignoreDuplicates: false
         })
         .select()
         .single();
 
       if (error) {
+        // If it's a duplicate key error, try to fetch the existing data
+        if (error.code === '23505') {
+          console.log(`Storage info for ${itemName} already exists, fetching existing data`);
+          const { data: existingData } = await this.supabase
+            .from('storage_info')
+            .select('*')
+            .eq('name', itemName)
+            .single();
+
+          if (existingData) {
+            return existingData as StorageInfo;
+          }
+        }
         console.error('Error inserting AI-generated storage info:', error);
         return this.createDefaultStorageInfo(itemName);
       }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
-import { Surface, Text, Button, Chip, ActivityIndicator, FAB, Card, Divider, TextInput, IconButton, Menu } from 'react-native-paper';
+import { Surface, Text, Button, Chip, ActivityIndicator, FAB, Card, Divider, TextInput, IconButton, Menu, Switch } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useIsFocused } from '@react-navigation/native';
 import { Colors } from '../constants/colors';
@@ -45,6 +45,8 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   const [bookmarkedRecipes, setBookmarkedRecipes] = useState<Set<string>>(new Set());
   const [savingRecipe, setSavingRecipe] = useState<string | null>(null);
   const [currentIngredientContext, setCurrentIngredientContext] = useState<string | null>(fromIngredient || null);
+  const [selectedIngredients, setSelectedIngredients] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(true);
   const { user } = useAuth();
   const isFocused = useIsFocused();
 
@@ -174,6 +176,12 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
       // 재고목록과 동일한 임박순 정렬 적용
       const sortedItems = [...items].sort(sortByUrgency);
       setIngredients(sortedItems);
+
+      // 전체 선택이 활성화된 경우 모든 재료를 선택
+      if (selectAll) {
+        const allIds = new Set(sortedItems.map(item => item.id));
+        setSelectedIngredients(allIds);
+      }
     } catch (error) {
       console.error('Failed to load ingredients:', error);
       setIngredients([]);
@@ -296,13 +304,51 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
     return { frozen, refrigerated, normal };
   };
 
+  const handleToggleSelectAll = (value: boolean) => {
+    setSelectAll(value);
+    if (value) {
+      // 전체 선택
+      const allIds = new Set(ingredients.map(item => item.id));
+      setSelectedIngredients(allIds);
+    } else {
+      // 전체 해제
+      setSelectedIngredients(new Set());
+    }
+  };
+
+  const handleToggleIngredient = (itemId: string) => {
+    const newSelected = new Set(selectedIngredients);
+    if (newSelected.has(itemId)) {
+      newSelected.delete(itemId);
+      // 하나라도 선택 해제되면 전체 선택 OFF
+      setSelectAll(false);
+    } else {
+      newSelected.add(itemId);
+      // 모두 선택되었는지 확인
+      if (newSelected.size === ingredients.length) {
+        setSelectAll(true);
+      }
+    }
+    setSelectedIngredients(newSelected);
+  };
+
   const handleRecommend = async () => {
     try {
       setRecommending(true);
-      console.log('Getting recommendations for ingredients:', ingredients.length);
 
-      // Sort ingredients by expiry urgency and prepare for AI service
-      const sortedIngredients = [...ingredients].sort((a, b) => {
+      // 선택된 재료만 필터링
+      const selectedItems = ingredients.filter(item => selectedIngredients.has(item.id));
+
+      if (selectedItems.length === 0) {
+        alert('요리에 사용할 재료를 선택해주세요.');
+        setRecommending(false);
+        return;
+      }
+
+      console.log('Getting recommendations for selected ingredients:', selectedItems.length);
+
+      // Sort selected ingredients by expiry urgency and prepare for AI service
+      const sortedIngredients = [...selectedItems].sort((a, b) => {
         // Prioritize items closer to expiry
         const getDaysRemaining = (item: FoodItem) => {
           if (!item.expiryDate) return 999;
@@ -415,6 +461,20 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
           </View>
         </Surface>
 
+        {/* 전체 선택 토글 */}
+        {ingredients.length > 0 && (
+          <View style={styles.selectAllContainer}>
+            <Text variant="bodyMedium" style={styles.selectAllText}>
+              전체 선택
+            </Text>
+            <Switch
+              value={selectAll}
+              onValueChange={handleToggleSelectAll}
+              color={Colors.primary.main}
+            />
+          </View>
+        )}
+
         {/* 재료 칩 목록 - 카테고리별로 분류 */}
         {ingredients.length > 0 ? (
           <>
@@ -437,20 +497,39 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                         🥬 신선 재료 ({sortedFresh.length}개)
                       </Text>
                       <View style={styles.chipContainer}>
-                        {sortedFresh.map((item) => (
-                          <Chip
-                            key={item.id}
-                            style={[
-                              styles.ingredientChip,
-                              { backgroundColor: getExpiryColor(item) }
-                            ]}
-                            textStyle={styles.chipText}
-                            mode="flat"
-                            compact
-                          >
-                            {item.name}
-                          </Chip>
-                        ))}
+                        {sortedFresh.map((item) => {
+                          const isSelected = selectedIngredients.has(item.id);
+                          const itemColor = getExpiryColor(item);
+                          return (
+                            <TouchableOpacity
+                              key={item.id}
+                              onPress={() => handleToggleIngredient(item.id)}
+                              activeOpacity={0.7}
+                            >
+                              <Chip
+                                style={[
+                                  styles.ingredientChip,
+                                  { backgroundColor: itemColor }
+                                ]}
+                                textStyle={styles.chipText}
+                                mode="flat"
+                                compact
+                              >
+                                <View style={styles.chipContent}>
+                                  {isSelected && (
+                                    <MaterialCommunityIcons
+                                      name="check"
+                                      size={12}
+                                      color="#FFFFFF"
+                                      style={styles.chipCheckIcon}
+                                    />
+                                  )}
+                                  <Text style={styles.chipText}>{item.name}</Text>
+                                </View>
+                              </Chip>
+                            </TouchableOpacity>
+                          );
+                        })}
                       </View>
                     </>
                   )}
@@ -462,20 +541,39 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                         ❄️ 냉동 재료 ({sortedFrozen.length}개)
                       </Text>
                       <View style={styles.chipContainer}>
-                        {sortedFrozen.map((item) => (
-                          <Chip
-                            key={item.id}
-                            style={[
-                              styles.ingredientChip,
-                              { backgroundColor: getExpiryColor(item) }
-                            ]}
-                            textStyle={styles.chipText}
-                            mode="flat"
-                            compact
-                          >
-                            {item.name}
-                          </Chip>
-                        ))}
+                        {sortedFrozen.map((item) => {
+                          const isSelected = selectedIngredients.has(item.id);
+                          const itemColor = getExpiryColor(item);
+                          return (
+                            <TouchableOpacity
+                              key={item.id}
+                              onPress={() => handleToggleIngredient(item.id)}
+                              activeOpacity={0.7}
+                            >
+                              <Chip
+                                style={[
+                                  styles.ingredientChip,
+                                  { backgroundColor: itemColor }
+                                ]}
+                                textStyle={styles.chipText}
+                                mode="flat"
+                                compact
+                              >
+                                <View style={styles.chipContent}>
+                                  {isSelected && (
+                                    <MaterialCommunityIcons
+                                      name="check"
+                                      size={12}
+                                      color="#FFFFFF"
+                                      style={styles.chipCheckIcon}
+                                    />
+                                  )}
+                                  <Text style={styles.chipText}>{item.name}</Text>
+                                </View>
+                              </Chip>
+                            </TouchableOpacity>
+                          );
+                        })}
                       </View>
                     </>
                   )}
@@ -1538,5 +1636,29 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
+  },
+  selectAllContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
+    backgroundColor: Colors.background.paper,
+    borderRadius: 8,
+  },
+  selectAllText: {
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-Medium',
+  },
+  chipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipCheckIcon: {
+    marginRight: 4,
   },
 });
