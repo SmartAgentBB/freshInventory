@@ -47,6 +47,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   const [currentIngredientContext, setCurrentIngredientContext] = useState<string | null>(fromIngredient || null);
   const [selectedIngredients, setSelectedIngredients] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(true);
+  const [cookingStyleInput, setCookingStyleInput] = useState('');
   const { user } = useAuth();
   const isFocused = useIsFocused();
 
@@ -373,8 +374,8 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
         return item.name;
       });
 
-      // AI 추천 API 호출
-      const result = await aiService.generateRecipeSuggestions(ingredientInfo);
+      // AI 추천 API 호출 (사용자 입력 스타일 포함)
+      const result = await aiService.generateRecipeSuggestions(ingredientInfo, cookingStyleInput.trim());
       console.log('Received recommendations result:', result);
 
       if (result.success && result.recipes.length > 0) {
@@ -581,20 +582,48 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
               );
             })()}
 
-            {/* 요리 추천받기 버튼 */}
+            {/* 요리 스타일 입력 및 추천받기 버튼 */}
             {ingredients.length > 0 && !showRecommendations && (
-              <View style={styles.recommendButtonContainer}>
-                <Button
-                  mode="contained"
-                  onPress={handleRecommend}
-                  loading={recommending}
-                  icon="chef-hat"
-                  style={styles.recommendButton}
-                  contentStyle={styles.recommendButtonContent}
-                >
-                  요리 추천받기
-                </Button>
-              </View>
+              <>
+                <View style={styles.cookingStyleContainer}>
+                  <TextInput
+                    value={cookingStyleInput}
+                    onChangeText={setCookingStyleInput}
+                    placeholder="원하는 요리 스타일 입력 (선택사항)"
+                    placeholderTextColor={Colors.text.disabled}
+                    mode="outlined"
+                    multiline
+                    numberOfLines={2}
+                    style={styles.cookingStyleInput}
+                    outlineColor={Colors.border.light}
+                    activeOutlineColor={Colors.primary.main}
+                    dense
+                    right={
+                      cookingStyleInput ? (
+                        <TextInput.Icon
+                          icon="close"
+                          onPress={() => setCookingStyleInput('')}
+                        />
+                      ) : null
+                    }
+                  />
+                  <Text variant="bodySmall" style={styles.cookingStyleHint}>
+                    예: 초간단 저녁 식사, 맥주 안주, 다이어트용 고단백, 얼큰한 국물
+                  </Text>
+                </View>
+                <View style={styles.recommendButtonContainer}>
+                  <Button
+                    mode="contained"
+                    onPress={handleRecommend}
+                    loading={recommending}
+                    icon="chef-hat"
+                    style={styles.recommendButton}
+                    contentStyle={styles.recommendButtonContent}
+                  >
+                    요리 추천받기
+                  </Button>
+                </View>
+              </>
             )}
 
             {/* 다시 추천받기 버튼 */}
@@ -606,6 +635,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                     setShowRecommendations(false);
                     setRecommendations([]);
                     setCurrentIngredientContext(null); // Clear the specific ingredient context
+                    setCookingStyleInput(''); // Clear cooking style input
                   }}
                   icon="refresh"
                   style={styles.recommendButton}
@@ -1660,5 +1690,23 @@ const styles = StyleSheet.create({
   },
   chipCheckIcon: {
     marginRight: 4,
+  },
+  cookingStyleContainer: {
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  cookingStyleInput: {
+    backgroundColor: Colors.background.paper,
+    fontSize: 14,
+    fontFamily: 'OpenSans-Regular',
+    minHeight: 56,
+  },
+  cookingStyleHint: {
+    color: Colors.text.disabled,
+    fontFamily: 'OpenSans-Regular',
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.xs,
+    fontSize: 11,
   },
 });

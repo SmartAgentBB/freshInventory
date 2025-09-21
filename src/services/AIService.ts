@@ -236,7 +236,7 @@ export class AIService {
   /**
    * Generate recipe suggestions based on available ingredients
    */
-  async generateRecipeSuggestions(ingredients: string[]): Promise<RecipeResult> {
+  async generateRecipeSuggestions(ingredients: string[], cookingStyle?: string): Promise<RecipeResult> {
     try {
       if (!ingredients || ingredients.length === 0) {
         return {
@@ -246,18 +246,23 @@ export class AIService {
         };
       }
 
-      // Check cache first
-      const cacheKey = `recipes_${ingredients.sort().join('_')}`;
+      // Check cache first (include cooking style in cache key)
+      const cacheKey = `recipes_${ingredients.sort().join('_')}_${cookingStyle || 'default'}`;
       if (this.cache.has(cacheKey)) {
         console.log('=== Using cached recipe result ===');
         return this.cache.get(cacheKey);
       }
 
+      // Add cooking style preference to prompt if provided
+      const stylePrompt = cookingStyle
+        ? `\n사용자 요청사항: ${cookingStyle}\n이 요청사항을 최대한 반영하여 추천해주세요.\n`
+        : '';
+
       const prompt = `당신은 30년차 한식 요리 연구가입니다. 반드시 유효한 JSON 형식으로만 응답해주세요.
 
 보유한 식재료:
 ${ingredients.join(', ')}
-
+${stylePrompt}
 위 식재료를 활용하여 만들 수 있는 요리를 3-5개 추천해주세요.
 
 중요한 원칙:
