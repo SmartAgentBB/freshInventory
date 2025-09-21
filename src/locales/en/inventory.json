@@ -98,5 +98,12 @@
     "message": "Delete \"{{name}}\"?",
     "cancel": "Cancel",
     "delete": "Delete"
+  },
+  "storageInfo": {
+    "title": "Storage Information",
+    "recommendedPeriod": "Recommended Storage Period",
+    "storageMethod": "Storage Method",
+    "loading": "Loading storage information...",
+    "confirm": "OK"
   }
 }

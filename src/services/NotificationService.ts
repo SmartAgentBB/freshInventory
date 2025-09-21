@@ -31,7 +31,9 @@ export class NotificationService {
   private inventoryService: InventoryService;
 
   constructor() {
-    this.inventoryService = new InventoryService(supabaseClient);
+    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
+                   process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    this.inventoryService = new InventoryService(supabaseClient, apiKey);
   }
 
   // 알림 권한 요청

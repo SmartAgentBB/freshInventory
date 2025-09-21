@@ -9,7 +9,8 @@
     "resolveJsonModule": true,
     "noEmit": true,
     "declaration": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
+    "customConditions": ["react-native"],
     "target": "es2017",
     "lib": [
       "es2017",

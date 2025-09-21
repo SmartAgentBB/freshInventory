@@ -85,7 +85,8 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
   const aiService = new AIService();
   const shoppingService = new ShoppingService(supabaseClient);
   const { refreshCount } = useShoppingCount();
-  const inventoryService = new InventoryService(supabaseClient);
+  const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY;
+  const inventoryService = new InventoryService(supabaseClient, geminiApiKey);
 
   const analyzeImage = async (imageUri: string) => {
     setSelectedImageUri(imageUri);

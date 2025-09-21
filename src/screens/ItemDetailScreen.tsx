@@ -11,6 +11,7 @@ import {
   Portal,
   Dialog,
   Paragraph,
+  ActivityIndicator,
   useTheme
 } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -19,7 +20,9 @@ import { FoodItem } from '../models/FoodItem';
 import { InventoryService } from '../services/InventoryService';
 import { StorageInfoService } from '../services/StorageInfoService';
 import { RecipeService } from '../services/RecipeService';
-import { Recipe, AIService } from '../services/AIService';
+import { AIService } from '../services/AIService';
+import { Recipe as AIRecipe } from '../services/AIService';
+import { Recipe } from '../models/Recipe';
 import { supabaseClient } from '../services/supabaseClient';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
@@ -55,9 +58,7 @@ export const ItemDetailScreen: React.FC = () => {
 
   const recipeService = useRef(new RecipeService()).current;
 
-  const aiService = useRef(new AIService(
-    process.env.EXPO_PUBLIC_GEMINI_API_KEY || ''
-  )).current;
+  const aiService = useRef(new AIService()).current;
 
   useEffect(() => {
     const params = route.params as { item?: FoodItem };
@@ -112,11 +113,26 @@ export const ItemDetailScreen: React.FC = () => {
 
       // Convert SavedRecipe to Recipe format
       const recipes: Recipe[] = related.map(r => ({
-        name: r.name,
-        ingredients: r.ingredients,
-        difficulty: r.difficulty,
+        id: r.id,
+        title: r.name,
+        description: '',
+        difficulty: r.difficulty as 'easy' | 'medium' | 'hard',
         cookingTime: r.cookingTime,
-        instructions: r.instructions || []
+        servings: 2,
+        ingredients: r.ingredients.map(ing => ({
+          name: ing,
+          quantity: 1,
+          unit: '',
+          required: true
+        })),
+        instructions: r.instructions || [],
+        tags: [],
+        category: 'main-dish',
+        cuisine: 'korean',
+        isBookmarked: true,
+        userId: user?.id || '',
+        createdAt: new Date(),
+        updatedAt: new Date()
       }));
 
       setRelatedRecipes(recipes);
@@ -140,14 +156,14 @@ export const ItemDetailScreen: React.FC = () => {
 
       if (recommendations && recommendations.length > 0) {
         // Navigate to Cooking screen with recommendations
-        navigation.navigate('Cooking' as never, {
+        (navigation as any).navigate('Cooking', {
           screen: 'CookingMain',
           params: {
             showRecommendations: true,
             recommendations: recommendations,
             fromIngredient: item.name
           }
-        } as never);
+        });
       } else {
         Alert.alert('알림', '추천 레시피를 가져올 수 없습니다.');
       }
@@ -445,7 +461,7 @@ export const ItemDetailScreen: React.FC = () => {
                       <Text variant="bodySmall" style={styles.expiryDateText}>
                         {i18n.language === 'en' ? `Since ${frozenDateFormatted}` : `${frozenDateFormatted}부터`}
                       </Text>
-                      <View style={styles.dDayContainer}>
+                      <View style={styles.expiryContent}>
                         <Text variant="bodyLarge" style={styles.dataText}>
                           {i18n.language === 'en' ? `${frozenDays}D` : `${frozenDays}일`}
                         </Text>
@@ -625,10 +641,10 @@ export const ItemDetailScreen: React.FC = () => {
                   compact={true}
                   onPress={() => {
                     // Navigate to recipe detail screen from Cooking stack
-                    navigation.navigate('Cooking' as never, {
+                    (navigation as any).navigate('Cooking', {
                       screen: 'RecipeDetail',
                       params: { recipe, fromItemDetail: true }
-                    } as never);
+                    });
                   }}
                 />
               ))}
@@ -639,29 +655,79 @@ export const ItemDetailScreen: React.FC = () => {
 
       {/* Storage Info Modal */}
       <Portal>
-        <Dialog 
-          visible={storageInfoModalVisible} 
+        <Dialog
+          visible={storageInfoModalVisible}
           onDismiss={() => setStorageInfoModalVisible(false)}
+          style={styles.storageInfoDialog}
         >
-          <Dialog.Title>보관 정보</Dialog.Title>
-          <Dialog.Content>
+          <Dialog.Content style={styles.storageInfoContent}>
+            <View style={styles.storageInfoHeader}>
+              <IconButton
+                icon="information"
+                size={24}
+                iconColor={Colors.primary.main}
+                style={styles.storageInfoIcon}
+              />
+              <Text style={styles.storageInfoTitle}>{t('storageInfo.title')}</Text>
+            </View>
             {storageInfo ? (
-              <>
-                <Paragraph>
-                  <Text style={{ fontWeight: 'bold' }}>권장 소비기간: </Text>
-                  {storageInfo.storage_desc || `${storageInfo.storage_days}일`}
-                </Paragraph>
-                <Paragraph style={{ marginTop: 8 }}>
-                  <Text style={{ fontWeight: 'bold' }}>보관 방법: </Text>
-                  {storageInfo.storage_method || '냉장 보관하세요'}
-                </Paragraph>
-              </>
+              <View style={styles.storageInfoContainer}>
+                <Surface style={styles.storageInfoCard} elevation={1}>
+                  <View style={styles.storageInfoRow}>
+                    <IconButton
+                      icon="calendar-clock"
+                      size={20}
+                      iconColor={Colors.primary.main}
+                      style={styles.storageInfoRowIcon}
+                    />
+                    <View style={styles.storageInfoTextContainer}>
+                      <Text style={styles.storageInfoLabel}>{t('storageInfo.recommendedPeriod')}</Text>
+                      <Text style={styles.storageInfoValue}>
+                        {storageInfo.storage_desc ||
+                          (i18n.language === 'en'
+                            ? `${storageInfo.storage_days} days`
+                            : `${storageInfo.storage_days}일`)}
+                      </Text>
+                    </View>
+                  </View>
+                </Surface>
+
+                <Surface style={[styles.storageInfoCard, { marginTop: 12 }]} elevation={1}>
+                  <View style={styles.storageInfoRow}>
+                    <IconButton
+                      icon="fridge"
+                      size={20}
+                      iconColor={Colors.primary.main}
+                      style={styles.storageInfoRowIcon}
+                    />
+                    <View style={styles.storageInfoTextContainer}>
+                      <Text style={styles.storageInfoLabel}>{t('storageInfo.storageMethod')}</Text>
+                      <Text style={styles.storageInfoValue}>
+                        {storageInfo.storage_method ||
+                          (i18n.language === 'en'
+                            ? 'Keep refrigerated'
+                            : '냉장 보관하세요')}
+                      </Text>
+                    </View>
+                  </View>
+                </Surface>
+              </View>
             ) : (
-              <Paragraph>보관 정보를 불러오는 중...</Paragraph>
+              <View style={styles.storageInfoLoading}>
+                <ActivityIndicator animating={true} color={Colors.primary.main} />
+                <Text style={styles.storageInfoLoadingText}>{t('storageInfo.loading')}</Text>
+              </View>
             )}
           </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setStorageInfoModalVisible(false)}>확인</Button>
+          <Dialog.Actions style={styles.storageInfoActions}>
+            <Button
+              mode="contained"
+              onPress={() => setStorageInfoModalVisible(false)}
+              style={styles.storageInfoButton}
+              labelStyle={styles.storageInfoButtonLabel}
+            >
+              {t('storageInfo.confirm')}
+            </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -994,5 +1060,88 @@ const styles = StyleSheet.create({
   },
   sliderButton: {
     margin: 0,
+  },
+  // Storage Info Modal Styles
+  storageInfoDialog: {
+    borderRadius: 16,
+  },
+  storageInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  storageInfoIcon: {
+    margin: 0,
+    marginRight: 12,
+    backgroundColor: Colors.primary.light,
+  },
+  storageInfoTitle: {
+    fontSize: 18,
+    fontFamily: 'OpenSans-Bold',
+    color: Colors.text.primary,
+    flex: 1,
+  },
+  storageInfoContent: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 12,
+  },
+  storageInfoContainer: {
+    gap: 12,
+  },
+  storageInfoCard: {
+    backgroundColor: Colors.background.paper,
+    borderRadius: 12,
+    padding: 0,
+    elevation: 1,
+    overflow: 'hidden',
+  },
+  storageInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  storageInfoRowIcon: {
+    margin: 0,
+    marginRight: 16,
+    backgroundColor: Colors.primary.light,
+  },
+  storageInfoTextContainer: {
+    flex: 1,
+  },
+  storageInfoLabel: {
+    fontSize: 12,
+    fontFamily: 'OpenSans-Medium',
+    color: Colors.text.secondary,
+    marginBottom: 4,
+  },
+  storageInfoValue: {
+    fontSize: 16,
+    fontFamily: 'OpenSans-SemiBold',
+    color: Colors.text.primary,
+  },
+  storageInfoLoading: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  storageInfoLoadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    fontFamily: 'OpenSans-Regular',
+    color: Colors.text.secondary,
+  },
+  storageInfoActions: {
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+    paddingTop: 12,
+  },
+  storageInfoButton: {
+    borderRadius: 24,
+    flex: 1,
+  },
+  storageInfoButtonLabel: {
+    fontFamily: 'OpenSans-SemiBold',
+    fontSize: 14,
   },
 });

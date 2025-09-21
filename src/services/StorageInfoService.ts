@@ -3,6 +3,7 @@
  */
 import { SupabaseClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getCurrentLanguage } from './i18n';
 
 export interface StorageInfo {
   id: string;
@@ -116,7 +117,22 @@ export class StorageInfoService {
 
       const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-      const prompt = `다음 식재료에 대한 보관 정보를 제공해주세요: "${itemName}"
+      const currentLanguage = getCurrentLanguage();
+      const isEnglish = currentLanguage === 'en';
+
+      const prompt = isEnglish
+        ? `Please provide storage information for the following ingredient: "${itemName}"
+Respond with JSON in the following format:
+{
+    "category": "Category (vegetables, fruits, meat, dairy, grains, condiments, other)",
+    "name": "${itemName}",
+    "storage_days": number (in days),
+    "storage_desc": "Storage period description (e.g., 3-5 days)",
+    "storage_method": "Storage method description"
+}
+
+Return only JSON without any other text.`
+        : `다음 식재료에 대한 보관 정보를 제공해주세요: "${itemName}"
 다음 형식으로 JSON 응답을 제공해주세요:
 {
     "category": "카테고리 (야채, 과일, 육류, 유제품, 곡물, 조미료, 기타 중 선택)",
@@ -146,7 +162,7 @@ JSON만 반환하고 다른 텍스트는 포함하지 마세요.`;
         return this.createDefaultStorageInfo(itemName);
       }
 
-      // Map Korean categories to English
+      // Map Korean categories to English if needed
       const categoryMap: { [key: string]: string } = {
         '야채': 'vegetables',
         '과일': 'fruits',
@@ -157,8 +173,22 @@ JSON만 반환하고 다른 텍스트는 포함하지 마세요.`;
         '기타': 'other'
       };
 
-      if (storageData.category && categoryMap[storageData.category]) {
-        storageData.category = categoryMap[storageData.category];
+      if (storageData.category) {
+        // Convert to lowercase for English categories
+        const lowerCategory = storageData.category.toLowerCase();
+
+        // If it's a Korean category, map it
+        if (categoryMap[storageData.category]) {
+          storageData.category = categoryMap[storageData.category];
+        }
+        // If it's already English, standardize to lowercase
+        else if (['vegetables', 'fruits', 'meat', 'dairy', 'grains', 'condiments', 'other'].includes(lowerCategory)) {
+          storageData.category = lowerCategory;
+        }
+        // Default to 'other' if unrecognized
+        else {
+          storageData.category = 'other';
+        }
       }
 
       // Use upsert to handle duplicate key errors gracefully
@@ -208,6 +238,9 @@ JSON만 반환하고 다른 텍스트는 포함하지 마세요.`;
    * Create default storage info when AI is not available
    */
   private createDefaultStorageInfo(itemName: string): StorageInfo | null {
+    const currentLanguage = getCurrentLanguage();
+    const isEnglish = currentLanguage === 'en';
+
     // Return default values without saving to database
     // The caller can decide whether to save this
     return {
@@ -215,8 +248,8 @@ JSON만 반환하고 다른 텍스트는 포함하지 마세요.`;
       name: itemName,
       category: 'other',
       storage_days: 7, // Default 7 days
-      storage_desc: '7일',
-      storage_method: '냉장 보관하세요'
+      storage_desc: isEnglish ? '7 days' : '7일',
+      storage_method: isEnglish ? 'Keep refrigerated' : '냉장 보관하세요'
     };
   }
 

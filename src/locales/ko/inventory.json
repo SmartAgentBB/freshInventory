@@ -98,5 +98,12 @@
     "message": "\"{{name}}\"을(를) 삭제하시겠습니까?",
     "cancel": "취소",
     "delete": "삭제"
+  },
+  "storageInfo": {
+    "title": "보관 정보",
+    "recommendedPeriod": "권장 소비기간",
+    "storageMethod": "보관 방법",
+    "loading": "보관 정보를 불러오는 중...",
+    "confirm": "확인"
   }
 }

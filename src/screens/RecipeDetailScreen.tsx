@@ -67,7 +67,9 @@ export const RecipeDetailScreen = () => {
 
   // Service instances
   const inventoryService = useMemo(() => {
-    return new InventoryService(supabaseClient);
+    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
+                   process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    return new InventoryService(supabaseClient, apiKey);
   }, []);
 
   const recipeService = useMemo(() => {

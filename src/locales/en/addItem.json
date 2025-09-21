@@ -3,7 +3,7 @@
   "saveTitle": "Save Items",
   "analyzing": "AI is analyzing ingredients...",
   "detected": "Detected Items",
-  "detectedHelp": "You can review and edit the items below",
+  "detectedHelp": "AI recognition may contain errors.\nPlease review and edit the name, quantity, and unit of each item.",
   "saveAll": "Save All",
   "save": "Save",
   "completeShoppingNotice": "Items from your shopping list were detected.",

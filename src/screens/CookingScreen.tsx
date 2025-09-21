@@ -56,7 +56,9 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   // useMemo를 사용하여 서비스 인스턴스들을 한 번만 생성
   const inventoryService = useMemo(() => {
     console.log('Creating InventoryService with supabaseClient:', !!supabaseClient);
-    return new InventoryService(supabaseClient);
+    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
+                   process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    return new InventoryService(supabaseClient, apiKey);
   }, []);
 
   const aiService = useMemo(() => {
@@ -783,7 +785,9 @@ const BookmarksTab = () => {
 
   // Service instances
   const inventoryService = useMemo(() => {
-    return new InventoryService(supabaseClient);
+    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
+                   process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    return new InventoryService(supabaseClient, apiKey);
   }, []);
 
   useEffect(() => {
