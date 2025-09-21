@@ -1,0 +1,64 @@
+{
+  "title": "요리",
+  "tabs": {
+    "bookmarks": "요리책",
+    "recommend": "요리 추천"
+  },
+  "recommend": {
+    "title": "AI 요리 추천",
+    "subtitle": "보유 재료로 AI가 추천하는 요리를 만들어보세요",
+    "selectAll": "전체 선택",
+    "selectIngredients": "재료 선택",
+    "selectIngredientsAlert": "요리에 사용할 재료를 선택해주세요.",
+    "noIngredients": "재료가 없습니다",
+    "noIngredientsDesc": "재고 관리에서 재료를 추가해주세요",
+    "styleInput": {
+      "placeholder": "원하는 요리 스타일 입력 (선택사항)",
+      "hint": "예: 초간단 저녁 식사, 맥주 안주, 다이어트용 고단백, 얼큰한 국물"
+    },
+    "getRecommendation": "요리 추천받기",
+    "recommendButton": "요리 추천받기",
+    "recommendAgain": "다시 추천받기",
+    "recommending": "AI가 레시피를 생성 중입니다...",
+    "recommendedRecipes": "추천 레시피",
+    "fromIngredient": "{{ingredient}} 활용 레시피"
+  },
+  "recipe": {
+    "difficulty": "난이도",
+    "cookingTime": "조리시간",
+    "minutes": "분",
+    "ingredients": "필요한 재료",
+    "instructions": "조리 방법",
+    "youtubeSearch": "유튜브 검색",
+    "bookmark": "저장",
+    "bookmarked": "저장됨",
+    "hasIngredient": "보유",
+    "missingIngredient": "없음",
+    "addToShopping": "장보기"
+  },
+  "difficulty": {
+    "easy": "쉬움",
+    "medium": "보통",
+    "hard": "어려움"
+  },
+  "bookmarks": {
+    "empty": "저장된 레시피가 없습니다",
+    "emptyDesc": "추천받은 요리를 북마크하면 여기에 표시됩니다",
+    "sortBy": {
+      "recent": "최신순",
+      "ingredients": "보유재료순"
+    },
+    "total": "총 {{count}}개",
+    "availableIngredients": "보유 재료 {{count}}종"
+  },
+  "categories": {
+    "fresh": "신선 재료",
+    "frozen": "냉동 재료"
+  },
+  "status": {
+    "urgent": "임박"
+  },
+  "search": {
+    "recipePlaceholder": "검색할 요리 이름을 입력하세요"
+  }
+}

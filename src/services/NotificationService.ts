@@ -7,6 +7,7 @@ import { InventoryService } from './InventoryService';
 import { supabaseClient } from './supabaseClient';
 import { differenceInDays, format, startOfDay, setHours, setMinutes } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { getCurrentLanguage } from './i18n';
 
 // 알림 설정
 Notifications.setNotificationHandler({
@@ -36,7 +37,12 @@ export class NotificationService {
   // 알림 권한 요청
   async requestPermissions(): Promise<boolean> {
     if (!Device.isDevice) {
-      console.log('알림은 실제 기기에서만 작동합니다.');
+      const language = getCurrentLanguage();
+      console.log(
+        language === 'en'
+          ? 'Notifications only work on physical devices.'
+          : '알림은 실제 기기에서만 작동합니다.'
+      );
       return false;
     }
 
@@ -49,7 +55,12 @@ export class NotificationService {
     }
 
     if (finalStatus !== 'granted') {
-      console.log('알림 권한이 거부되었습니다.');
+      const language = getCurrentLanguage();
+      console.log(
+        language === 'en'
+          ? 'Notification permission denied.'
+          : '알림 권한이 거부되었습니다.'
+      );
       return false;
     }
 
@@ -103,8 +114,15 @@ export class NotificationService {
 
   // 알림 내용 생성
   private createNotificationContent(expired: string[], expiringToday: string[], expiringSoon: string[]) {
-    let title = '⚠냉파고 임박 재료 알림';
-    let body = '빨리 소비해야하는 식재료가 있어요!\n';
+    const language = getCurrentLanguage();
+    const isEnglish = language === 'en';
+
+    let title = isEnglish
+      ? '⚠️ FreshKeeper Expiry Alert'
+      : '⚠️ 냉파고 임박 재료 알림';
+    let body = isEnglish
+      ? 'Items that need to be consumed soon!\n'
+      : '빨리 소비해야하는 식재료가 있어요!\n';
 
     // 모든 임박/만료 식재료를 하나의 리스트로 통합
     const allItems: string[] = [];
@@ -133,7 +151,9 @@ export class NotificationService {
     body += displayItems.join(', ');
 
     if (allItems.length > 10) {
-      body += ` 외 ${allItems.length - 10}개`;
+      body += isEnglish
+        ? ` and ${allItems.length - 10} more`
+        : ` 외 ${allItems.length - 10}개`;
     }
 
     return { title, body };
@@ -160,10 +180,13 @@ export class NotificationService {
     }
 
     // 알림 스케줄링
+    const language = getCurrentLanguage();
+    const isEnglish = language === 'en';
+
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: '⚠냉파고 임박 재료 알림',
-        body: '빨리 소비해야하는 식재료가 있어요!',
+        title: isEnglish ? '⚠️ FreshKeeper Expiry Alert' : '⚠️ 냉파고 임박 재료 알림',
+        body: isEnglish ? 'Items that need to be consumed soon!' : '빨리 소비해야하는 식재료가 있어요!',
         data: {
           userId,
           type: 'daily-check',
@@ -185,7 +208,11 @@ export class NotificationService {
       lastScheduledDate: format(new Date(), 'yyyy-MM-dd'),
     });
 
-    console.log(`알림이 매일 ${settings.time.hour}시 ${settings.time.minute}분에 예약되었습니다.`);
+    console.log(
+      language === 'en'
+        ? `Notification scheduled daily at ${settings.time.hour}:${settings.time.minute.toString().padStart(2, '0')}`
+        : `알림이 매일 ${settings.time.hour}시 ${settings.time.minute}분에 예약되었습니다.`
+    );
   }
 
   // 즉시 알림 보내기 (테스트용)
@@ -195,7 +222,12 @@ export class NotificationService {
 
     if (!content) {
       // 모든 식재료가 신선할 때는 알림을 보내지 않음
-      console.log('모든 식재료가 신선합니다. 알림을 보내지 않습니다.');
+      const language = getCurrentLanguage();
+      console.log(
+        language === 'en'
+          ? 'All items are fresh. No notification sent.'
+          : '모든 식재료가 신선합니다. 알림을 보내지 않습니다.'
+      );
       return;
     }
 

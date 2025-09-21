@@ -1,0 +1,54 @@
+{
+  "title": "My Page",
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "notifications": "Notifications",
+    "theme": "Theme",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "version": "Version"
+  },
+  "account": {
+    "title": "Account Information",
+    "email": "Email",
+    "name": "Name",
+    "joinDate": "Joined",
+    "editProfile": "Edit Profile",
+    "changePassword": "Change Password",
+    "logout": "Logout",
+    "deleteAccount": "Delete Account"
+  },
+  "language": {
+    "title": "Select Language",
+    "korean": "한국어",
+    "english": "English",
+    "changeSuccess": "Language has been changed"
+  },
+  "stats": {
+    "title": "Usage Statistics",
+    "totalItems": "Total Items",
+    "savedRecipes": "Saved Recipes",
+    "consumedItems": "Consumed Items",
+    "wastedItems": "Wasted Items"
+  },
+  "notifications": {
+    "title": "Notification Settings",
+    "expiryAlert": "Expiry Date Alerts",
+    "recipeRecommend": "Recipe Recommendations",
+    "shoppingReminder": "Shopping Reminders",
+    "time": "Notification Time"
+  },
+  "about": {
+    "title": "About App",
+    "developer": "Developer",
+    "contact": "Contact Us",
+    "rate": "Rate App",
+    "share": "Share App"
+  },
+  "messages": {
+    "logoutConfirm": "Are you sure you want to logout?",
+    "deleteAccountConfirm": "Deleting your account will remove all data. Are you sure?",
+    "changesSaved": "Changes have been saved"
+  }
+}

@@ -4,6 +4,7 @@ import { Text, ActivityIndicator, FAB, Chip, IconButton, Surface, TextInput } fr
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../constants/colors';
 import { FoodItem } from '../models/FoodItem';
 import { FoodItemCard } from '../components/FoodItemCard';
@@ -24,6 +25,7 @@ type NavigationProp = StackNavigationProp<InventoryStackParamList, 'InventoryLis
 type RouteProps = RouteProp<InventoryStackParamList, 'InventoryList'>;
 
 export const InventoryScreen: React.FC = () => {
+  const { t } = useTranslation('inventory');
   const { user } = useAuth();
   const { refreshCount } = useShoppingCount();
   const navigation = useNavigation<NavigationProp>();
@@ -288,13 +290,13 @@ export const InventoryScreen: React.FC = () => {
   const getEmptyMessage = (): string => {
     switch (activeTab) {
       case 'fresh':
-        return '재고가 없습니다';
+        return t('empty.fresh');
       case 'frozen':
-        return '냉동 보관 중인 재료가 없습니다';
+        return t('empty.frozen');
       case 'history':
-        return '소비 완료된 재료가 없습니다';
+        return t('empty.history');
       default:
-        return '항목이 없습니다';
+        return t('empty.default');
     }
   };
 
@@ -324,9 +326,9 @@ export const InventoryScreen: React.FC = () => {
       <View style={styles.headerSection}>
         {/* Tabs */}
         <View style={styles.tabContainer}>
-          <TabButton tab="fresh" label="재고목록" />
-          <TabButton tab="frozen" label="냉동보관" />
-          <TabButton tab="history" label="소비완료" />
+          <TabButton tab="fresh" label={t('tabs.fresh')} />
+          <TabButton tab="frozen" label={t('tabs.frozen')} />
+          <TabButton tab="history" label={t('tabs.history')} />
         </View>
 
         {/* Search Bar (Fresh and Frozen tabs) */}
@@ -336,7 +338,7 @@ export const InventoryScreen: React.FC = () => {
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder="검색할 재료 이름을 입력하세요"
+                placeholder={t('search.placeholder')}
                 placeholderTextColor="#9E9E9E"
                 mode="outlined"
                 style={styles.searchInput}
@@ -382,7 +384,7 @@ export const InventoryScreen: React.FC = () => {
                 ]}
                 compact
               >
-                최신순
+                {t('sort.newest')}
               </Chip>
               <Chip
                 mode={(activeTab === 'fresh' ? freshSortType : frozenSortType) === 'oldest' ? 'flat' : 'outlined'}
@@ -397,7 +399,7 @@ export const InventoryScreen: React.FC = () => {
                 ]}
                 compact
               >
-                오래된순
+                {t('sort.oldest')}
               </Chip>
               {activeTab === 'fresh' && (
                 <Chip
@@ -413,13 +415,13 @@ export const InventoryScreen: React.FC = () => {
                   ]}
                   compact
                 >
-                  임박순
+                  {t('sort.urgent')}
                 </Chip>
               )}
             </View>
             <View style={styles.countContainer}>
               <Text variant="bodySmall" style={styles.countText}>
-                총 {getCurrentItems().length}개
+                {t('count', { count: getCurrentItems().length })}
               </Text>
               {(activeTab === 'fresh' || activeTab === 'frozen') && (
                 <IconButton
@@ -438,10 +440,10 @@ export const InventoryScreen: React.FC = () => {
             <View style={styles.historyInfo}>
               <View style={styles.historyInfoTextContainer}>
                 <Text style={styles.historyInfoText}>
-                  최근에 소비한 재료를 확인하세요.
+                  {t('history.info')}
                 </Text>
                 <Text style={styles.historySubText}>
-                  재구매가 필요한 재료를 장보기 목록에 쉽게 추가하세요.
+                  {t('history.subInfo')}
                 </Text>
               </View>
             </View>
@@ -552,7 +554,7 @@ export const InventoryScreen: React.FC = () => {
                 <View style={styles.imageButtonsContainer}>
                   <FAB
                     icon="camera"
-                    label="카메라"
+                    label={t('camera.button')}
                     style={[styles.imageButton, { marginBottom: Spacing.sm }]}
                     onPress={async () => {
                       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -575,7 +577,7 @@ export const InventoryScreen: React.FC = () => {
                   />
                   <FAB
                     icon="image"
-                    label="갤러리"
+                    label={t('camera.gallery')}
                     style={styles.imageButton}
                     onPress={async () => {
                       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -626,7 +628,7 @@ export const InventoryScreen: React.FC = () => {
               style={styles.backButton}
             />
             <Text variant="labelLarge" style={styles.headerTitle}>
-              식재료 저장
+              {t('addItem:saveTitle')}
             </Text>
             <View style={{ width: 48 }} />
           </View>

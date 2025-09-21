@@ -1,0 +1,102 @@
+{
+  "title": "Inventory Management",
+  "tabs": {
+    "fresh": "Inventory",
+    "frozen": "Frozen",
+    "history": "Consumed",
+    "current": "Current Stock",
+    "expired": "Past Records"
+  },
+  "empty": {
+    "title": "No items in inventory",
+    "subtitle": "Press + button to add items",
+    "fresh": "No items in inventory",
+    "frozen": "No frozen items",
+    "history": "No consumed items",
+    "default": "No items"
+  },
+  "addItem": "Add Item",
+  "itemDetails": "Item Details",
+  "expiryDate": "Expiry Date",
+  "daysRemaining": "{{days}} days remaining",
+  "daysAgo": "{{days}} days ago",
+  "today": "Today",
+  "quantity": "Quantity",
+  "category": "Category",
+  "storageInfo": "Storage Information",
+  "storageDays": "Storage Period",
+  "storageMethod": "Storage Method",
+  "storageDesc": "Storage Description",
+  "actions": {
+    "freeze": "Freeze",
+    "unfreeze": "Unfreeze",
+    "consume": "Mark as Consumed",
+    "delete": "Delete",
+    "edit": "Edit"
+  },
+  "categories": {
+    "vegetable": "Vegetables",
+    "fruit": "Fruits",
+    "meat": "Meat",
+    "seafood": "Seafood",
+    "dairy": "Dairy",
+    "grain": "Grains",
+    "etc": "Others"
+  },
+  "camera": {
+    "title": "Add by Photo",
+    "button": "Camera",
+    "gallery": "Gallery",
+    "analyzing": "AI is analyzing ingredients...",
+    "recognized": "Recognized Items",
+    "failed": "Recognition Failed",
+    "retry": "Try Again"
+  },
+  "sort": {
+    "newest": "Newest",
+    "oldest": "Oldest",
+    "urgent": "Urgent"
+  },
+  "search": {
+    "placeholder": "Search for ingredients"
+  },
+  "count": "Total {{count}}",
+  "history": {
+    "info": "Check recently consumed items.",
+    "subInfo": "Easily add items that need to be repurchased to your shopping list."
+  },
+  "itemDetail": {
+    "registrationDate": "Reg.",
+    "expiryDate": "Expires",
+    "freezing": "Frozen❄️",
+    "quantity": "Qty.",
+    "pieces": "pcs",
+    "packs": "packs",
+    "until": "Until {{date}}",
+    "daysRemaining": "D-{{days}}",
+    "dDay": "D-Day",
+    "remainingAmount": "Remaining",
+    "update": "Update",
+    "freeze": "Freeze",
+    "frozen": "Frozen",
+    "dispose": "Dispose",
+    "disposeConfirm": "Confirm Disposal",
+    "disposeMessage": "Are you sure you want to dispose \"{{name}}\"?",
+    "cancel": "Cancel",
+    "getRecipes": "Get Recipe Suggestions",
+    "recipesWithIngredient": "Recipes using this ingredient",
+    "savedRecipesDesc": "Saved recipes that use this ingredient",
+    "errors": {
+      "updateFailed": "Failed to update remaining amount.",
+      "freezeFailed": "Failed to freeze item.",
+      "disposeFailed": "Failed to dispose item.",
+      "error": "Error"
+    }
+  },
+  "deleteConfirm": {
+    "title": "Delete Confirmation",
+    "message": "Delete \"{{name}}\"?",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  }
+}

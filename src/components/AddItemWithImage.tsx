@@ -22,6 +22,7 @@ import {
   Checkbox,
 } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import { ImageUpload } from './ImageUpload';
 import { AIService, FoodItem } from '../services/AIService';
 import { uploadImageToSupabase } from '../services/StorageService';
@@ -62,8 +63,7 @@ const mapKoreanCategory = (koreanCategory: string): string => {
   return categoryMap[koreanCategory] || 'other';
 };
 
-// Available units for food items
-const UNITS = ['개', '팩'];
+// Available units for food items will be determined inside the component
 
 export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
   onComplete,
@@ -71,6 +71,8 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
   hideImageSelection = false,
   initialImageUri = '',
 }) => {
+  const { t, i18n } = useTranslation('addItem');
+  const UNITS = i18n.language === 'en' ? ['pcs', 'packs'] : ['개', '팩'];
   const [selectedImageUri, setSelectedImageUri] = useState<string>(initialImageUri);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [detectedItems, setDetectedItems] = useState<EditableItem[]>([]);
@@ -253,7 +255,7 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
 
   const handleSaveAll = async () => {
     if (detectedItems.length === 0) {
-      Alert.alert('알림', '저장할 항목이 없습니다.');
+      Alert.alert(t('messages.notification'), t('messages.noItems'));
       return;
     }
 
@@ -346,40 +348,40 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
 
             // Show success message with completed items
             const message = failedCount > 0
-              ? `${savedItems.length}개 항목이 저장되었습니다.\n장보기 목록의 ${completedItems.join(', ')}이(가) 완료 처리되었습니다.\n${failedCount}개 항목 저장에 실패했습니다.`
-              : `${savedItems.length}개 항목이 저장되었습니다.\n장보기 목록의 ${completedItems.join(', ')}이(가) 완료 처리되었습니다.`;
+              ? t('messages.itemsSavedWithShopping', { count: savedItems.length, items: completedItems.join(', ') }) + '\n' + t('messages.itemsSavedWithErrors', { saved: 0, failed: failedCount }).split('.')[1]
+              : t('messages.itemsSavedWithShopping', { count: savedItems.length, items: completedItems.join(', ') });
 
-            Alert.alert('저장 완료', message);
+            Alert.alert(t('messages.saveComplete'), message);
           } else if (failedCount > 0) {
             Alert.alert(
-              '일부 저장 실패',
-              `${savedItems.length}개 항목이 저장되었습니다. ${failedCount}개 항목 저장에 실패했습니다.`
+              t('messages.partialSaveSuccess'),
+              t('messages.itemsSavedWithErrors', { saved: savedItems.length, failed: failedCount })
             );
           } else {
-            Alert.alert('저장 완료', `${savedItems.length}개 항목이 저장되었습니다.`);
+            Alert.alert(t('messages.saveComplete'), t('messages.itemsSaved', { count: savedItems.length }));
           }
         } else if (failedCount > 0) {
           Alert.alert(
-            '일부 저장 실패',
-            `${savedItems.length}개 항목이 저장되었습니다. ${failedCount}개 항목 저장에 실패했습니다.`
+            t('messages.partialSaveSuccess'),
+            t('messages.itemsSavedWithErrors', { saved: savedItems.length, failed: failedCount })
           );
         } else {
-          Alert.alert('저장 완료', `${savedItems.length}개 항목이 저장되었습니다.`);
+          Alert.alert(t('messages.saveComplete'), t('messages.itemsSaved', { count: savedItems.length }));
         }
       } else if (failedCount > 0) {
         Alert.alert(
-          '일부 저장 실패',
-          `${savedItems.length}개 항목이 저장되었습니다. ${failedCount}개 항목 저장에 실패했습니다.`
+          t('messages.partialSaveSuccess'),
+          t('messages.itemsSavedWithErrors', { saved: savedItems.length, failed: failedCount })
         );
       } else {
-        Alert.alert('저장 완료', `${savedItems.length}개 항목이 저장되었습니다.`);
+        Alert.alert(t('messages.saveComplete'), t('messages.itemsSaved', { count: savedItems.length }));
       }
 
       // Navigate back to inventory screen
       onComplete();
     } catch (error) {
       console.error('Save error:', error);
-      Alert.alert('오류', '저장 중 오류가 발생했습니다.');
+      Alert.alert(t('messages.error'), t('messages.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -439,7 +441,7 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
               {/* Quantity row */}
               <View style={styles.quantityRow}>
                 <Text variant="labelMedium" style={styles.quantityLabel}>
-                  수량
+                  {t('quantity')}
                 </Text>
                 <View style={styles.quantityControls}>
                   <IconButton
@@ -554,7 +556,7 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
                 fontSize: 12,
               }}
             >
-              장보기 완료하기
+              {t('completeShoppingButton')}
             </Text>
             <TouchableOpacity
               style={[
@@ -599,7 +601,7 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
         {!hideImageSelection && (
           <>
             <Text variant="headlineSmall" style={styles.title}>
-              사진으로 재료 추가
+              {t('title')}
             </Text>
             
             <ImageUpload
@@ -628,7 +630,7 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
           <View style={styles.loadingContainer} testID="ai-analysis-loading">
             <ActivityIndicator size="large" color={Colors.primary.main} />
             <Text variant="bodyLarge" style={styles.loadingText}>
-              AI가 재료를 분석하고 있습니다...
+              {t('analyzing')}
             </Text>
           </View>
         )}
@@ -636,10 +638,10 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
         {detectedItems.length > 0 && (
           <View style={styles.resultsContainer}>
             <Text variant="titleLarge" style={styles.sectionTitle}>
-              감지된 재료
+              {t('detected')}
             </Text>
             <Text variant="bodyMedium" style={styles.helpText}>
-              아래 항목을 확인하고 수정할 수 있습니다
+              {t('detectedHelp')}
             </Text>
 
             <View testID="detected-items-list">
@@ -654,10 +656,10 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
                 marginBottom: Spacing.xs,
               }}>
                 <Text variant="bodySmall" style={{ color: Colors.text.secondary, marginBottom: 2 }}>
-                  장보기 목록에 있는 식재료가 감지되었습니다.
+                  {t('completeShoppingNotice')}
                 </Text>
                 <Text variant="bodySmall" style={{ color: Colors.text.secondary }}>
-                  체크된 항목은 저장 시 장보기 완료로 처리됩니다.
+                  {t('completeShoppingDesc')}
                 </Text>
               </View>
             )}
@@ -670,7 +672,7 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
               style={styles.saveButton}
               testID="save-all-button"
             >
-              모두 저장
+              {t('saveAll')}
             </Button>
           </View>
         )}

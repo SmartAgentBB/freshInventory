@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "FreshKeeper",
+    "tagline": "Smart Fridge Manager"
+  },
+  "navigation": {
+    "inventory": "Inventory",
+    "cooking": "Recipes",
+    "shopping": "Shopping",
+    "profile": "Profile"
+  },
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "confirm": "Confirm",
+    "close": "Close",
+    "search": "Search",
+    "refresh": "Refresh",
+    "filter": "Filter",
+    "sort": "Sort",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "done": "Done"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Successfully completed",
+    "noData": "No data available",
+    "confirmDelete": "Are you sure you want to delete?",
+    "saved": "Saved",
+    "updated": "Updated",
+    "deleted": "Deleted",
+    "networkError": "Network error occurred",
+    "tryAgain": "Please try again",
+    "more": "more"
+  },
+  "units": {
+    "days": "days",
+    "hours": "hours",
+    "minutes": "minutes",
+    "items": "items",
+    "pieces": "pcs",
+    "kg": "kg",
+    "g": "g",
+    "l": "L",
+    "ml": "ml"
+  },
+  "status": {
+    "fresh": "Fresh",
+    "normal": "Normal",
+    "warning": "Warning",
+    "expired": "Expired",
+    "frozen": "Frozen"
+  },
+  "shopping": {
+    "tabs": {
+      "active": "Shopping",
+      "history": "History"
+    },
+    "history": {
+      "info": "Check your completed shopping records.",
+      "empty": "No completed shopping this month.",
+      "monthlyRecord": "{{month}} Shopping Records"
+    }
+  }
+}

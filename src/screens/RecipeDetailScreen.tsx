@@ -9,6 +9,7 @@ import {
   Chip,
 } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { Recipe } from '../services/AIService';
@@ -20,14 +21,14 @@ import { supabaseClient } from '../services/supabaseClient';
 import { ShoppingService } from '../services/ShoppingService';
 import { useShoppingCount } from '../contexts/ShoppingContext';
 
-// Helper function to convert English difficulty to Korean
-const getDifficultyText = (difficulty: string): string => {
-  const difficultyMap: { [key: string]: string } = {
-    'easy': '쉬움',
-    'medium': '보통',
-    'hard': '어려움'
+// Helper function to get difficulty translation key
+const getDifficultyKey = (difficulty: string): string => {
+  const difficultyKeys: { [key: string]: string } = {
+    'easy': 'difficulty.easy',
+    'medium': 'difficulty.medium',
+    'hard': 'difficulty.hard'
   };
-  return difficultyMap[difficulty?.toLowerCase()] || difficulty || '보통';
+  return difficultyKeys[difficulty?.toLowerCase()] || 'difficulty.medium';
 };
 
 // Extract ingredient name only (remove quantity and unit)
@@ -54,6 +55,7 @@ const extractIngredientName = (fullIngredient: string): string => {
 };
 
 export const RecipeDetailScreen = () => {
+  const { t } = useTranslation('cooking');
   const navigation = useNavigation();
   const route = useRoute();
   const { recipe, fromItemDetail } = route.params as { recipe: Recipe; fromItemDetail?: boolean };
@@ -239,10 +241,10 @@ export const RecipeDetailScreen = () => {
         <Surface style={styles.infoCard} elevation={1}>
           <View style={styles.infoContainer}>
             <Text variant="bodyMedium" style={styles.infoText}>
-              난이도: {getDifficultyText(recipe.difficulty)}
+              {t('recipe.difficulty')}: {t(getDifficultyKey(recipe.difficulty))}
             </Text>
             <Text variant="bodyMedium" style={styles.infoText}>
-              ⏰ {recipe.cookingTime}분
+              ⏰ {recipe.cookingTime} {t('recipe.minutes')}
             </Text>
           </View>
         </Surface>
@@ -250,7 +252,7 @@ export const RecipeDetailScreen = () => {
         {/* Ingredients Card */}
         <Surface style={styles.sectionCard} elevation={1}>
           <Text variant="titleMedium" style={styles.sectionTitle}>
-            필요한 재료
+            {t('recipe.ingredients')}
           </Text>
           <View style={styles.ingredientsList}>
             {recipe.ingredients.map((ingredient, idx) => {
@@ -273,7 +275,7 @@ export const RecipeDetailScreen = () => {
                       style={styles.hasChip}
                       textStyle={styles.hasChipText}
                     >
-                      보유
+                      {t('recipe.hasIngredient')}
                     </Chip>
                   ) : (
                     <Button
@@ -292,7 +294,7 @@ export const RecipeDetailScreen = () => {
                       textColor={inShopping ? Colors.primary.main : '#757575'}
                       compact
                     >
-                      {inShopping ? "장보기" : "장보기"}
+                      {t('recipe.addToShopping')}
                     </Button>
                   )}
                 </View>
@@ -305,7 +307,7 @@ export const RecipeDetailScreen = () => {
         {recipe.instructions && recipe.instructions.length > 0 && (
           <Surface style={styles.sectionCard} elevation={1}>
             <Text variant="titleMedium" style={styles.sectionTitle}>
-              조리 방법
+              {t('recipe.instructions')}
             </Text>
             <View style={styles.instructionsList}>
               {recipe.instructions.map((instruction, idx) => {
@@ -333,7 +335,7 @@ export const RecipeDetailScreen = () => {
             icon="youtube"
             style={styles.actionButton}
           >
-            유튜브 검색
+            {t('recipe.youtubeSearch')}
           </Button>
           <Button
             mode="outlined"
@@ -345,7 +347,7 @@ export const RecipeDetailScreen = () => {
             loading={deletingRecipe}
             disabled={deletingRecipe}
           >
-            삭제
+            {t('common:buttons.delete')}
           </Button>
         </View>
       </ScrollView>

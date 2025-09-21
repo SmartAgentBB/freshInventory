@@ -1,0 +1,102 @@
+{
+  "title": "재고 관리",
+  "tabs": {
+    "fresh": "재고목록",
+    "frozen": "냉동보관",
+    "history": "소비완료",
+    "current": "재고목록",
+    "expired": "지난기록"
+  },
+  "empty": {
+    "title": "재고가 없습니다",
+    "subtitle": "+ 버튼을 눌러 재고를 추가해주세요",
+    "fresh": "재고가 없습니다",
+    "frozen": "냉동 보관 중인 재료가 없습니다",
+    "history": "소비 완료된 재료가 없습니다",
+    "default": "항목이 없습니다"
+  },
+  "addItem": "항목 추가",
+  "itemDetails": "상세 정보",
+  "expiryDate": "유통기한",
+  "daysRemaining": "{{days}}일 남음",
+  "daysAgo": "{{days}}일 전",
+  "today": "오늘",
+  "quantity": "수량",
+  "category": "카테고리",
+  "storageInfo": "보관 정보",
+  "storageDays": "보관 기간",
+  "storageMethod": "보관 방법",
+  "storageDesc": "보관 설명",
+  "actions": {
+    "freeze": "냉동 보관",
+    "unfreeze": "냉동 해제",
+    "consume": "소비 완료",
+    "delete": "삭제",
+    "edit": "수정"
+  },
+  "categories": {
+    "vegetable": "채소",
+    "fruit": "과일",
+    "meat": "육류",
+    "seafood": "해산물",
+    "dairy": "유제품",
+    "grain": "곡물",
+    "etc": "기타"
+  },
+  "camera": {
+    "title": "사진으로 추가",
+    "button": "카메라",
+    "gallery": "갤러리",
+    "analyzing": "AI가 식재료를 분석 중입니다...",
+    "recognized": "인식된 재료",
+    "failed": "인식 실패",
+    "retry": "다시 시도"
+  },
+  "sort": {
+    "newest": "최신순",
+    "oldest": "오래된순",
+    "urgent": "임박순"
+  },
+  "search": {
+    "placeholder": "검색할 재료 이름을 입력하세요"
+  },
+  "count": "총 {{count}}개",
+  "history": {
+    "info": "최근에 소비한 재료를 확인하세요.",
+    "subInfo": "재구매가 필요한 재료를 장보기 목록에 쉽게 추가하세요."
+  },
+  "itemDetail": {
+    "registrationDate": "등록일",
+    "expiryDate": "소비기한",
+    "freezing": "냉동중❄️",
+    "quantity": "수량",
+    "pieces": "개",
+    "packs": "팩",
+    "until": "{{date}}까지",
+    "daysRemaining": "D-{{days}}일",
+    "dDay": "D-Day",
+    "remainingAmount": "남은양",
+    "update": "업데이트",
+    "freeze": "냉동",
+    "frozen": "냉동중",
+    "dispose": "폐기",
+    "disposeConfirm": "폐기 확인",
+    "disposeMessage": "\"{{name}}\"을(를) 폐기 처리하시겠습니까?",
+    "cancel": "취소",
+    "getRecipes": "요리 추천받기",
+    "recipesWithIngredient": "이 재료로 만들 수 있는 요리",
+    "savedRecipesDesc": "요리책에 저장된 레시피 중 이 재료를 사용하는 요리",
+    "errors": {
+      "updateFailed": "남은 양 업데이트에 실패했습니다.",
+      "freezeFailed": "냉동 처리에 실패했습니다.",
+      "disposeFailed": "폐기 처리에 실패했습니다.",
+      "error": "오류"
+    }
+  },
+  "deleteConfirm": {
+    "title": "삭제 확인",
+    "message": "\"{{name}}\"을(를) 삭제하시겠습니까?",
+    "cancel": "취소",
+    "delete": "삭제"
+  }
+}

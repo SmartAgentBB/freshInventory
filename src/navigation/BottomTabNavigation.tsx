@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useTranslation } from 'react-i18next';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../constants/colors';
-import { getTranslation } from '../constants/translations';
 import { InventoryStackNavigator } from './InventoryStackNavigator';
 import { CookingStackNavigator } from './CookingStackNavigator';
 import { ShoppingScreen } from '../screens/ShoppingScreen';
@@ -13,6 +13,7 @@ import { useShoppingCount } from '../contexts/ShoppingContext';
 const Tab = createBottomTabNavigator();
 
 export const BottomTabNavigation = () => {
+  const { t } = useTranslation('common');
   const { activeItemCount } = useShoppingCount();
 
   return (
@@ -48,7 +49,7 @@ export const BottomTabNavigation = () => {
         name="Inventory"
         component={InventoryStackNavigator}
         options={{
-          tabBarLabel: getTranslation('navigation.inventory'),
+          tabBarLabel: t('navigation.inventory'),
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
               name="fridge-outline"
@@ -72,7 +73,7 @@ export const BottomTabNavigation = () => {
         name="Cooking"
         component={CookingStackNavigator}
         options={{
-          tabBarLabel: getTranslation('navigation.cooking'),
+          tabBarLabel: t('navigation.cooking'),
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
               name="chef-hat"
@@ -96,7 +97,7 @@ export const BottomTabNavigation = () => {
         name="Shopping"
         component={ShoppingScreen}
         options={{
-          tabBarLabel: getTranslation('navigation.shopping'),
+          tabBarLabel: t('navigation.shopping'),
           tabBarIcon: ({ color, size }) => (
             <View>
               <MaterialCommunityIcons

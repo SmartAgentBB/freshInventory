@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "냉파고",
+    "tagline": "냉장고 파먹기 도우미"
+  },
+  "navigation": {
+    "inventory": "재고",
+    "cooking": "요리",
+    "shopping": "장보기",
+    "profile": "마이"
+  },
+  "buttons": {
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "수정",
+    "add": "추가",
+    "confirm": "확인",
+    "close": "닫기",
+    "search": "검색",
+    "refresh": "새로고침",
+    "filter": "필터",
+    "sort": "정렬",
+    "back": "뒤로",
+    "next": "다음",
+    "previous": "이전",
+    "done": "완료"
+  },
+  "messages": {
+    "loading": "로딩 중...",
+    "error": "오류가 발생했습니다",
+    "success": "성공적으로 완료되었습니다",
+    "noData": "데이터가 없습니다",
+    "confirmDelete": "정말 삭제하시겠습니까?",
+    "saved": "저장되었습니다",
+    "updated": "업데이트되었습니다",
+    "deleted": "삭제되었습니다",
+    "networkError": "네트워크 오류가 발생했습니다",
+    "tryAgain": "다시 시도해주세요",
+    "more": "외"
+  },
+  "units": {
+    "days": "일",
+    "hours": "시간",
+    "minutes": "분",
+    "items": "개",
+    "pieces": "개",
+    "kg": "kg",
+    "g": "g",
+    "l": "L",
+    "ml": "ml"
+  },
+  "status": {
+    "fresh": "신선",
+    "normal": "보통",
+    "warning": "주의",
+    "expired": "만료",
+    "frozen": "냉동"
+  },
+  "shopping": {
+    "tabs": {
+      "active": "장보기",
+      "history": "지난 기록"
+    },
+    "history": {
+      "info": "완료한 장보기 기록을 확인하세요.",
+      "empty": "이번 달에 완료한 장보기가 없습니다.",
+      "monthlyRecord": "{{month}}월 장보기 기록"
+    }
+  }
+}

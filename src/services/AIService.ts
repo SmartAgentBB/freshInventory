@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getCurrentLanguage } from './i18n';
 
 // For testing, use a fallback key if environment variable is not set
-const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY || 
+const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
                 process.env.GOOGLE_GENERATIVE_AI_KEY ||
                 'AIzaSyBX3jvhUe8YourDemoKeyForTesting';
 
@@ -93,8 +94,12 @@ export class AIService {
    */
   async analyzeImage(imageUri: string): Promise<AnalysisResult> {
     try {
+      // Get current language
+      const language = getCurrentLanguage();
+      const isEnglish = language === 'en';
+
       // Check cache first
-      const cacheKey = `analyze_${imageUri}`;
+      const cacheKey = `analyze_${imageUri}_${language}`;
       if (this.cache.has(cacheKey)) {
         return this.cache.get(cacheKey);
       }
@@ -115,7 +120,36 @@ export class AIService {
       // Convert image to base64
       const base64Image = await this.imageToBase64(imageUri);
 
-      const prompt = `Detect all of the prominent food items in the image and provide detailed information in Korean.
+      const prompt = isEnglish
+        ? `Detect all of the prominent food items in the image and provide detailed information in English.
+      The box_2d should be [ymin, xmin, ymax, xmax] normalized to 0-1000.
+
+      For each ingredient, include the following information:
+      - name: Ingredient name (in English, ALWAYS use SINGULAR form - e.g., "apple" not "apples", "carrot" not "carrots")
+      - quantity: Quantity (number)
+      - unit: Unit (must be either "pcs" for individual items or "packs" for packaged items)
+      - category: Category (fruit, vegetable, meat, dairy, grain, seasoning, other)
+      - box_2d: [ymin, xmin, ymax, xmax] normalized to 0-1000 range
+
+      Important:
+      - The ingredient name must ALWAYS be in SINGULAR form regardless of quantity
+      - unit must be either "pcs" or "packs":
+        * Individual fruits, vegetables, etc. use "pcs"
+        * Packaged or bundled items use "packs"
+
+      Response format:
+      {
+        "items": [
+          {
+            "name": "apple",
+            "quantity": 3,
+            "unit": "pcs",
+            "category": "fruit",
+            "box_2d": [100, 200, 500, 600]
+          }
+        ]
+      }`
+        : `Detect all of the prominent food items in the image and provide detailed information in Korean.
       The box_2d should be [ymin, xmin, ymax, xmax] normalized to 0-1000.
 
       각 식재료에 대해 다음 정보를 포함해주세요:
@@ -236,7 +270,7 @@ export class AIService {
   /**
    * Generate recipe suggestions based on available ingredients
    */
-  async generateRecipeSuggestions(ingredients: string[], cookingStyle?: string): Promise<RecipeResult> {
+  async generateRecipeSuggestions(ingredients: string[], cookingStyle?: string, language: string = 'ko'): Promise<RecipeResult> {
     try {
       if (!ingredients || ingredients.length === 0) {
         return {
@@ -246,19 +280,64 @@ export class AIService {
         };
       }
 
-      // Check cache first (include cooking style in cache key)
-      const cacheKey = `recipes_${ingredients.sort().join('_')}_${cookingStyle || 'default'}`;
+      // Check cache first (include cooking style and language in cache key)
+      const cacheKey = `recipes_${ingredients.sort().join('_')}_${cookingStyle || 'default'}_${language}`;
       if (this.cache.has(cacheKey)) {
         console.log('=== Using cached recipe result ===');
         return this.cache.get(cacheKey);
       }
 
-      // Add cooking style preference to prompt if provided
-      const stylePrompt = cookingStyle
-        ? `\n사용자 요청사항: ${cookingStyle}\n이 요청사항을 최대한 반영하여 추천해주세요.\n`
-        : '';
+      // Generate prompt based on language
+      let prompt: string;
 
-      const prompt = `당신은 30년차 한식 요리 연구가입니다. 반드시 유효한 JSON 형식으로만 응답해주세요.
+      if (language === 'en') {
+        const stylePrompt = cookingStyle
+          ? `\nUser preference: ${cookingStyle}\nPlease incorporate this preference into your recommendations.\n`
+          : '';
+
+        prompt = `You are an experienced international chef. Please respond only in valid JSON format.
+
+Available ingredients:
+${ingredients.join(', ')}
+${stylePrompt}
+Suggest 3-5 recipes using these ingredients.
+
+Important guidelines:
+1. Recommend popular, well-known international dishes (Western, Asian fusion, Mediterranean, etc.).
+2. Don't force all ingredients into one dish. Use different main ingredients for variety.
+3. Prioritize ingredients marked with (임박/urgent) or expiring soon.
+4. Consider using ingredients marked with (주의/caution).
+5. Each recipe must include at least 1 of the user's available ingredients.
+6. Provide clear, easy-to-follow cooking instructions in English.
+
+⚠️ IMPORTANT: Response must be valid JSON only. No other text or explanations.
+
+JSON format (follow this structure exactly):
+{
+  "recipes": [
+    {
+      "name": "Vegetable Stir Fry",
+      "ingredients": ["onion 1pc", "carrot 2pcs", "soy sauce 2tbsp"],
+      "difficulty": "easy",
+      "cookingTime": 15,
+      "instructions": ["Prepare all vegetables", "Heat oil in wok", "Stir-fry for 5-7 minutes"]
+    }
+  ]
+}
+
+Notes:
+- Use double quotes for all strings
+- difficulty must be "easy", "medium", or "hard" (lowercase)
+- cookingTime should be a number (in minutes)
+- No trailing commas
+- Return only JSON, no other text`;
+      } else {
+        // Korean prompt (default)
+        const stylePrompt = cookingStyle
+          ? `\n사용자 요청사항: ${cookingStyle}\n이 요청사항을 최대한 반영하여 추천해주세요.\n`
+          : '';
+
+        prompt = `당신은 30년차 한식 요리 연구가입니다. 반드시 유효한 JSON 형식으로만 응답해주세요.
 
 보유한 식재료:
 ${ingredients.join(', ')}
@@ -294,6 +373,7 @@ JSON 형식 (정확히 이 구조를 따라주세요):
 - cookingTime은 숫자(분 단위)로 입력해주세요
 - 마지막 항목 뒤에 쉼표를 붙이지 마세요
 - JSON 외의 다른 텍스트는 절대 포함하지 마세요`;
+      }
 
       const result = await this.model.generateContent(prompt);
       const response = await result.response;

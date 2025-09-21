@@ -1,0 +1,34 @@
+{
+  "title": "Shopping",
+  "tabs": {
+    "shoppingList": "Shopping List",
+    "completed": "Completed"
+  },
+  "list": {
+    "title": "Shopping List",
+    "totalCount": "Total {{count}}",
+    "inputPlaceholder": "Enter ingredient name",
+    "addButton": "Add",
+    "empty": "Shopping list is empty",
+    "emptyDesc": "Add items you need to buy"
+  },
+  "completed": {
+    "title": "Completed Shopping",
+    "empty": "No completed shopping",
+    "emptyDesc": "Completed items will appear here",
+    "noMonthlyData": "No completed shopping this month"
+  },
+  "item": {
+    "quantity": "Quantity",
+    "notes": "Notes",
+    "addToInventory": "Add to Inventory",
+    "delete": "Delete"
+  },
+  "messages": {
+    "addSuccess": "Item added successfully",
+    "addError": "Failed to add item",
+    "completeSuccess": "Shopping completed",
+    "deleteSuccess": "Item deleted successfully",
+    "error": "Error"
+  }
+}

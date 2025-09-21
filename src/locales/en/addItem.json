@@ -1,0 +1,41 @@
+{
+  "title": "Add Items with Photo",
+  "saveTitle": "Save Items",
+  "analyzing": "AI is analyzing ingredients...",
+  "detected": "Detected Items",
+  "detectedHelp": "You can review and edit the items below",
+  "saveAll": "Save All",
+  "save": "Save",
+  "completeShoppingNotice": "Items from your shopping list were detected.",
+  "completeShoppingDesc": "Checked items will be marked as completed when saved.",
+  "completeShoppingButton": "Complete Shopping",
+  "quantity": "Qty.",
+  "category": "Category",
+  "itemName": "Item Name",
+  "selectCategory": "Select Category",
+  "categories": {
+    "fruit": "Fruit",
+    "vegetable": "Vegetable",
+    "meat": "Meat",
+    "seafood": "Seafood",
+    "dairy": "Dairy",
+    "grain": "Grain",
+    "seasoning": "Seasoning",
+    "other": "Other"
+  },
+  "units": {
+    "pieces": "pcs",
+    "packs": "packs"
+  },
+  "messages": {
+    "noItems": "No items to save.",
+    "saveComplete": "Save Complete",
+    "partialSaveSuccess": "Partially Saved",
+    "saveError": "Error occurred while saving.",
+    "itemsSaved": "{{count}} items saved.",
+    "itemsSavedWithShopping": "{{count}} items saved.\n{{items}} from shopping list marked as completed.",
+    "itemsSavedWithErrors": "{{saved}} items saved. Failed to save {{failed}} items.",
+    "error": "Error",
+    "notification": "Notice"
+  }
+}

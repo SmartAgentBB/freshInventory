@@ -1,0 +1,64 @@
+{
+  "title": "Recipes",
+  "tabs": {
+    "bookmarks": "My Recipes",
+    "recommend": "Recommendations"
+  },
+  "recommend": {
+    "title": "AI Recipe Recommendations",
+    "subtitle": "Create dishes recommended by AI using your ingredients",
+    "selectAll": "Select All",
+    "selectIngredients": "Select Ingredients",
+    "selectIngredientsAlert": "Please select ingredients for cooking.",
+    "noIngredients": "No ingredients available",
+    "noIngredientsDesc": "Please add ingredients in inventory management",
+    "styleInput": {
+      "placeholder": "Enter desired cooking style (optional)",
+      "hint": "e.g., Quick dinner, Beer snacks, High protein diet, Spicy soup"
+    },
+    "getRecommendation": "Get Recipe Recommendations",
+    "recommendButton": "Get Recipe Recommendations",
+    "recommendAgain": "Get New Recommendations",
+    "recommending": "AI is generating recipes...",
+    "recommendedRecipes": "Recommended Recipes",
+    "fromIngredient": "Recipes using {{ingredient}}"
+  },
+  "recipe": {
+    "difficulty": "Difficulty",
+    "cookingTime": "Cooking Time",
+    "minutes": "min",
+    "ingredients": "Ingredients",
+    "instructions": "Cooking Instructions",
+    "youtubeSearch": "YouTube Search",
+    "bookmark": "Save",
+    "bookmarked": "Saved",
+    "hasIngredient": "Have",
+    "missingIngredient": "Need",
+    "addToShopping": "Shopping"
+  },
+  "difficulty": {
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard"
+  },
+  "bookmarks": {
+    "empty": "No saved recipes",
+    "emptyDesc": "Bookmarked recipes will appear here",
+    "sortBy": {
+      "recent": "Recent",
+      "ingredients": "By Available"
+    },
+    "total": "Total {{count}}",
+    "availableIngredients": "{{count}} available"
+  },
+  "categories": {
+    "fresh": "Fresh Items",
+    "frozen": "Frozen Items"
+  },
+  "status": {
+    "urgent": "Urgent"
+  },
+  "search": {
+    "recipePlaceholder": "Search for recipe name"
+  }
+}

@@ -14,6 +14,7 @@ import {
   useTheme
 } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { FoodItem } from '../models/FoodItem';
 import { InventoryService } from '../services/InventoryService';
 import { StorageInfoService } from '../services/StorageInfoService';
@@ -23,7 +24,7 @@ import { supabaseClient } from '../services/supabaseClient';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { ko, enUS } from 'date-fns/locale';
 import { useAuth } from '../hooks/useAuth';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -33,6 +34,7 @@ export const ItemDetailScreen: React.FC = () => {
   const route = useRoute();
   const theme = useTheme();
   const { user } = useAuth();
+  const { t, i18n } = useTranslation('inventory');
   const [item, setItem] = useState<FoodItem | null>(null);
   const [currentRemains, setCurrentRemains] = useState(100);
   const [storageInfoModalVisible, setStorageInfoModalVisible] = useState(false);
@@ -192,7 +194,7 @@ export const ItemDetailScreen: React.FC = () => {
       navigation.goBack();
     } catch (error) {
       console.error('Error updating remains:', error);
-      Alert.alert('오류', '남은 양 업데이트에 실패했습니다.');
+      Alert.alert(t('itemDetail.errors.error'), t('itemDetail.errors.updateFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -263,7 +265,7 @@ export const ItemDetailScreen: React.FC = () => {
       navigation.goBack();
     } catch (error) {
       console.error('Error freezing item:', error);
-      Alert.alert('오류', '냉동 처리에 실패했습니다.');
+      Alert.alert(t('itemDetail.errors.error'), t('itemDetail.errors.freezeFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -278,12 +280,12 @@ export const ItemDetailScreen: React.FC = () => {
 
     if (Platform.OS !== 'web') {
       Alert.alert(
-        '폐기 확인',
-        `"${item.name}"을(를) 폐기 처리하시겠습니까?`,
+        t('itemDetail.disposeConfirm'),
+        t('itemDetail.disposeMessage', { name: item.name }),
         [
-          { text: '취소', style: 'cancel' },
-          { 
-            text: '폐기', 
+          { text: t('itemDetail.cancel'), style: 'cancel' },
+          {
+            text: t('itemDetail.dispose'), 
             onPress: async () => {
               await processDispose();
             },
@@ -317,7 +319,7 @@ export const ItemDetailScreen: React.FC = () => {
       navigation.goBack();
     } catch (error) {
       console.error('Error disposing item:', error);
-      Alert.alert('오류', '폐기 처리에 실패했습니다.');
+      Alert.alert(t('itemDetail.errors.error'), t('itemDetail.errors.disposeFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -348,8 +350,8 @@ export const ItemDetailScreen: React.FC = () => {
   const dDayText = daysUntilExpiry < 0 
     ? `D+${Math.abs(daysUntilExpiry)}일`
     : daysUntilExpiry === 0 
-    ? 'D-Day' 
-    : `D-${daysUntilExpiry}일`;
+    ? t('itemDetail.dDay')
+    : t('itemDetail.daysRemaining', { days: daysUntilExpiry });
 
   // Calculate frozen days if item is frozen
   let frozenDays = 0;
@@ -360,14 +362,14 @@ export const ItemDetailScreen: React.FC = () => {
     frozenDate.setHours(0, 0, 0, 0);
     // Add 1 to include today (day 0 for today)
     frozenDays = Math.floor((today.getTime() - frozenDate.getTime()) / (1000 * 60 * 60 * 24));
-    frozenDateFormatted = format(frozenDate, 'MM/dd', { locale: ko });
+    frozenDateFormatted = format(frozenDate, i18n.language === 'en' ? 'MMM dd' : 'MM/dd', { locale: i18n.language === 'en' ? enUS : ko });
   } else if (isFrozen && !item.frozenDate) {
     // If frozen but no frozen date, use added date as frozen date
     const frozenDate = new Date(item.addedDate);
     frozenDate.setHours(0, 0, 0, 0);
     // Add 1 to include today (day 0 for today)
     frozenDays = Math.floor((today.getTime() - frozenDate.getTime()) / (1000 * 60 * 60 * 24));
-    frozenDateFormatted = format(frozenDate, 'MM/dd', { locale: ko });
+    frozenDateFormatted = format(frozenDate, i18n.language === 'en' ? 'MMM dd' : 'MM/dd', { locale: i18n.language === 'en' ? enUS : ko });
   }
 
   return (
@@ -414,17 +416,17 @@ export const ItemDetailScreen: React.FC = () => {
             <View style={styles.tableHeader}>
               <View style={[styles.tableCell, styles.tableCellSmall]}>
                 <Text variant="labelMedium" style={styles.headerText}>
-                  등록일
+                  {t('itemDetail.registrationDate')}
                 </Text>
               </View>
               <View style={[styles.tableCell, styles.tableCellLarge, styles.tableCellBorder]}>
                 <Text variant="labelMedium" style={styles.headerText}>
-                  {isFrozen ? '냉동중❄️' : '소비기한'}
+                  {isFrozen ? t('itemDetail.freezing') : t('itemDetail.expiryDate')}
                 </Text>
               </View>
               <View style={[styles.tableCell, styles.tableCellSmall, styles.tableCellBorder]}>
                 <Text variant="labelMedium" style={styles.headerText}>
-                  수량
+                  {t('itemDetail.quantity')}
                 </Text>
               </View>
             </View>
@@ -433,7 +435,7 @@ export const ItemDetailScreen: React.FC = () => {
             <View style={styles.tableRow}>
               <View style={[styles.tableCell, styles.tableCellSmall]}>
                 <Text variant="bodyLarge" style={styles.dataText}>
-                  {format(item.addedDate, 'MM/dd', { locale: ko })}
+                  {format(item.addedDate, i18n.language === 'en' ? 'MMM dd' : 'MM/dd', { locale: i18n.language === 'en' ? enUS : ko })}
                 </Text>
               </View>
               <View style={[styles.tableCell, styles.tableCellLarge, styles.tableCellBorder]}>
@@ -441,18 +443,20 @@ export const ItemDetailScreen: React.FC = () => {
                   {isFrozen ? (
                     <>
                       <Text variant="bodySmall" style={styles.expiryDateText}>
-                        {frozenDateFormatted}부터
+                        {i18n.language === 'en' ? `Since ${frozenDateFormatted}` : `${frozenDateFormatted}부터`}
                       </Text>
                       <View style={styles.dDayContainer}>
                         <Text variant="bodyLarge" style={styles.dataText}>
-                          {frozenDays}일
+                          {i18n.language === 'en' ? `${frozenDays}D` : `${frozenDays}일`}
                         </Text>
                       </View>
                     </>
                   ) : (
                     <View style={styles.expiryContent}>
                       <Text variant="bodySmall" style={styles.expiryDateText}>
-                        {format(expiryDate, 'MM/dd', { locale: ko })}까지
+                        {i18n.language === 'en'
+                          ? t('itemDetail.until', { date: format(expiryDate, 'MMM dd') })
+                          : t('itemDetail.until', { date: format(expiryDate, 'MM/dd', { locale: ko }) })}
                       </Text>
                       <View style={styles.dDayWithIcon}>
                         <Text variant="bodyLarge" style={styles.dataText}>
@@ -476,7 +480,7 @@ export const ItemDetailScreen: React.FC = () => {
               </View>
               <View style={[styles.tableCell, styles.tableCellSmall, styles.tableCellBorder]}>
                 <Text variant="bodyLarge" style={styles.dataText}>
-                  {item.quantity} {item.unit}
+                  {item.quantity} {i18n.language === 'en' && item.unit === '개' ? t('itemDetail.pieces') : i18n.language === 'en' && item.unit === '팩' ? t('itemDetail.packs') : item.unit}
                 </Text>
               </View>
             </View>
@@ -487,7 +491,7 @@ export const ItemDetailScreen: React.FC = () => {
         <Surface style={styles.remainsCard}>
           <View style={styles.cardHeader}>
             <Text variant="labelMedium" style={styles.headerText}>
-              남은 양
+              {t('itemDetail.remainingAmount')}
             </Text>
             <Button
               mode="outlined"
@@ -505,7 +509,7 @@ export const ItemDetailScreen: React.FC = () => {
               contentStyle={styles.updateButtonContent}
               compact
             >
-              업데이트
+              {t('itemDetail.update')}
             </Button>
           </View>
           <View style={styles.remainsContent}>
@@ -566,7 +570,7 @@ export const ItemDetailScreen: React.FC = () => {
             disabled={isLoading || isFrozen}
             labelStyle={[styles.freezeButtonLabel, isFrozen && styles.disabledButtonLabel]}
           >
-            {isFrozen ? "냉동중" : "냉동"}
+            {isFrozen ? t('itemDetail.frozen') : t('itemDetail.freeze')}
           </Button>
 
           <Button
@@ -579,7 +583,7 @@ export const ItemDetailScreen: React.FC = () => {
             labelStyle={styles.disposeButtonLabel}
             textColor="#F44336"
           >
-            폐기
+            {t('itemDetail.dispose')}
           </Button>
         </View>
 
@@ -595,7 +599,7 @@ export const ItemDetailScreen: React.FC = () => {
               loading={isRecommending}
               disabled={isRecommending}
             >
-              요리 추천받기
+              {t('itemDetail.getRecipes')}
             </Button>
           </View>
         </View>
@@ -606,10 +610,10 @@ export const ItemDetailScreen: React.FC = () => {
             <View style={styles.recipesDivider} />
             <View style={styles.recipesHeader}>
               <Text variant="titleMedium" style={styles.recipesTitle}>
-                이 재료로 만들 수 있는 요리
+                {t('itemDetail.recipesWithIngredient')}
               </Text>
               <Text variant="bodySmall" style={styles.recipesSubtitle}>
-                요리책에 저장된 레시피 중 이 재료를 사용하는 요리
+                {t('itemDetail.savedRecipesDesc')}
               </Text>
             </View>
             <View style={styles.recipesContainer}>

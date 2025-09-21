@@ -1,5 +1,6 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import { useTranslation } from 'react-i18next';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { Colors } from '../constants/colors';
 
@@ -10,6 +11,8 @@ export type ProfileStackParamList = {
 const Stack = createStackNavigator<ProfileStackParamList>();
 
 export const ProfileStackNavigator = () => {
+  const { t } = useTranslation('profile');
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -32,7 +35,7 @@ export const ProfileStackNavigator = () => {
         name="ProfileMain"
         component={ProfileScreen}
         options={{
-          title: '마이 페이지',
+          title: t('title'),
           headerShown: true,
         }}
       />

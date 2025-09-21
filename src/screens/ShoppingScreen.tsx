@@ -12,6 +12,7 @@ import {
   Divider,
 } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { ShoppingService, ShoppingItem } from '../services/ShoppingService';
@@ -19,13 +20,14 @@ import { supabaseClient } from '../services/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 import { useIsFocused } from '@react-navigation/native';
 import { format, isToday, isYesterday } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { ko, enUS } from 'date-fns/locale';
 import { useShoppingCount } from '../contexts/ShoppingContext';
 
 type TabType = 'shopping' | 'history';
 
-// 장보기 탭 컴포넌트
+// Shopping Tab Component
 const ShoppingListTab = () => {
+  const { t, i18n } = useTranslation('shopping');
   const [activeItems, setActiveItems] = useState<ShoppingItem[]>([]);
   const [completedItems, setCompletedItems] = useState<ShoppingItem[]>([]);
   const [newItemName, setNewItemName] = useState('');
@@ -103,7 +105,7 @@ const ShoppingListTab = () => {
       setNewItemName('');
       loadShoppingList();
     } else {
-      Alert.alert('오류', result.error || '아이템 추가에 실패했습니다.');
+      Alert.alert(t('messages.error'), result.error || t('messages.addError'));
     }
     setAdding(false);
   };
@@ -185,11 +187,13 @@ const ShoppingListTab = () => {
     const date = new Date(dateString);
 
     if (isToday(date)) {
-      return '오늘';
+      return i18n.language === 'en' ? 'Today' : '오늘';
     } else if (isYesterday(date)) {
-      return '어제';
+      return i18n.language === 'en' ? 'Yesterday' : '어제';
     } else {
-      return format(date, 'M월 d일 (EEE)', { locale: ko });
+      return i18n.language === 'en'
+        ? format(date, 'MMM d (EEE)', { locale: enUS })
+        : format(date, 'M월 d일 (EEE)', { locale: ko });
     }
   };
 
@@ -208,10 +212,10 @@ const ShoppingListTab = () => {
         <Card.Content>
           <View style={styles.sectionHeader}>
             <Text variant="titleMedium" style={styles.sectionTitle}>
-              쇼핑 목록
+              {t('list.title')}
             </Text>
             <Text variant="bodySmall" style={styles.countText}>
-              총 {activeItems.length}개
+              {t('list.totalCount', { count: activeItems.length })}
             </Text>
           </View>
 
@@ -220,7 +224,7 @@ const ShoppingListTab = () => {
             <TextInput
               value={newItemName}
               onChangeText={setNewItemName}
-              placeholder="재료 이름을 입력하세요"
+              placeholder={t('list.inputPlaceholder')}
               placeholderTextColor="#9E9E9E"
               mode="outlined"
               style={styles.input}
@@ -242,7 +246,7 @@ const ShoppingListTab = () => {
               contentStyle={styles.addButtonContent}
               compact
             >
-              추가
+              {t('list.addButton')}
             </Button>
           </View>
 
@@ -252,7 +256,7 @@ const ShoppingListTab = () => {
           {activeItems.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text variant="bodyMedium" style={styles.emptyText}>
-                쇼핑 목록이 비어있습니다
+                {t('list.empty')}
               </Text>
             </View>
           ) : (
@@ -345,7 +349,7 @@ const ShoppingListTab = () => {
       <Card style={styles.card} mode="outlined">
         <Card.Content>
           <Text variant="titleMedium" style={styles.sectionTitle}>
-            완료한 쇼핑
+            {t('completed.title')}
           </Text>
 
           <Divider style={styles.divider} />
@@ -353,7 +357,7 @@ const ShoppingListTab = () => {
           {completedItems.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text variant="bodyMedium" style={styles.emptyText}>
-                완료한 쇼핑이 없습니다
+                {t('completed.empty')}
               </Text>
             </View>
           ) : (
@@ -403,6 +407,7 @@ const ShoppingListTab = () => {
 
 // 지난 기록 탭 컴포넌트
 const HistoryTab = () => {
+  const { t, i18n } = useTranslation('shopping');
   const [historyItems, setHistoryItems] = useState<ShoppingItem[]>([]);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -544,7 +549,9 @@ const HistoryTab = () => {
               size={24}
             />
             <Text variant="titleMedium" style={styles.monthTitle}>
-              {currentYear}년 {currentMonth + 1}월
+              {i18n.language === 'en'
+                ? `${new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                : `${currentYear}년 ${currentMonth + 1}월`}
             </Text>
             <IconButton
               icon="chevron-right"
@@ -609,7 +616,7 @@ const HistoryTab = () => {
         <Card style={styles.card} mode="outlined">
           <Card.Content>
             <Text variant="bodyMedium" style={styles.emptyText}>
-              이번 달에 완료한 장보기가 없습니다.
+              {t('completed.noMonthlyData')}
             </Text>
           </Card.Content>
         </Card>
@@ -617,11 +624,15 @@ const HistoryTab = () => {
         <>
           <Surface style={styles.monthlyHeader} elevation={0}>
             <Text variant="titleMedium" style={styles.monthlyTitle}>
-              {currentMonth + 1}월 장보기 기록
+              {i18n.language === 'en'
+                ? `${new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long' })} Shopping History`
+                : `${currentMonth + 1}월 장보기 기록`}
             </Text>
           </Surface>
           {monthlyHistory.map(({ date, items }) => {
-            const formattedDate = format(new Date(date), 'M월 d일 (EEE)', { locale: ko });
+            const formattedDate = i18n.language === 'en'
+              ? format(new Date(date), 'MMM d (EEE)', { locale: enUS })
+              : format(new Date(date), 'M월 d일 (EEE)', { locale: ko });
             return (
               <Card key={date} style={styles.card} mode="outlined">
                 <Card.Content>
@@ -643,8 +654,9 @@ const HistoryTab = () => {
   );
 };
 
-// 메인 ShoppingScreen
+// Main ShoppingScreen
 export const ShoppingScreen = () => {
+  const { t } = useTranslation('shopping');
   const [activeTab, setActiveTab] = useState<TabType>('shopping');
 
   const TabButton: React.FC<{ tab: TabType; label: string }> = ({ tab, label }) => (
@@ -673,22 +685,10 @@ export const ShoppingScreen = () => {
       <View style={styles.headerSection}>
         {/* Tabs */}
         <View style={styles.tabContainer}>
-          <TabButton tab="shopping" label="장보기" />
-          <TabButton tab="history" label="지난 기록" />
+          <TabButton tab="shopping" label={t('tabs.shoppingList')} />
+          <TabButton tab="history" label={t('tabs.completed')} />
         </View>
 
-        {/* History tab info */}
-        {activeTab === 'history' && (
-          <View style={styles.historyInfoContainer}>
-            <View style={styles.historyInfo}>
-              <View style={styles.historyInfoTextContainer}>
-                <Text style={styles.historyInfoText}>
-                  완료한 장보기 기록을 확인하세요.
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
       </View>
 
       {/* Tab Content */}

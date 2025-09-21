@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Card, Text, ProgressBar, IconButton } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import { FoodItem } from '../models/FoodItem';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { format, differenceInDays } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { ko, enUS } from 'date-fns/locale';
 
 interface HistoryCardProps {
   item: FoodItem;
@@ -22,6 +23,7 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
   isInShoppingList = false
 }) => {
   const [isAddedToShopping, setIsAddedToShopping] = useState(isInShoppingList);
+  const { t, i18n } = useTranslation('inventory');
 
   useEffect(() => {
     setIsAddedToShopping(isInShoppingList);
@@ -38,8 +40,8 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
   };
 
   // Format dates
-  const addedDate = format(item.addedDate, 'MM/dd', { locale: ko });
-  const consumedDate = item.consumedAt ? format(item.consumedAt, 'MM/dd', { locale: ko }) : '';
+  const addedDate = format(item.addedDate, i18n.language === 'en' ? 'MMM dd' : 'MM/dd', { locale: i18n.language === 'en' ? enUS : ko });
+  const consumedDate = item.consumedAt ? format(item.consumedAt, i18n.language === 'en' ? 'MMM dd' : 'MM/dd', { locale: i18n.language === 'en' ? enUS : ko }) : '';
   
   // Calculate consumption period
   const consumptionDays = item.consumedAt 
@@ -96,13 +98,13 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {item.name} ({item.quantity}{item.unit})
+              {item.name} ({item.quantity}{i18n.language === 'en' && item.unit === '개' ? t('itemDetail.pieces') : i18n.language === 'en' && item.unit === '팩' ? t('itemDetail.packs') : item.unit})
             </Text>
             
             {/* Consumption Period Row */}
             <View style={styles.infoRow}>
               <Text variant="bodySmall" style={styles.infoText}>
-                소비기간: {addedDate} ~ {consumedDate}
+                {i18n.language === 'en' ? 'Period' : '소비기간'}: {addedDate} ~ {consumedDate}
               </Text>
             </View>
 
@@ -117,11 +119,11 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
             {/* Usage Labels Row - Below the bar */}
             <View style={styles.usageLabelsRow}>
               <Text variant="bodySmall" style={[styles.usageLabel, { color: '#4CAF50' }]}>
-                사용 {Math.round(usageRatio * 100)}%
+                {i18n.language === 'en' ? 'Used' : '사용'} {Math.round(usageRatio * 100)}%
               </Text>
               {wasteRatio > 0 && (
                 <Text variant="bodySmall" style={[styles.usageLabel, { color: '#F44336' }]}>
-                  폐기 {Math.round(wasteRatio * 100)}%
+                  {i18n.language === 'en' ? 'Wasted' : '폐기'} {Math.round(wasteRatio * 100)}%
                 </Text>
               )}
             </View>

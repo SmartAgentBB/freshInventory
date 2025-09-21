@@ -1,19 +1,20 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { Card, Text } from 'react-native-paper';
+import { Card, Text, Chip } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { Recipe } from '../models/Recipe';
 
-// Helper function to convert English difficulty to Korean
-const getDifficultyText = (difficulty: string): string => {
-  const difficultyMap: { [key: string]: string } = {
-    'easy': '쉬움',
-    'medium': '보통',
-    'hard': '어려움'
+// Helper function to get difficulty translation key
+const getDifficultyKey = (difficulty: string): string => {
+  const difficultyKeys: { [key: string]: string } = {
+    'easy': 'difficulty.easy',
+    'medium': 'difficulty.medium',
+    'hard': 'difficulty.hard'
   };
-  return difficultyMap[difficulty?.toLowerCase()] || difficulty || '보통';
+  return difficultyKeys[difficulty?.toLowerCase()] || 'difficulty.medium';
 };
 
 interface RecipeCardProps {
@@ -29,6 +30,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   ingredients = [],
   compact = false
 }) => {
+  const { t } = useTranslation('cooking');
   const handlePress = () => {
     onPress?.(recipe);
   };
@@ -78,7 +80,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         })}
         {hasMore && (
           <Text variant="bodySmall" style={styles.ingredientPreviewText}>
-            외
+            {t('common:messages.more', { defaultValue: '외' })}
           </Text>
         )}
       </View>
@@ -101,30 +103,32 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             <View style={styles.recipeInfoLeft}>
               <View style={styles.recipeInfoItem}>
                 <Text variant="bodySmall" style={styles.recipeInfoLabel}>
-                  난이도:
+                  {t('recipe.difficulty')}:
                 </Text>
                 <Text variant="bodyMedium" style={styles.recipeInfoValue}>
-                  {getDifficultyText(recipe.difficulty)}
+                  {t(getDifficultyKey(recipe.difficulty))}
                 </Text>
               </View>
               <Text variant="bodyMedium" style={styles.timeText}>
-                ⏰ {recipe.cookingTime}분
+                ⏰ {recipe.cookingTime} {t('recipe.minutes')}
               </Text>
             </View>
 
             {ingredients.length > 0 && (
-              <View style={styles.availableChip}>
-                <Text variant="bodySmall" style={styles.availableChipText}>
-                  {getAvailableCount()}/{recipe.ingredients.length} 재료 보유
-                </Text>
-              </View>
+              <Chip
+                mode="flat"
+                style={styles.availableChip}
+                textStyle={styles.availableChipText}
+              >
+                {t('recipe.hasIngredient')} {getAvailableCount()}
+              </Chip>
             )}
           </View>
 
           {!compact && ingredients.length > 0 && (
             <View style={styles.ingredientSection}>
               <Text variant="bodySmall" style={styles.ingredientLabel}>
-                필요한 재료:
+                {t('recipe.ingredients')}:
               </Text>
               {getIngredientNames()}
             </View>
@@ -186,14 +190,19 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Regular',
   },
   availableChip: {
-    backgroundColor: Colors.primary.light,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: '#E8F5E9',
+    height: 28,
+    marginLeft: Spacing.xs,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 0,
   },
   availableChipText: {
-    color: Colors.primary.main,
+    fontSize: 12,
+    color: '#4CAF50',
     fontFamily: 'OpenSans-SemiBold',
+    lineHeight: 16,
+    textAlignVertical: 'center',
   },
   ingredientSection: {
     marginTop: Spacing.sm,

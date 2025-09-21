@@ -1,0 +1,34 @@
+{
+  "title": "쇼핑",
+  "tabs": {
+    "shoppingList": "쇼핑 목록",
+    "completed": "완료한 쇼핑"
+  },
+  "list": {
+    "title": "쇼핑 목록",
+    "totalCount": "총 {{count}}개",
+    "inputPlaceholder": "재료 이름을 입력하세요",
+    "addButton": "추가",
+    "empty": "쇼핑 목록이 비어있습니다",
+    "emptyDesc": "필요한 재료를 추가해주세요"
+  },
+  "completed": {
+    "title": "완료한 쇼핑",
+    "empty": "완료한 쇼핑이 없습니다",
+    "emptyDesc": "구매 완료한 아이템이 여기에 표시됩니다",
+    "noMonthlyData": "이번 달에 완료한 장보기가 없습니다"
+  },
+  "item": {
+    "quantity": "수량",
+    "notes": "메모",
+    "addToInventory": "재고 추가",
+    "delete": "삭제"
+  },
+  "messages": {
+    "addSuccess": "아이템이 추가되었습니다",
+    "addError": "아이템 추가에 실패했습니다",
+    "completeSuccess": "쇼핑을 완료했습니다",
+    "deleteSuccess": "아이템이 삭제되었습니다",
+    "error": "오류"
+  }
+}

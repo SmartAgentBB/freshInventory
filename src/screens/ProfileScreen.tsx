@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
-import { Surface, Text, List, Button, Divider, Switch } from 'react-native-paper';
+import { Surface, Text, List, Button, Divider, Switch, Menu } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { useAuth } from '../hooks/useAuth';
 import { AuthService } from '../services/AuthService';
 import { supabaseClient } from '../services/supabaseClient';
 import { notificationService } from '../services/NotificationService';
+import { changeLanguage, getCurrentLanguage, getAvailableLanguages } from '../services/i18n';
 
 export const ProfileScreen: React.FC = () => {
+  const { t, i18n } = useTranslation('profile');
   const { user, signOut } = useAuth();
   const navigation = useNavigation<any>();
   const authService = new AuthService(supabaseClient);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notificationTime, setNotificationTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [languageMenuVisible, setLanguageMenuVisible] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState(getCurrentLanguage());
+  const availableLanguages = getAvailableLanguages();
 
   useEffect(() => {
     loadNotificationSettings();
@@ -33,18 +39,29 @@ export const ProfileScreen: React.FC = () => {
 
   const handleSignOut = async () => {
     Alert.alert(
-      '로그아웃',
-      '정말 로그아웃 하시겠습니까?',
+      t('account.logout'),
+      t('messages.logoutConfirm'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common:buttons.cancel'), style: 'cancel' },
         {
-          text: '로그아웃',
+          text: t('account.logout'),
           style: 'destructive',
           onPress: async () => {
             await signOut();
           },
         },
       ]
+    );
+  };
+
+  const handleLanguageChange = async (langCode: string) => {
+    setLanguageMenuVisible(false);
+    await changeLanguage(langCode);
+    setCurrentLanguage(langCode);
+    Alert.alert(
+      t('language.title'),
+      t('language.changeSuccess'),
+      [{ text: t('common:buttons.confirm'), style: 'default' }]
     );
   };
 
@@ -68,9 +85,15 @@ export const ProfileScreen: React.FC = () => {
   const formatTime = (date: Date) => {
     const hours = date.getHours();
     const minutes = date.getMinutes();
-    const period = hours >= 12 ? '오후' : '오전';
-    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-    return `${period} ${displayHours}시 ${minutes.toString().padStart(2, '0')}분`;
+    if (i18n.language === 'ko') {
+      const period = hours >= 12 ? '오후' : '오전';
+      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+      return `${period} ${displayHours}시 ${minutes.toString().padStart(2, '0')}분`;
+    } else {
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+      return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    }
   };
 
 
@@ -80,19 +103,47 @@ export const ProfileScreen: React.FC = () => {
         {/* 사용자 정보 */}
         <Surface style={styles.section} elevation={1}>
           <List.Item
-            title="이메일"
+            title={t('account.email')}
             description={user?.email || ''}
             left={props => <List.Icon {...props} icon="email-outline" color={Colors.primary.main} />}
             style={styles.listItem}
           />
         </Surface>
 
+        {/* 언어 설정 */}
+        <Surface style={styles.section} elevation={1}>
+          <Menu
+            visible={languageMenuVisible}
+            onDismiss={() => setLanguageMenuVisible(false)}
+            anchor={
+              <List.Item
+                title={t('settings.language')}
+                description={availableLanguages.find(lang => lang.code === currentLanguage)?.name}
+                left={props => <List.Icon {...props} icon="translate" color={Colors.primary.main} />}
+                right={props => <List.Icon {...props} icon="chevron-down" />}
+                onPress={() => setLanguageMenuVisible(true)}
+                style={styles.listItem}
+              />
+            }
+          >
+            {availableLanguages.map(lang => (
+              <Menu.Item
+                key={lang.code}
+                onPress={() => handleLanguageChange(lang.code)}
+                title={`${lang.flag} ${lang.name}`}
+                style={currentLanguage === lang.code ? styles.selectedLanguage : undefined}
+              />
+            ))}
+          </Menu>
+        </Surface>
+
         {/* 알림 설정 */}
         <Surface style={styles.section} elevation={1}>
           <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
+            <View style={[styles.settingInfo, { flexDirection: 'row', alignItems: 'center' }]}>
+              <List.Icon icon="bell-outline" color={Colors.primary.main} style={{ margin: 0, marginRight: 8 }} />
               <Text variant="titleMedium" style={styles.settingTitle}>
-                소비기한 알림
+                {t('notifications.expiryAlert')}
               </Text>
             </View>
             <Switch
@@ -105,7 +156,7 @@ export const ProfileScreen: React.FC = () => {
             <>
               <Divider />
               <List.Item
-                title="알림 시간"
+                title={t('notifications.time')}
                 description={formatTime(notificationTime)}
                 left={props => <List.Icon {...props} icon="clock-outline" color={Colors.primary.main} />}
                 onPress={() => setShowTimePicker(true)}
@@ -120,7 +171,7 @@ export const ProfileScreen: React.FC = () => {
         {/* 앱 정보 */}
         <Surface style={styles.section} elevation={1}>
           <List.Item
-            title="버전 정보"
+            title={t('settings.version')}
             description="v1.2.0"
             left={props => <List.Icon {...props} icon="information-outline" color={Colors.primary.main} />}
             style={styles.listItem}
@@ -146,7 +197,7 @@ export const ProfileScreen: React.FC = () => {
           textColor={Colors.primary.main}
           icon="logout"
         >
-          로그아웃
+          {t('account.logout')}
         </Button>
       </Surface>
     </ScrollView>
@@ -203,5 +254,8 @@ const styles = StyleSheet.create({
   logoutButtonContent: {
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
+  },
+  selectedLanguage: {
+    backgroundColor: Colors.primary.container,
   },
 });

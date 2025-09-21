@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-n
 import { Surface, Text, Button, Chip, ActivityIndicator, FAB, Card, Divider, TextInput, IconButton, Menu, Switch } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useIsFocused } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { InventoryService } from '../services/InventoryService';
@@ -17,14 +18,14 @@ import { recipeService } from '../services/RecipeService';
 
 type TabType = 'recommend' | 'bookmarks';
 
-// Helper function to convert English difficulty to Korean
-const getDifficultyText = (difficulty: string): string => {
-  const difficultyMap: { [key: string]: string } = {
-    'easy': '쉬움',
-    'medium': '보통',
-    'hard': '어려움'
+// Helper function to get difficulty translation key
+const getDifficultyKey = (difficulty: string): string => {
+  const difficultyKeys: { [key: string]: string } = {
+    'easy': 'difficulty.easy',
+    'medium': 'difficulty.medium',
+    'hard': 'difficulty.hard'
   };
-  return difficultyMap[difficulty?.toLowerCase()] || difficulty || '보통';
+  return difficultyKeys[difficulty?.toLowerCase()] || 'difficulty.medium';
 };
 
 // 요리 추천 탭
@@ -37,6 +38,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   initialRecommendations,
   fromIngredient
 }) => {
+  const { t, i18n } = useTranslation('cooking');
   const [ingredients, setIngredients] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [recommending, setRecommending] = useState(false);
@@ -341,7 +343,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
       const selectedItems = ingredients.filter(item => selectedIngredients.has(item.id));
 
       if (selectedItems.length === 0) {
-        alert('요리에 사용할 재료를 선택해주세요.');
+        alert(t('recommend.selectIngredientsAlert'));
         setRecommending(false);
         return;
       }
@@ -375,7 +377,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
       });
 
       // AI 추천 API 호출 (사용자 입력 스타일 포함)
-      const result = await aiService.generateRecipeSuggestions(ingredientInfo, cookingStyleInput.trim());
+      const result = await aiService.generateRecipeSuggestions(ingredientInfo, cookingStyleInput.trim(), i18n.language);
       console.log('Received recommendations result:', result);
 
       if (result.success && result.recipes.length > 0) {
@@ -436,28 +438,28 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
         {/* 안내 메시지 및 색상 범례 */}
         <Surface style={styles.infoCard} elevation={1}>
           <Text variant="bodySmall" style={styles.infoText}>
-            보유 재료로 AI가 추천하는 요리를 만들어보세요.
+            {t('recommend.subtitle')}
           </Text>
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: '#F44336' }]} />
-              <Text variant="bodySmall" style={{ fontSize: 11 }}>만료</Text>
+              <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.expired')}</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: '#FF9800' }]} />
-              <Text variant="bodySmall" style={{ fontSize: 11 }}>임박</Text>
+              <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('status.urgent')}</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: '#FFC107' }]} />
-              <Text variant="bodySmall" style={{ fontSize: 11 }}>주의</Text>
+              <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.warning')}</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: '#4CAF50' }]} />
-              <Text variant="bodySmall" style={{ fontSize: 11 }}>신선</Text>
+              <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.fresh')}</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: '#2196F3' }]} />
-              <Text variant="bodySmall" style={{ fontSize: 11 }}>냉동</Text>
+              <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.frozen')}</Text>
             </View>
           </View>
         </Surface>
@@ -466,7 +468,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
         {ingredients.length > 0 && (
           <View style={styles.selectAllContainer}>
             <Text variant="bodyMedium" style={styles.selectAllText}>
-              전체 선택
+              {t('recommend.selectAll')}
             </Text>
             <Switch
               value={selectAll}
@@ -495,7 +497,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                   {sortedFresh.length > 0 && (
                     <>
                       <Text variant="titleMedium" style={styles.sectionTitle}>
-                        🥬 신선 재료 ({sortedFresh.length}개)
+                        🥬 {t('categories.fresh')} ({sortedFresh.length})
                       </Text>
                       <View style={styles.chipContainer}>
                         {sortedFresh.map((item) => {
@@ -539,7 +541,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                   {sortedFrozen.length > 0 && (
                     <>
                       <Text variant="titleMedium" style={styles.sectionTitle}>
-                        ❄️ 냉동 재료 ({sortedFrozen.length}개)
+                        ❄️ {t('categories.frozen')} ({sortedFrozen.length})
                       </Text>
                       <View style={styles.chipContainer}>
                         {sortedFrozen.map((item) => {
@@ -589,7 +591,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                   <TextInput
                     value={cookingStyleInput}
                     onChangeText={setCookingStyleInput}
-                    placeholder="원하는 요리 스타일 입력 (선택사항)"
+                    placeholder={t('recommend.styleInput.placeholder')}
                     placeholderTextColor={Colors.text.disabled}
                     mode="outlined"
                     multiline
@@ -608,7 +610,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                     }
                   />
                   <Text variant="bodySmall" style={styles.cookingStyleHint}>
-                    예: 초간단 저녁 식사, 맥주 안주, 다이어트용 고단백, 얼큰한 국물
+                    {t('recommend.styleInput.hint')}
                   </Text>
                 </View>
                 <View style={styles.recommendButtonContainer}>
@@ -620,7 +622,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                     style={styles.recommendButton}
                     contentStyle={styles.recommendButtonContent}
                   >
-                    요리 추천받기
+                    {t('recommend.getRecommendation')}
                   </Button>
                 </View>
               </>
@@ -641,7 +643,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                   style={styles.recommendButton}
                   contentStyle={styles.recommendButtonContent}
                 >
-                  다시 추천받기
+                  {t('recommend.recommendAgain')}
                 </Button>
               </View>
             )}
@@ -650,7 +652,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
             {showRecommendations && recommendations.length > 0 && (
               <>
                 <Text variant="titleMedium" style={styles.sectionTitle}>
-                  🍳 {currentIngredientContext ? `${currentIngredientContext} 활용 레시피` : '추천 레시피'}
+                  🍳 {currentIngredientContext ? t('recommend.fromIngredient', { ingredient: currentIngredientContext }) : t('recommend.recommendedRecipes')}
                 </Text>
                 {recommendations.map((recipe, index) => (
                   <Card key={index} style={styles.recipeCard} mode="outlined">
@@ -661,17 +663,17 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
 
                       <View style={styles.recipeInfo}>
                         <Text variant="bodyMedium" style={styles.difficultyText}>
-                          난이도: {getDifficultyText(recipe.difficulty)}
+                          {t('recipe.difficulty')}: {t(getDifficultyKey(recipe.difficulty))}
                         </Text>
                         <Text variant="bodyMedium" style={styles.timeText}>
-                          ⏰ {recipe.cookingTime}분
+                          ⏰ {recipe.cookingTime} {t('recipe.minutes')}
                         </Text>
                       </View>
 
                       <Divider style={styles.divider} />
 
                       <Text variant="labelLarge" style={styles.sectionLabel}>
-                        필요한 재료
+                        {t('recipe.ingredients')}
                       </Text>
                       <View style={styles.ingredientsList}>
                         {recipe.ingredients.map((ingredient, idx) => {
@@ -693,7 +695,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                                   style={styles.hasChip}
                                   textStyle={styles.hasChipText}
                                 >
-                                  보유
+                                  {t('recipe.hasIngredient')}
                                 </Chip>
                               )}
                             </View>
@@ -705,7 +707,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                         <>
                           <Divider style={styles.divider} />
                           <Text variant="labelLarge" style={styles.sectionLabel}>
-                            조리 방법
+                            {t('recipe.instructions')}
                           </Text>
                           <View style={styles.ingredientsList}>
                             {recipe.instructions.map((instruction, idx) => {
@@ -729,7 +731,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                         icon="youtube"
                         style={styles.youtubeButton}
                       >
-                        유튜브 검색
+                        {t('recipe.youtubeSearch')}
                       </Button>
                       <Button
                         mode={bookmarkedRecipes.has(recipe.name) ? "contained" : "outlined"}
@@ -742,7 +744,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                         loading={savingRecipe === recipe.name}
                         disabled={savingRecipe === recipe.name}
                       >
-                        {bookmarkedRecipes.has(recipe.name) ? "저장됨" : "저장"}
+                        {bookmarkedRecipes.has(recipe.name) ? t('recipe.bookmarked') : t('recipe.bookmark')}
                       </Button>
                     </Card.Actions>
                   </Card>
@@ -767,6 +769,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
 
 // 요리책 탭
 const BookmarksTab = () => {
+  const { t } = useTranslation('cooking');
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
   const [displayedRecipes, setDisplayedRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -874,10 +877,10 @@ const BookmarksTab = () => {
     return (
       <View style={styles.centerContainer}>
         <Text variant="headlineSmall" style={styles.emptyText}>
-          저장된 레시피가 없습니다
+          {t('bookmarks.empty')}
         </Text>
         <Text variant="bodyMedium" style={styles.emptySubText}>
-          추천받은 요리를 북마크하면 여기에 표시됩니다
+          {t('bookmarks.emptyDesc')}
         </Text>
       </View>
     );
@@ -922,7 +925,7 @@ const BookmarksTab = () => {
         })}
         {hasMore && (
           <Text variant="bodySmall" style={styles.ingredientPreviewText}>
-            외
+            {t('common:messages.more')}
           </Text>
         )}
       </View>
@@ -951,7 +954,7 @@ const BookmarksTab = () => {
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="검색할 요리 이름을 입력하세요"
+              placeholder={t('search.recipePlaceholder')}
               placeholderTextColor="#9E9E9E"
               mode="outlined"
               style={styles.searchInput}
@@ -996,7 +999,7 @@ const BookmarksTab = () => {
             ]}
             compact
           >
-            최신순
+            {t('bookmarks.sortBy.recent')}
           </Chip>
           <Chip
             mode={sortBy === 'ingredients' ? 'flat' : 'outlined'}
@@ -1011,12 +1014,12 @@ const BookmarksTab = () => {
             ]}
             compact
           >
-            보유재료순
+            {t('bookmarks.sortBy.ingredients')}
           </Chip>
         </View>
         <View style={styles.countContainer}>
           <Text variant="bodySmall" style={styles.countText}>
-            총 {displayedRecipes.length}개
+            {t('bookmarks.total', { count: displayedRecipes.length })}
           </Text>
           <IconButton
             icon="magnify"
@@ -1044,31 +1047,30 @@ const BookmarksTab = () => {
                     <View style={styles.recipeInfoLeft}>
                       <View style={styles.recipeInfoItem}>
                         <Text variant="bodySmall" style={styles.recipeInfoLabel}>
-                          난이도:
+                          {t('recipe.difficulty')}:
                         </Text>
                         <Text variant="bodyMedium" style={styles.recipeInfoValue}>
-                          {getDifficultyText(recipe.difficulty)}
+                          {t(getDifficultyKey(recipe.difficulty))}
                         </Text>
                       </View>
                       <Text variant="bodyMedium" style={styles.timeText}>
-                        ⏰ {recipe.cookingTime}분
+                        ⏰ {recipe.cookingTime} {t('recipe.minutes')}
                       </Text>
                     </View>
                     {getAvailableCount(recipe.ingredients) > 0 && (
-                      <View style={styles.availabilityContainer}>
-                        <Text variant="bodySmall" style={styles.availabilityLabel}>
-                          보유 재료
-                        </Text>
-                        <Text variant="bodyMedium" style={styles.availabilityCount}>
-                          {getAvailableCount(recipe.ingredients)}종
-                        </Text>
-                      </View>
+                      <Chip
+                        mode="flat"
+                        style={styles.availabilityChip}
+                        textStyle={styles.availabilityChipText}
+                      >
+                        {t('recipe.hasIngredient')} {getAvailableCount(recipe.ingredients)}
+                      </Chip>
                     )}
                   </View>
 
                   <View style={styles.ingredientPreviewRow}>
                     <Text variant="bodySmall" style={styles.ingredientLabel}>
-                      재료:
+                      {t('recipe.ingredients')}:
                     </Text>
                     {getIngredientNames(recipe.ingredients)}
                   </View>
@@ -1083,6 +1085,7 @@ const BookmarksTab = () => {
 };
 
 export const CookingScreen = () => {
+  const { t } = useTranslation('cooking');
   const route = useRoute();
   const [activeTab, setActiveTab] = useState<TabType>('bookmarks');
   const [passedRecommendations, setPassedRecommendations] = useState<Recipe[] | null>(null);
@@ -1122,8 +1125,8 @@ export const CookingScreen = () => {
     <View style={styles.mainContainer}>
       {/* Tabs */}
       <View style={styles.tabContainer}>
-        <TabButton tab="bookmarks" label="요리책" />
-        <TabButton tab="recommend" label="요리 추천" />
+        <TabButton tab="bookmarks" label={t('tabs.bookmarks')} />
+        <TabButton tab="recommend" label={t('tabs.recommend')} />
       </View>
 
       {/* Tab Content */}
@@ -1564,6 +1567,21 @@ const styles = StyleSheet.create({
   },
   checkIcon: {
     marginRight: 2,
+  },
+  availabilityChip: {
+    backgroundColor: '#E8F5E9',
+    height: 28,
+    marginLeft: Spacing.xs,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 0,
+  },
+  availabilityChipText: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontFamily: 'OpenSans-SemiBold',
+    lineHeight: 16,
+    textAlignVertical: 'center',
   },
   availabilityContainer: {
     flexDirection: 'row',

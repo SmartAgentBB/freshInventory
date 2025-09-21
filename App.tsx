@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { PaperProvider, Surface, Text, ActivityIndicator } from 'react-native-paper';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { I18nextProvider } from 'react-i18next';
+import i18n from './src/services/i18n';
 import { mintLightTheme } from './src/theme/mintTheme';
 import { Colors } from './src/constants/colors';
 import { AuthFlow } from './src/navigation/AuthFlow';
@@ -68,8 +70,10 @@ export default function App() {
   }
 
   return (
-    <PaperProvider theme={mintLightTheme}>
-      <AuthFlow />
-    </PaperProvider>
+    <I18nextProvider i18n={i18n}>
+      <PaperProvider theme={mintLightTheme}>
+        <AuthFlow />
+      </PaperProvider>
+    </I18nextProvider>
   );
 }

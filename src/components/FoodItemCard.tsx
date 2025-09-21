@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, Alert, Platform, Pressable } from 'react-native';
 import { Card, Text, IconButton, ProgressBar } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { FoodItem } from '../models/FoodItem';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { ko, enUS } from 'date-fns/locale';
 
 interface FoodItemCardProps {
   item: FoodItem;
@@ -23,13 +24,18 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
   onPress
 }) => {
   const [imageError, setImageError] = useState(false);
+  const { t, i18n } = useTranslation('inventory');
 
   const handleDelete = () => {
     console.log('Delete button clicked for item:', item.name, item.id);
 
     // For web, use window.confirm as a fallback
     if (Platform.OS === 'web') {
-      const confirmDelete = window.confirm(`"${item.name}"을(를) 삭제하시겠습니까?`);
+      const confirmDelete = window.confirm(
+        i18n.language === 'en'
+          ? t('deleteConfirm.message', { name: item.name })
+          : `"${item.name}"을(를) 삭제하시겠습니까?`
+      );
       if (confirmDelete) {
         console.log('Calling onDelete for item:', item.id);
         onDelete?.(item.id);
@@ -37,15 +43,15 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
     } else {
       // For mobile, use React Native Alert
       Alert.alert(
-        '삭제 확인',
-        `"${item.name}"을(를) 삭제하시겠습니까?`,
+        t('deleteConfirm.title'),
+        t('deleteConfirm.message', { name: item.name }),
         [
           {
-            text: '취소',
+            text: t('deleteConfirm.cancel'),
             style: 'cancel',
           },
           {
-            text: '삭제',
+            text: t('deleteConfirm.delete'),
             onPress: () => {
               console.log('Calling onDelete for item:', item.id);
               onDelete?.(item.id);
@@ -62,7 +68,7 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
     onPress?.(item);
   };
 
-  const formattedDate = format(item.addedDate, 'MM/dd', { locale: ko });
+  const formattedDate = format(item.addedDate, i18n.language === 'en' ? 'MMM dd' : 'MM/dd', { locale: i18n.language === 'en' ? enUS : ko });
   const remainsPercent = (item.remains || 1) * 100;
   const isFrozen = item.status === 'frozen';
 
@@ -79,7 +85,7 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
     frozenDate = item.frozenDate ? new Date(item.frozenDate) : new Date(item.addedDate);
     frozenDate.setHours(0, 0, 0, 0);
     frozenDays = Math.floor((today.getTime() - frozenDate.getTime()) / (1000 * 60 * 60 * 24));
-    formattedFrozenDate = format(frozenDate, 'MM/dd', { locale: ko });
+    formattedFrozenDate = format(frozenDate, i18n.language === 'en' ? 'MMM dd' : 'MM/dd', { locale: i18n.language === 'en' ? enUS : ko });
   }
 
   // Calculate days remaining using storageDays (consistent with CookingScreen)
@@ -165,7 +171,7 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
             {/* Registration/Frozen Date and D-day/Frozen days Row */}
             <View style={[styles.infoRow, { flex: 1, alignItems: 'center' }]}>
               <Text variant="bodySmall" style={styles.infoText}>
-                {isFrozen ? `냉동: ${formattedFrozenDate}` : `등록: ${formattedDate}`}
+                {isFrozen ? `${i18n.language === 'en' ? 'Frozen' : '냉동'}: ${formattedFrozenDate}` : `${i18n.language === 'en' ? t('itemDetail.registrationDate') : '등록'}: ${formattedDate}`}
               </Text>
               {isFrozen ? (
                 <View style={[styles.dDayBadge, { backgroundColor: '#4A90E2' }]}>
@@ -173,7 +179,7 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
                     variant="bodySmall"
                     style={[styles.dDayText, { color: '#FFFFFF' }]}
                   >
-                    {frozenDays}일
+                    {i18n.language === 'en' ? `${frozenDays}D` : `${frozenDays}일`}
                   </Text>
                 </View>
               ) : dDayText ? (
@@ -191,7 +197,7 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
             {/* Quantity and Remains Row */}
             <View style={styles.infoRow}>
               <Text variant="bodySmall" style={styles.infoText}>
-                수량: {item.quantity}{item.unit}
+                {i18n.language === 'en' ? t('itemDetail.quantity') : '수량'}: {item.quantity}{i18n.language === 'en' && item.unit === '개' ? t('itemDetail.pieces') : i18n.language === 'en' && item.unit === '팩' ? t('itemDetail.packs') : item.unit}
               </Text>
               <Text variant="bodySmall" style={styles.infoText}>
                 {Math.round(remainsPercent)}%
@@ -279,7 +285,7 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     flex: 1,
-    paddingRight: 30, // Make room for delete button
+    paddingRight: 8, // Reduced padding to allow more space for content
     justifyContent: 'space-between', // Distribute space evenly
     height: 128, // Match thumbnail height
   },
@@ -317,7 +323,7 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   dDayBadge: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 20,
     alignItems: 'center',
@@ -327,6 +333,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 3,
+    marginLeft: 'auto', // Push to the right end
+    marginRight: -4, // Negative margin to extend further right
   },
   dDayText: {
     fontFamily: 'OpenSans-Bold',
