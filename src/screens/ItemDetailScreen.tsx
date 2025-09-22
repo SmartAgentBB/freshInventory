@@ -114,7 +114,8 @@ export const ItemDetailScreen: React.FC = () => {
       // Convert SavedRecipe to Recipe format
       const recipes: Recipe[] = related.map(r => ({
         id: r.id,
-        title: r.name,
+        title: r.name,  // Use 'title' as per Recipe model
+        name: r.name,   // Add 'name' for backward compatibility
         description: '',
         difficulty: r.difficulty as 'easy' | 'medium' | 'hard',
         cookingTime: r.cookingTime,
@@ -640,10 +641,10 @@ export const ItemDetailScreen: React.FC = () => {
                   ingredients={[]}  // Don't show ingredient status in this context
                   compact={true}
                   onPress={() => {
-                    // Navigate to recipe detail screen from Cooking stack
-                    (navigation as any).navigate('Cooking', {
-                      screen: 'RecipeDetail',
-                      params: { recipe, fromItemDetail: true }
+                    // Navigate to recipe detail screen within the same stack
+                    (navigation as any).navigate('RecipeDetail', {
+                      recipe,
+                      fromItemDetail: true
                     });
                   }}
                 />

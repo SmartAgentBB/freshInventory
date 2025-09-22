@@ -43,7 +43,10 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   };
 
   const getAvailableCount = (): number => {
-    return recipe.ingredients.filter(ing => hasIngredient(ing)).length;
+    return recipe.ingredients.filter(ing => {
+      const ingredientStr = typeof ing === 'string' ? ing : ing?.name || '';
+      return hasIngredient(ingredientStr);
+    }).length;
   };
 
   const getIngredientNames = (): React.ReactNode => {
@@ -53,8 +56,10 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     return (
       <View style={styles.ingredientPreviewContainer}>
         {displayIngredients.map((ing, idx) => {
-          const ingredientName = ing.split(' ')[0];
-          const have = hasIngredient(ing);
+          // Handle both string and object formats
+          const ingredientStr = typeof ing === 'string' ? ing : ing?.name || '';
+          const ingredientName = ingredientStr.split(' ')[0];
+          const have = hasIngredient(ingredientStr);
           return (
             <View key={idx} style={styles.ingredientPreviewItem}>
               {have && (
@@ -96,7 +101,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       <Card style={[styles.card, compact && styles.compactCard]} mode="outlined">
         <Card.Content>
           <Text variant="titleMedium" style={styles.recipeTitle}>
-            {recipe.name}
+            {recipe.title || recipe.name}
           </Text>
 
           <View style={styles.recipeInfo}>
@@ -157,8 +162,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   recipeTitle: {
-    color: Colors.text.primary,
+    color: Colors.text.primary,  // Changed back to primary for better visibility
     fontFamily: 'OpenSans-Bold',
+    fontWeight: '700',
+    fontSize: 16,
     marginBottom: Spacing.xs,
   },
   recipeInfo: {

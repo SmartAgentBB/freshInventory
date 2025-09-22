@@ -111,7 +111,11 @@ export const RecipeDetailScreen = () => {
 
       // Check each recipe ingredient against shopping list items
       recipe.ingredients.forEach(ingredient => {
-        const ingredientName = extractIngredientName(ingredient);
+        // Handle both string and object formats
+        const ingredientStr = typeof ingredient === 'string'
+          ? ingredient
+          : ingredient?.name || JSON.stringify(ingredient);
+        const ingredientName = extractIngredientName(ingredientStr);
 
         // Check if this ingredient name matches any shopping item
         const isInShopping = activeItems.some(item =>
@@ -119,7 +123,7 @@ export const RecipeDetailScreen = () => {
         );
 
         if (isInShopping) {
-          shoppingSet.add(ingredient); // Store the full ingredient string for matching
+          shoppingSet.add(ingredientStr); // Store the full ingredient string for matching
         }
       });
 
@@ -138,7 +142,8 @@ export const RecipeDetailScreen = () => {
   };
 
   const handleYouTubeSearch = () => {
-    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(recipe.name + ' 레시피')}`;
+    const recipeName = recipe.title || recipe.name || '';
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(recipeName + ' 레시피')}`;
     Linking.openURL(url);
   };
 
@@ -154,15 +159,15 @@ export const RecipeDetailScreen = () => {
     setDeletingRecipe(false);
   };
 
-  const handleToggleShopping = async (ingredient: string) => {
+  const handleToggleShopping = async (ingredientStr: string) => {
     if (!user?.id) return;
 
-    const ingredientName = extractIngredientName(ingredient);
+    const ingredientName = extractIngredientName(ingredientStr);
     const newShoppingItems = new Set(shoppingItems);
 
-    if (shoppingItems.has(ingredient)) {
+    if (shoppingItems.has(ingredientStr)) {
       // Remove from shopping list
-      newShoppingItems.delete(ingredient);
+      newShoppingItems.delete(ingredientStr);
 
       // Remove from database
       try {
@@ -180,7 +185,7 @@ export const RecipeDetailScreen = () => {
           if (!result.success) {
             console.error('Failed to remove from shopping list:', result.error);
             // Revert UI change if deletion failed
-            newShoppingItems.add(ingredient);
+            newShoppingItems.add(ingredientStr);
           } else {
             // Update shopping count badge
             await refreshCount();
@@ -189,18 +194,19 @@ export const RecipeDetailScreen = () => {
       } catch (error) {
         console.error('Error removing from shopping list:', error);
         // Revert UI change if error occurred
-        newShoppingItems.add(ingredient);
+        newShoppingItems.add(ingredientStr);
       }
     } else {
       // Add to shopping list
-      newShoppingItems.add(ingredient);
+      newShoppingItems.add(ingredientStr);
       // Add to shopping list in database with recipe name as memo
       try {
-        const result = await shoppingService.addItem(user.id, ingredientName, recipe.name);
+        const recipeName = recipe.title || recipe.name || '';
+        const result = await shoppingService.addItem(user.id, ingredientName, recipeName);
         if (!result.success) {
           console.error('Failed to add to shopping list:', result.error);
           // Revert UI change if addition failed
-          newShoppingItems.delete(ingredient);
+          newShoppingItems.delete(ingredientStr);
         } else {
           // Update shopping count badge
           await refreshCount();
@@ -208,7 +214,7 @@ export const RecipeDetailScreen = () => {
       } catch (error) {
         console.error('Error adding to shopping list:', error);
         // Revert UI change if error occurred
-        newShoppingItems.delete(ingredient);
+        newShoppingItems.delete(ingredientStr);
       }
     }
 
@@ -230,7 +236,7 @@ export const RecipeDetailScreen = () => {
           style={styles.backButton}
         />
         <Text variant="labelLarge" style={styles.headerTitle}>
-          {recipe.name}
+          {recipe.title || recipe.name}
         </Text>
         <View style={{ width: 48 }} />
       </View>
@@ -258,8 +264,12 @@ export const RecipeDetailScreen = () => {
           </Text>
           <View style={styles.ingredientsList}>
             {recipe.ingredients.map((ingredient, idx) => {
-              const have = hasIngredient(ingredient);
-              const inShopping = shoppingItems.has(ingredient);
+              // Handle both string and object formats
+              const ingredientStr = typeof ingredient === 'string'
+                ? ingredient
+                : ingredient?.name || JSON.stringify(ingredient);
+              const have = hasIngredient(ingredientStr);
+              const inShopping = shoppingItems.has(ingredientStr);
               return (
                 <View key={idx} style={styles.ingredientRow}>
                   <Text
@@ -269,7 +279,7 @@ export const RecipeDetailScreen = () => {
                       have ? styles.hasIngredient : styles.missingIngredient
                     ]}
                   >
-                    • {ingredient}
+                    • {ingredientStr}
                   </Text>
                   {have ? (
                     <Chip
@@ -282,7 +292,7 @@ export const RecipeDetailScreen = () => {
                   ) : (
                     <Button
                       mode="outlined"
-                      onPress={() => handleToggleShopping(ingredient)}
+                      onPress={() => handleToggleShopping(ingredientStr)}
                       icon={inShopping ? "check" : "plus"}
                       style={[
                         styles.shoppingButton,
