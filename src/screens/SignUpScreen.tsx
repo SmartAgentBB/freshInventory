@@ -180,7 +180,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
               marginBottom: 32
             }}
           >
-            냉파고 회원가입
+            냉프로 회원가입
           </Text>
 
           {/* Email Input */}

@@ -104,7 +104,7 @@ export const AuthFlow: React.FC = () => {
               marginBottom: 24
             }}
           >
-            냉파고
+            냉프로
           </Text>
           
           <ActivityIndicator 

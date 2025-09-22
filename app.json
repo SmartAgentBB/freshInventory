@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "냉파고",
-    "slug": "naengpago",
+    "name": "냉프로",
+    "slug": "nengpro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -26,14 +26,14 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#26A69A"
       },
-      "package": "com.shinysun0.naengpago",
+      "package": "com.shinysun0.nengpro",
       "googleServicesFile": "./google-services.json"
     },
     "notification": {
       "icon": "./assets/icon.png",
       "color": "#26A69A",
       "androidMode": "default",
-      "androidCollapsedTitle": "냉파고 알림"
+      "androidCollapsedTitle": "냉프로 알림"
     },
     "web": {
       "favicon": "./assets/favicon.png"

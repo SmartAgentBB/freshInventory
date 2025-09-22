@@ -121,7 +121,7 @@ export class NotificationService {
 
     let title = isEnglish
       ? '⚠️ FreshKeeper Expiry Alert'
-      : '⚠️ 냉파고 임박 재료 알림';
+      : '⚠️ 냉프로 임박 재료 알림';
     let body = isEnglish
       ? 'Items that need to be consumed soon!\n'
       : '빨리 소비해야하는 식재료가 있어요!\n';
@@ -187,7 +187,7 @@ export class NotificationService {
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: isEnglish ? '⚠️ FreshKeeper Expiry Alert' : '⚠️ 냉파고 임박 재료 알림',
+        title: isEnglish ? '⚠️ FreshKeeper Expiry Alert' : '⚠️ 냉프로 임박 재료 알림',
         body: isEnglish ? 'Items that need to be consumed soon!' : '빨리 소비해야하는 식재료가 있어요!',
         data: {
           userId,
