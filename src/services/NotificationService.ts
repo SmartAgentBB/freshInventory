@@ -80,9 +80,9 @@ export class NotificationService {
     if (settingsStr) {
       return JSON.parse(settingsStr);
     }
-    // 기본값: 오후 12시
+    // 기본값: 알림 OFF, 오후 12시
     return {
-      enabled: true,
+      enabled: false,
       time: { hour: 12, minute: 0 }
     };
   }

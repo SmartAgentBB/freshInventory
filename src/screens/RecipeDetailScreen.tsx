@@ -335,7 +335,8 @@ export const RecipeDetailScreen = () => {
             mode="outlined"
             onPress={handleYouTubeSearch}
             icon="youtube"
-            style={styles.actionButton}
+            style={[styles.actionButton, styles.youtubeButton]}
+            textColor={Colors.primary.main}
           >
             {t('recipe.youtubeSearch')}
           </Button>
@@ -516,6 +517,9 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
   },
+  youtubeButton: {
+    borderColor: Colors.primary.main,
+  },
   deleteButton: {
     borderColor: '#616161',
   },
@@ -532,6 +536,7 @@ const styles = StyleSheet.create({
   },
   shoppingButtonActive: {
     borderColor: Colors.primary.main,
+    backgroundColor: '#EAF5F2',  // Light mint background when selected (same as HistoryCard)
   },
   shoppingButtonContent: {
     height: 32,
