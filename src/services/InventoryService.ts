@@ -47,6 +47,7 @@ export class InventoryService {
         .select('*')
         .eq('user_id', userId)
         .eq('status', status)
+        .gt('remains', 0)  // Only get items that are not fully consumed
         .order('created_at', { ascending: false });
 
       if (error) {

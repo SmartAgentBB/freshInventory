@@ -558,13 +558,61 @@ export class RecipeService {
   /**
    * Toggle bookmark (backward compatibility)
    */
-  async toggleBookmark(recipeId: string, userId: string, bookmarked: boolean): Promise<{ success: boolean; error?: string }> {
-    if (bookmarked) {
-      // Save recipe
-      return this.saveSharedRecipe(recipeId, userId);
-    } else {
-      // Remove recipe
-      return this.deleteRecipe(recipeId, userId);
+  async toggleBookmark(userId: string, recipe: Recipe): Promise<{ success: boolean; bookmarked?: boolean; error?: string }> {
+    try {
+      // First check if recipe exists in master table by name and created_by
+      const { data: existingRecipe } = await supabaseClient
+        .from('recipes')
+        .select('id')
+        .eq('name', recipe.name)
+        .eq('created_by', userId)
+        .single();
+
+      let recipeId: string;
+
+      if (existingRecipe) {
+        recipeId = existingRecipe.id;
+
+        // Check if user has this recipe bookmarked
+        const { data: existingBookmark } = await supabaseClient
+          .from('user_saved_recipes')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('recipe_id', recipeId)
+          .single();
+
+        if (existingBookmark) {
+          // Already bookmarked, remove it
+          const deleteResult = await this.deleteRecipe(recipeId, userId);
+          return { ...deleteResult, bookmarked: false };
+        } else {
+          // Not bookmarked, add bookmark
+          const { error: bookmarkError } = await supabaseClient
+            .from('user_saved_recipes')
+            .insert({
+              user_id: userId,
+              recipe_id: recipeId,
+              saved_at: new Date().toISOString(),
+              last_viewed_at: new Date().toISOString()
+            });
+
+          if (bookmarkError) throw bookmarkError;
+          return { success: true, bookmarked: true };
+        }
+      } else {
+        // Recipe doesn't exist, save it
+        const saveResult = await this.saveRecipe(recipe, userId);
+        if (!saveResult.success) {
+          return { success: false, error: saveResult.error };
+        }
+        return { success: true, bookmarked: true };
+      }
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to toggle bookmark'
+      };
     }
   }
 }
