@@ -16,8 +16,8 @@ export const ProfileScreen: React.FC = () => {
   const { t, i18n } = useTranslation('profile');
   const { user, signOut } = useAuth();
   const navigation = useNavigation<any>();
-  const authService = new AuthService(supabaseClient);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const authService = new AuthService();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notificationTime, setNotificationTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [languageMenuVisible, setLanguageMenuVisible] = useState(false);
@@ -26,10 +26,11 @@ export const ProfileScreen: React.FC = () => {
 
   useEffect(() => {
     loadNotificationSettings();
-  }, []);
+  }, [user?.id]);
 
   const loadNotificationSettings = async () => {
-    const settings = await notificationService.getSettings();
+    if (!user?.id) return;
+    const settings = await notificationService.getSettings(user.id);
     setNotificationsEnabled(settings.enabled);
     const time = new Date();
     time.setHours(settings.time.hour);

@@ -61,14 +61,34 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     }
 
     setLoading(true);
-    
+
     try {
       const result = await authService.signInWithPassword(email.trim(), password.trim());
 
       // AuthFlow will automatically handle navigation when authentication state changes
       // No need to manually navigate
-    } catch (error) {
-      setLoginError('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+    } catch (error: any) {
+      console.log('Login error:', error); // Debug log
+
+      // Check error message for email verification requirement
+      const errorMessage = error?.message || error?.msg || '';
+      const errorCode = error?.code || '';
+
+      if (errorMessage.toLowerCase().includes('email not confirmed') ||
+          errorMessage.toLowerCase().includes('email verification') ||
+          errorMessage.toLowerCase().includes('confirm your email') ||
+          errorMessage.toLowerCase().includes('email_not_confirmed') ||
+          errorCode === 'email_not_confirmed') {
+        setLoginError('이메일 인증을 진행해주세요. 가입 시 입력한 이메일을 확인해주세요.');
+      } else if (errorMessage.toLowerCase().includes('invalid login credentials') ||
+                 errorMessage.toLowerCase().includes('invalid email or password') ||
+                 errorCode === 'invalid_credentials') {
+        setLoginError('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+      } else if (errorMessage.toLowerCase().includes('user not found')) {
+        setLoginError('등록되지 않은 이메일입니다. 회원가입을 먼저 진행해주세요.');
+      } else {
+        setLoginError(errorMessage || '로그인에 실패했습니다. 다시 시도해주세요.');
+      }
     } finally {
       setLoading(false);
     }

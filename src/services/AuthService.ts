@@ -102,19 +102,21 @@ export class AuthService {
   /**
    * Sign up with email and password
    */
-  async signUp(email: string, password: string): Promise<{ user: User | null; session: Session | null }> {
+  async signUp(email: string, password: string): Promise<{ data?: { user: User | null; session: Session | null }; error?: any }> {
     const { data, error } = await this.supabase.auth.signUp({
       email,
       password
     });
 
     if (error) {
-      throw error;
+      return { error };
     }
 
     return {
-      user: data.user,
-      session: data.session
+      data: {
+        user: data.user,
+        session: data.session
+      }
     };
   }
 

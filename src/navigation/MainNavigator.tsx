@@ -18,8 +18,13 @@ export const MainNavigator = () => {
     if (user?.id) {
       notificationSubscriptionRef.current = notificationService.setupNotificationListeners(navigation);
 
-      // 일일 알림 스케줄링 (오후 12시)
-      notificationService.scheduleDailyNotification(user.id);
+      // 알림 설정이 활성화되어 있는 경우에만 스케줄링
+      // (사용자가 프로필에서 직접 설정을 변경할 때 스케줄링됨)
+      notificationService.getSettings(user.id).then(settings => {
+        if (settings.enabled) {
+          notificationService.scheduleDailyNotification(user.id);
+        }
+      });
     }
 
     return () => {

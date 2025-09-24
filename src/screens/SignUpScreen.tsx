@@ -90,21 +90,53 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
 
     setLoading(true);
     setSuccessMessage('');
-    
+
     try {
       const result = await authService.signUp(email.trim(), password.trim());
-      
-      // Show success message
-      setSuccessMessage('회원가입이 완료되었습니다. 이메일을 확인해주세요.');
-      
-      // Navigate to login after delay
-      setTimeout(() => {
-        navigation.navigate('Login');
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Signup error:', error);
-      setSignupError('회원가입에 실패했습니다. 다시 시도해주세요.');
+
+      console.log('Signup result:', result); // Debug log
+
+      if (result.error) {
+        console.log('Signup error details:', result.error); // Debug log
+
+        // Check for specific error types
+        const errorMessage = result.error.message || result.error.msg || '';
+        const errorCode = result.error.code || result.error.status || '';
+
+        if (errorMessage.toLowerCase().includes('already registered') ||
+            errorMessage.toLowerCase().includes('already exists') ||
+            errorMessage.toLowerCase().includes('user already registered') ||
+            errorCode === 'user_already_exists' ||
+            (result.error.status === 400 && errorMessage.includes('email'))) {
+          setSignupError('이미 등록된 이메일입니다. 다른 이메일을 사용해주세요.');
+        } else if (errorMessage.toLowerCase().includes('invalid email')) {
+          setSignupError('유효하지 않은 이메일 주소입니다.');
+        } else if (errorMessage.toLowerCase().includes('weak password')) {
+          setSignupError('비밀번호가 너무 약합니다. 더 강한 비밀번호를 사용해주세요.');
+        } else {
+          setSignupError(errorMessage || '회원가입에 실패했습니다. 다시 시도해주세요.');
+        }
+        return;
+      }
+
+      // Show success message only if signup was successful
+      if (result.data?.user) {
+        setSuccessMessage('회원가입이 완료되었습니다. 이메일을 확인해주세요.');
+
+        // Navigate to login after delay
+        setTimeout(() => {
+          navigation.navigate('Login');
+        }, 2000);
+      } else {
+        // If no error but also no user, something went wrong
+        setSignupError('회원가입 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
+      }
+
+    } catch (error: any) {
+      console.error('Signup catch error:', error);
+
+      // This should not happen now, but keep as fallback
+      setSignupError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }

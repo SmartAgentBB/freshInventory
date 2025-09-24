@@ -15,11 +15,13 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
-const NOTIFICATION_SETTINGS_KEY = '@ez2cook_notification_settings';
-const NOTIFICATION_IDENTIFIER = 'daily-expiry-check';
+const NOTIFICATION_SETTINGS_KEY_PREFIX = '@ez2cook_notification_settings_';
+const getNotificationIdentifier = (userId: string) => `daily-expiry-check-${userId}`;
 
 interface NotificationSettings {
   enabled: boolean;
@@ -70,13 +72,23 @@ export class NotificationService {
   }
 
   // 알림 설정 저장
-  async saveSettings(settings: NotificationSettings): Promise<void> {
-    await AsyncStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
+  async saveSettings(settings: NotificationSettings, userId?: string): Promise<void> {
+    if (!userId) return;
+    const key = `${NOTIFICATION_SETTINGS_KEY_PREFIX}${userId}`;
+    await AsyncStorage.setItem(key, JSON.stringify(settings));
   }
 
   // 알림 설정 불러오기
-  async getSettings(): Promise<NotificationSettings> {
-    const settingsStr = await AsyncStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+  async getSettings(userId?: string): Promise<NotificationSettings> {
+    if (!userId) {
+      // userId가 없으면 기본값 반환
+      return {
+        enabled: false,
+        time: { hour: 12, minute: 0 }
+      };
+    }
+    const key = `${NOTIFICATION_SETTINGS_KEY_PREFIX}${userId}`;
+    const settingsStr = await AsyncStorage.getItem(key);
     if (settingsStr) {
       return JSON.parse(settingsStr);
     }
@@ -89,7 +101,7 @@ export class NotificationService {
 
   // 만기/임박 식재료 확인
   async checkExpiringItems(userId: string) {
-    const items = await this.inventoryService.getItems(userId, 'active');
+    const items = await this.inventoryService.getItems(userId);
     const today = startOfDay(new Date());
 
     const expired: string[] = [];
@@ -166,11 +178,12 @@ export class NotificationService {
     const hasPermission = await this.requestPermissions();
     if (!hasPermission) return;
 
-    const settings = await this.getSettings();
+    const settings = await this.getSettings(userId);
     if (!settings.enabled) return;
 
     // 기존 알림 취소
-    await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDENTIFIER).catch(() => {});
+    const notificationId = getNotificationIdentifier(userId);
+    await Notifications.cancelScheduledNotificationAsync(notificationId).catch(() => {});
 
     // 알림 시간 설정 (오늘 또는 내일)
     const now = new Date();
@@ -197,18 +210,18 @@ export class NotificationService {
         sound: true,
       },
       trigger: {
+        type: Notifications.NotificationTriggerType.DAILY as const,
         hour: settings.time.hour,
         minute: settings.time.minute,
-        repeats: true,
       },
-      identifier: NOTIFICATION_IDENTIFIER,
+      identifier: notificationId,
     });
 
     // 설정 업데이트
     await this.saveSettings({
       ...settings,
       lastScheduledDate: format(new Date(), 'yyyy-MM-dd'),
-    });
+    }, userId);
 
     console.log(
       language === 'en'
@@ -249,22 +262,23 @@ export class NotificationService {
 
   // 알림 활성화/비활성화
   async toggleNotifications(enabled: boolean, userId: string): Promise<void> {
-    const settings = await this.getSettings();
+    const settings = await this.getSettings(userId);
     settings.enabled = enabled;
-    await this.saveSettings(settings);
+    await this.saveSettings(settings, userId);
 
     if (enabled) {
       await this.scheduleDailyNotification(userId);
     } else {
-      await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDENTIFIER).catch(() => {});
+      const notificationId = getNotificationIdentifier(userId);
+      await Notifications.cancelScheduledNotificationAsync(notificationId).catch(() => {});
     }
   }
 
   // 알림 시간 업데이트
   async updateNotificationTime(hour: number, minute: number, userId: string): Promise<void> {
-    const settings = await this.getSettings();
+    const settings = await this.getSettings(userId);
     settings.time = { hour, minute };
-    await this.saveSettings(settings);
+    await this.saveSettings(settings, userId);
 
     if (settings.enabled) {
       await this.scheduleDailyNotification(userId);

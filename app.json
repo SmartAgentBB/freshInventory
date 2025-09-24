@@ -16,7 +16,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.shinysun0.freshinventory",
+      "bundleIdentifier": "com.smartagent.nengpro",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -26,7 +26,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#26A69A"
       },
-      "package": "com.shinysun0.nengpro",
+      "package": "com.smartagent.nengpro",
       "googleServicesFile": "./google-services.json"
     },
     "notification": {
@@ -38,6 +38,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "scheme": "com.smartagent.nengpro",
     "plugins": [
       "expo-font"
     ],
