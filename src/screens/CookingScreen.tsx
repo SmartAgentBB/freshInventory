@@ -364,19 +364,8 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
         return getDaysRemaining(a) - getDaysRemaining(b);
       });
 
-      // Create prioritized ingredient list with expiry info
-      const ingredientInfo = sortedIngredients.map(item => {
-        const daysRemaining = item.expiryDate
-          ? Math.floor((new Date(item.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-          : null;
-
-        if (daysRemaining !== null && daysRemaining <= 3) {
-          return `${item.name}(임박)`;
-        } else if (daysRemaining !== null && daysRemaining <= 7) {
-          return `${item.name}(주의)`;
-        }
-        return item.name;
-      });
+      // Create prioritized ingredient list (without expiry info)
+      const ingredientInfo = sortedIngredients.map(item => item.name);
 
       // AI 추천 API 호출 (사용자 입력 스타일 포함)
       const result = await aiService.generateRecipeSuggestions(ingredientInfo, cookingStyleInput.trim(), i18n.language);
