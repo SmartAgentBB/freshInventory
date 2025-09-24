@@ -124,6 +124,8 @@ EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
 - **보안**: 민감 정보 노출 금지, 환경 변수 사용
 
 ## 🔄 Git 워크플로우
+
+### 커밋 규칙
 1. 기능별 브랜치 생성
 2. 커밋 전 필수 확인:
    - `npm test` 통과
@@ -131,6 +133,13 @@ EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
    - `npm run lint` 에러 없음
 3. 의미있는 커밋 메시지 작성
 4. PR 생성 및 리뷰
+
+### ⚠️ 중요: GitHub Push 정책
+**절대 자동으로 push하지 않음**
+- `git add`와 `git commit`까지만 자동 실행 가능
+- `git push`는 반드시 사용자가 명시적으로 요청할 때만 실행
+- 사용자가 "github에 push해줘", "git push 해줘" 등 명확히 요청할 때만 push
+- 커밋 후 push 여부는 항상 사용자에게 확인
 
 ## 📞 지원
 - GitHub Issues: 버그 리포트 및 기능 제안
