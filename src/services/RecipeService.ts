@@ -112,43 +112,46 @@ export class RecipeService {
    */
   async saveRecipe(recipe: Recipe, userId: string): Promise<{ success: boolean; recipeId?: string; error?: string }> {
     try {
-      // 임시: 기존 saved_recipes 테이블 사용
+      // Check if a similar recipe already exists
       const { data: existingRecipe } = await supabaseClient
-        .from('saved_recipes')
+        .from('recipes')
         .select('id')
         .eq('name', recipe.name)
-        .eq('user_id', userId)
+        .eq('created_by', userId)
         .single();
+
+      let recipeId: string;
 
       if (existingRecipe) {
         // Update existing recipe
+        recipeId = existingRecipe.id;
         const { error: updateError } = await supabaseClient
-          .from('saved_recipes')
+          .from('recipes')
           .update({
             ingredients: recipe.ingredients,
-            difficulty: recipe.difficulty,
+            difficulty: this.convertDifficultyToEnglish(recipe.difficulty),
             cooking_time: recipe.cookingTime,
             instructions: recipe.instructions,
             youtube_query: recipe.youtubeQuery,
             updated_at: new Date().toISOString()
           })
-          .eq('id', existingRecipe.id);
+          .eq('id', recipeId);
 
         if (updateError) throw updateError;
-        return { success: true, recipeId: existingRecipe.id };
       } else {
-        // Create new recipe in saved_recipes
+        // Create new master recipe
         const { data: newRecipe, error: createError } = await supabaseClient
-          .from('saved_recipes')
+          .from('recipes')
           .insert({
-            user_id: userId,
             name: recipe.name,
             ingredients: recipe.ingredients,
-            difficulty: recipe.difficulty,
+            difficulty: this.convertDifficultyToEnglish(recipe.difficulty),
             cooking_time: recipe.cookingTime,
             instructions: recipe.instructions,
             youtube_query: recipe.youtubeQuery,
-            bookmarked: true
+            created_by: userId,
+            is_public: false, // Default to private
+            source_type: 'ai_generated'
           })
           .select('id')
           .single();
@@ -156,8 +159,24 @@ export class RecipeService {
         if (createError) throw createError;
         if (!newRecipe) throw new Error('Failed to create recipe');
 
-        return { success: true, recipeId: newRecipe.id };
+        recipeId = newRecipe.id;
       }
+
+      // Add or update user-recipe relationship
+      const { error: relationError } = await supabaseClient
+        .from('user_saved_recipes')
+        .upsert({
+          user_id: userId,
+          recipe_id: recipeId,
+          saved_at: new Date().toISOString(),
+          last_viewed_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,recipe_id'
+        });
+
+      if (relationError) throw relationError;
+
+      return { success: true, recipeId };
     } catch (error) {
       console.error('Error saving recipe:', error);
       return {
@@ -172,32 +191,30 @@ export class RecipeService {
    */
   async getUserSavedRecipes(userId: string): Promise<MasterRecipe[]> {
     try {
-      // 임시: 기존 saved_recipes 테이블 사용
       const { data, error } = await supabaseClient
-        .from('saved_recipes')
-        .select('*')
+        .from('user_saved_recipes')
+        .select(`
+          *,
+          recipe:recipes(*)
+        `)
         .eq('user_id', userId)
-        .eq('bookmarked', true)
-        .order('created_at', { ascending: false });
+        .order('saved_at', { ascending: false });
 
       if (error) throw error;
 
       return (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        ingredients: item.ingredients,
-        difficulty: item.difficulty,
-        cookingTime: item.cooking_time,
-        instructions: item.instructions,
-        youtubeQuery: item.youtube_query,
-        imageUrl: '',
-        createdBy: item.user_id,
-        isPublic: false,
-        saveCount: 1,
-        shareCount: 0,
-        sourceType: 'ai_generated' as const,
-        createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at)
+        ...item.recipe,
+        difficulty: this.convertDifficultyToKorean(item.recipe.difficulty),
+        cookingTime: item.recipe.cooking_time,
+        createdBy: item.recipe.created_by,
+        isPublic: item.recipe.is_public,
+        saveCount: item.recipe.save_count,
+        shareCount: item.recipe.share_count,
+        sourceType: item.recipe.source_type,
+        imageUrl: item.recipe.image_url,
+        youtubeQuery: item.recipe.youtube_query,
+        createdAt: new Date(item.recipe.created_at),
+        updatedAt: new Date(item.recipe.updated_at)
       }));
     } catch (error) {
       console.error('Error fetching saved recipes:', error);
