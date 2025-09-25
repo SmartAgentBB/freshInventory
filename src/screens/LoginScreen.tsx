@@ -178,8 +178,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 fontFamily: 'OpenSans-Regular'
               }}
             />
-            {emailError && (
-              <Text 
+            {emailError ? (
+              <Text
                 variant="bodySmall"
                 style={{
                   color: Colors.status.error,
@@ -189,7 +189,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               >
                 {emailError}
               </Text>
-            )}
+            ) : null}
           </View>
 
           {/* Password Input */}
@@ -220,8 +220,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 fontFamily: 'OpenSans-Regular'
               }}
             />
-            {passwordError && (
-              <Text 
+            {passwordError ? (
+              <Text
                 variant="bodySmall"
                 style={{
                   color: Colors.status.error,
@@ -231,15 +231,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               >
                 {passwordError}
               </Text>
-            )}
+            ) : null}
           </View>
 
           {/* Login Error */}
-          {loginError && (
-            <Text 
+          {loginError ? (
+            <Text
               variant="bodyMedium"
               style={{
-                color: Colors.error,
+                color: Colors.status.error,
                 fontFamily: 'OpenSans-Regular',
                 textAlign: 'center',
                 marginBottom: 16
@@ -247,7 +247,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             >
               {loginError}
             </Text>
-          )}
+          ) : null}
 
           {/* Login Button */}
           <TouchableOpacity

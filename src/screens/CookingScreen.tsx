@@ -55,7 +55,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
 
   // useMemo를 사용하여 서비스 인스턴스들을 한 번만 생성
   const inventoryService = useMemo(() => {
-    console.log('Creating InventoryService with supabaseClient:', !!supabaseClient);
+    // InventoryService creation with supabaseClient
     const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
                    process.env.EXPO_PUBLIC_GEMINI_API_KEY;
     return new InventoryService(supabaseClient, apiKey);
@@ -127,7 +127,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   // 화면에 포커스가 올 때마다 데이터를 다시 로드
   useEffect(() => {
     if (isFocused && user?.id) {
-      console.log('CookingScreen focused - reloading ingredients');
+      // CookingScreen focused - reloading ingredients
       loadIngredients();
     }
   }, [isFocused, user?.id]);
@@ -136,7 +136,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   useEffect(() => {
     if (!user?.id) return;
 
-    console.log('Setting up real-time subscription for cooking ingredients');
+    // Setting up real-time subscription for cooking ingredients
 
     const subscription = supabaseClient
       .channel('cooking-ingredients-changes')
@@ -149,7 +149,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Real-time update received in CookingScreen:', payload);
+          // Real-time update received in CookingScreen
           // 데이터 변경 감지 시 재로드
           loadIngredients();
         }
@@ -157,7 +157,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscription');
+      // Cleaning up real-time subscription
       subscription.unsubscribe();
     };
   }, [user?.id]);
@@ -167,16 +167,16 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
       setLoading(true);
 
       if (!user?.id) {
-        console.log('No user ID available');
+        // No user ID available
         setIngredients([]);
         return;
       }
 
-      console.log('Loading ingredients for user:', user.id);
+      // Loading ingredients for user
 
       // 과일 제외하고 재고가 있는 항목만 가져오기
       const items = await inventoryService.getCookingIngredients(user.id);
-      console.log('Loaded ingredients:', items.length, 'items');
+      // Loaded ingredients successfully
 
       // 재고목록과 동일한 임박순 정렬 적용
       const sortedItems = [...items].sort(sortByUrgency);
@@ -350,7 +350,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
         return;
       }
 
-      console.log('Getting recommendations for selected ingredients:', selectedItems.length);
+      // Getting recommendations for selected ingredients
 
       // Sort selected ingredients by expiry urgency and prepare for AI service
       const sortedIngredients = [...selectedItems].sort((a, b) => {
@@ -369,7 +369,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
 
       // AI 추천 API 호출 (사용자 입력 스타일 포함)
       const result = await aiService.generateRecipeSuggestions(ingredientInfo, cookingStyleInput.trim(), i18n.language);
-      console.log('Received recommendations result:', result);
+      // Received recommendations result
 
       if (result.success && result.recipes.length > 0) {
         setRecommendations(result.recipes);

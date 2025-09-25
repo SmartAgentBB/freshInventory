@@ -60,6 +60,13 @@ export const Colors = {
     level5: '#E8F5F2',      // Primary light
   },
 
+  // Direct aliases for common patterns
+  error: '#EF5350',         // Direct alias for status.error
+  success: '#4CAF50',       // Direct alias for status.success
+  warning: '#FFA726',       // Direct alias for status.warning
+  info: '#26A69A',          // Direct alias for status.info
+  outline: '#D0E8E6',       // Direct alias for border.outline
+
   // Legacy mappings for compatibility (will be removed later)
   secondary: {
     main: '#5f6368',        // Maps to text.secondary

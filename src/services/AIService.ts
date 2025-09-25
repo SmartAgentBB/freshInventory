@@ -121,9 +121,7 @@ export class AIService {
           reject
         );
       });
-      console.log('=== AI Service: Analyzing image ===');
-      console.log('Image URI:', imageUri);
-      console.log('Image dimensions for AI:', imageInfo.width, 'x', imageInfo.height);
+      // Analyzing image
 
       // Convert image to base64
       const base64Image = await this.imageToBase64(imageUri);
@@ -195,9 +193,7 @@ export class AIService {
       const response = await result.response;
       let text = response.text();
 
-      console.log('=== AI Service Raw Response ===');
-      console.log(text);
-      console.log('================================');
+      // AI Service raw response received
 
       // Clean up the response - remove markdown code blocks if present
       text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
@@ -210,15 +206,11 @@ export class AIService {
 
       try {
         const parsed = JSON.parse(text);
-        console.log('=== AI Service Parsed JSON ===');
-        console.log(JSON.stringify(parsed, null, 2));
-        console.log('================================');
+        // AI Service parsed JSON successfully
         
         const validItems = this.validateFoodItems(parsed.items || []);
         
-        console.log('=== AI Service Validated Items ===');
-        console.log(JSON.stringify(validItems, null, 2));
-        console.log('===================================');
+        // AI Service validated items
         
         const analysisResult = {
           success: true,
@@ -291,7 +283,7 @@ export class AIService {
       // Check cache first (include cooking style and language in cache key)
       const cacheKey = `recipes_${ingredients.sort().join('_')}_${cookingStyle || 'default'}_${language}`;
       if (this.cache.has(cacheKey)) {
-        console.log('=== Using cached recipe result ===');
+        // Using cached recipe result
         return this.cache.get(cacheKey);
       }
 
@@ -399,10 +391,7 @@ JSON 형식 (정확히 이 구조를 따라주세요):
       const response = await result.response;
       let text = response.text();
 
-      console.log('=== Recipe Generation Raw Response ===');
-      console.log('Original response length:', text.length);
-      console.log('Original response:', text);
-      console.log('=====================================');
+      // Recipe generation raw response received
 
       // Clean up the response - remove markdown code blocks if present
       text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
@@ -414,21 +403,15 @@ JSON 형식 (정확히 이 구조를 따라주세요):
       text = text.replace(/\s+/g, ' '); // Normalize multiple spaces
       text = text.trim();
 
-      console.log('=== After comprehensive cleanup ===');
-      console.log('Cleaned response length:', text.length);
-      console.log('Cleaned response:', text);
-      console.log('===================================');
+      // After comprehensive cleanup
 
       // Also handle cases where the AI might add extra text before/after JSON
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        console.log('=== JSON Match Found ===');
-        console.log('Match length:', jsonMatch[0].length);
-        console.log('Match content:', jsonMatch[0]);
-        console.log('========================');
+        // JSON match found
         text = jsonMatch[0];
       } else {
-        console.log('=== No JSON Match Found ===');
+        // No JSON match found
         console.log('No valid JSON structure found in response');
         console.log('Trying to fix common JSON issues...');
 

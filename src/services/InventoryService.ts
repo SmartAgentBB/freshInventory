@@ -203,9 +203,9 @@ export class InventoryService {
       
       if (storageInfo && storageInfo.storage_days) {
         storageDays = storageInfo.storage_days;
-        console.log(`Using storage days ${storageDays} for ${item.name}`);
+        // Using calculated storage days
       } else {
-        console.log(`Using default storage days for ${item.name}`);
+        // Using default storage days
       }
       
       const now = new Date();
@@ -348,7 +348,7 @@ export class InventoryService {
         return false;
       }
 
-      console.log('Session user ID:', session.user.id);
+      // Session user ID verified
 
       // First, fetch the item to get the thumbnail URL and verify ownership
       const { data: itemData, error: fetchError } = await this.supabase
@@ -495,7 +495,7 @@ export class InventoryService {
       }
 
       // 과일 제외 필터링 (클라이언트 측에서 처리)
-      console.log('Raw data categories:', (data || []).map(item => ({ name: item.name, category: item.category })));
+      // Raw data categories retrieved
       
       // category가 'fruits' 또는 '과일'인 항목 제외 (대소문자 구분 없이, 공백 제거)
       const filteredData = (data || []).filter(item => {
@@ -503,8 +503,7 @@ export class InventoryService {
         return category !== '과일' && category !== 'fruit' && category !== 'fruits';
       });
       
-      console.log('After filtering fruits:', filteredData.length, 'items');
-      console.log('Filtered items:', filteredData.map(item => ({ name: item.name, category: item.category })));
+      // After filtering fruits
       
       return this.mapDatabaseItemsToFoodItems(filteredData);
     } catch (error) {
@@ -533,7 +532,7 @@ export class InventoryService {
       }
 
       if (!consumedItems || consumedItems.length === 0) {
-        console.log('No consumed items found for user:', userId);
+        // No consumed items found for user
         return [];
       }
 

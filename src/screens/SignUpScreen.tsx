@@ -244,8 +244,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
                 fontFamily: 'OpenSans-Regular'
               }}
             />
-            {emailError && (
-              <Text 
+            {emailError ? (
+              <Text
                 variant="bodySmall"
                 style={{
                   color: Colors.status.error,
@@ -255,7 +255,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
               >
                 {emailError}
               </Text>
-            )}
+            ) : null}
           </View>
 
           {/* Password Input */}
@@ -286,8 +286,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
                 fontFamily: 'OpenSans-Regular'
               }}
             />
-            {passwordError && (
-              <Text 
+            {passwordError ? (
+              <Text
                 variant="bodySmall"
                 style={{
                   color: Colors.status.error,
@@ -297,13 +297,13 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
               >
                 {passwordError}
               </Text>
-            )}
+            ) : null}
             {/* Password strength indicator */}
-            {password && !passwordError && (
-              <Text 
+            {password && !passwordError ? (
+              <Text
                 variant="bodySmall"
                 style={{
-                  color: getPasswordStrength(password) === '강함' ? Colors.status.success : 
+                  color: getPasswordStrength(password) === '강함' ? Colors.status.success :
                         getPasswordStrength(password) === '보통' ? Colors.status.warning : Colors.status.error,
                   fontFamily: 'OpenSans-Regular',
                   marginTop: 4
@@ -311,7 +311,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
               >
                 {getPasswordStrength(password)}
               </Text>
-            )}
+            ) : null}
           </View>
 
           {/* Confirm Password Input */}
@@ -342,8 +342,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
                 fontFamily: 'OpenSans-Regular'
               }}
             />
-            {confirmPasswordError && (
-              <Text 
+            {confirmPasswordError ? (
+              <Text
                 variant="bodySmall"
                 style={{
                   color: Colors.status.error,
@@ -353,12 +353,12 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
               >
                 {confirmPasswordError}
               </Text>
-            )}
+            ) : null}
           </View>
 
           {/* Signup Error */}
-          {signupError && (
-            <Text 
+          {signupError ? (
+            <Text
               variant="bodyMedium"
               style={{
                 color: Colors.status.error,
@@ -369,11 +369,11 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
             >
               {signupError}
             </Text>
-          )}
+          ) : null}
 
           {/* Success Message */}
-          {successMessage && (
-            <Text 
+          {successMessage ? (
+            <Text
               variant="bodyMedium"
               style={{
                 color: Colors.status.success,
@@ -384,7 +384,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
             >
               {successMessage}
             </Text>
-          )}
+          ) : null}
 
           {/* Signup Button */}
           <TouchableOpacity
