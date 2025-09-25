@@ -172,12 +172,25 @@ export async function deleteImageFromSupabase(
       };
     }
 
+    // Check if user is authenticated before attempting delete
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      console.warn('No active session - skipping image deletion');
+      return {
+        success: false,
+        error: 'No active session',
+      };
+    }
+
     const { data, error } = await supabaseClient.storage
       .from(BUCKET_NAME)
       .remove([filePath]);
 
     if (error) {
-      console.error('Supabase delete error:', error);
+      // Don't log JSON parse errors as they're usually HTML responses from auth failures
+      if (error.message && !error.message.includes('JSON Parse error')) {
+        console.error('Supabase delete error:', error);
+      }
       return {
         success: false,
         error: error.message,

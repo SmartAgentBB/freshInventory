@@ -324,14 +324,31 @@ export class InventoryService {
    */
   async deleteItem(id: string): Promise<boolean> {
     try {
-      // Check if we have a valid session first
-      const { data: { session }, error: sessionError } = await this.supabase.auth.getSession();
+      // Force refresh session to ensure we have the latest
+      const { data: { session }, error: sessionError } = await this.supabase.auth.refreshSession();
 
-      if (sessionError || !session) {
-        console.error('Session error during delete:', sessionError);
-        // Don't throw - just return false to prevent logout
+      if (sessionError) {
+        console.error('Session refresh error:', sessionError);
+        // Try to get existing session as fallback
+        const { data: { session: fallbackSession } } = await this.supabase.auth.getSession();
+        if (!fallbackSession) {
+          console.error('No active session found after refresh attempt');
+          return false;
+        }
+        // Use fallback session if refresh failed
+        const currentSession = fallbackSession;
+        if (!currentSession) {
+          console.error('No valid session available');
+          return false;
+        }
+      }
+
+      if (!session) {
+        console.error('No active session found');
         return false;
       }
+
+      console.log('Session user ID:', session.user.id);
 
       // First, fetch the item to get the thumbnail URL and verify ownership
       const { data: itemData, error: fetchError } = await this.supabase
@@ -351,7 +368,8 @@ export class InventoryService {
 
       // Verify user owns this item
       if (itemData && itemData.user_id !== session.user.id) {
-        console.error('User does not own this item');
+        console.error('User does not own this item - ownership mismatch');
+        console.error('Item user_id:', itemData.user_id, 'Session user_id:', session.user.id);
         return false;
       }
 
@@ -364,12 +382,27 @@ export class InventoryService {
 
       if (error) {
         console.error('Delete error:', error);
-        // Check if it's an auth error
-        if (error.message?.includes('JWT') || error.message?.includes('token')) {
+        console.error('Error code:', error.code, 'Message:', error.message);
+
+        // Handle various error conditions but don't trigger logout
+        if (error.code === '42501') {
+          console.error('Permission denied - RLS policy violation');
+          return false;
+        }
+        if (error.message?.includes('JWT') ||
+            error.message?.includes('token') ||
+            error.message?.includes('expired')) {
           console.error('Auth token issue detected, but not triggering logout');
           return false;
         }
-        throw new Error(`Failed to delete item: ${error.message}`);
+        if (error.code === '23503') {
+          console.error('Foreign key constraint violation');
+          return false;
+        }
+
+        // Don't throw, just return false to prevent unexpected behaviors
+        console.error(`Failed to delete item: ${error.message}`);
+        return false;
       }
 
       // If item had a thumbnail, delete it from storage

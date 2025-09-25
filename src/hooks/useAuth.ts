@@ -30,7 +30,20 @@ export function useAuth(): UseAuthReturn {
     // Listen for auth changes
     const { data: authListener } = supabaseClient.auth.onAuthStateChange(
       (event, session) => {
-        setUser(session?.user || null);
+        console.log('Auth state change event:', event);
+
+        // Only update user state for legitimate auth events
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          setUser(session?.user || null);
+        } else if (event === 'SIGNED_OUT') {
+          // Only clear user if explicitly signed out
+          console.log('User signed out');
+          setUser(null);
+        } else if (event === 'INITIAL_SESSION') {
+          // Handle initial session
+          setUser(session?.user || null);
+        }
+
         setLoading(false);
       }
     );
