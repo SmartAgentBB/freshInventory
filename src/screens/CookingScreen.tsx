@@ -13,7 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CookingStackParamList } from '../navigation/CookingStackNavigator';
-import { AIService, Recipe } from '../services/AIService';
+import { AIService, Recipe, RecipeIngredient } from '../services/AIService';
 import { recipeService } from '../services/RecipeService';
 
 type TabType = 'recommend' | 'bookmarks';
@@ -408,10 +408,35 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   };
 
   // Check if user has an ingredient
-  const hasIngredient = (ingredientName: string): boolean => {
+  // Helper function to format ingredient display
+  const formatIngredient = (ingredient: RecipeIngredient | string): { display: string; name: string } => {
+    if (typeof ingredient === 'string') {
+      // Backward compatibility: handle old string format
+      const cleanedName = ingredient.replace(/\([^)]*\)/g, '')
+        .replace(/약간|조금|적당량|적당히|소량/g, '')
+        .replace(/\d+\/?\d*/g, '')
+        .replace(/개|g|kg|ml|L|큰술|작은술|컵|스푼|조각|장|줄기|송이|알|봉지|팩|통|덩어리|티스푼|테이블스푼|모|병|캔|방울|포기/g, '')
+        .replace(/\s+/g, ' ').trim();
+      return { display: ingredient, name: cleanedName || ingredient };
+    }
+
+    // New structured format
+    // Handle cases where quantity might be null or undefined
+    let quantityStr = '';
+    if (ingredient.quantity != null && !isNaN(ingredient.quantity)) {
+      quantityStr = ingredient.quantity === Math.floor(ingredient.quantity)
+        ? ingredient.quantity.toString()
+        : ingredient.quantity.toFixed(1).replace('.0', '');
+    }
+    const display = `${ingredient.name}${quantityStr ? ' ' + quantityStr : ''}${ingredient.unit || ''}`;
+    return { display, name: ingredient.name };
+  };
+
+  const hasIngredient = (ingredient: RecipeIngredient | string): boolean => {
+    const { name } = formatIngredient(ingredient);
     return ingredients.some(item =>
-      ingredientName.toLowerCase().includes(item.name.toLowerCase()) ||
-      item.name.toLowerCase().includes(ingredientName.toLowerCase())
+      name.toLowerCase().includes(item.name.toLowerCase()) ||
+      item.name.toLowerCase().includes(name.toLowerCase())
     );
   };
 
@@ -668,6 +693,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                       </Text>
                       <View style={styles.ingredientsList}>
                         {recipe.ingredients.map((ingredient, idx) => {
+                          const { display } = formatIngredient(ingredient);
                           const have = hasIngredient(ingredient);
                           return (
                             <View key={idx} style={styles.ingredientRow}>
@@ -678,7 +704,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                                   have ? styles.hasIngredient : styles.missingIngredient
                                 ]}
                               >
-                                • {ingredient}
+                                • {display}
                               </Text>
                               {have && (
                                 <Chip
@@ -884,14 +910,14 @@ const BookmarksTab = () => {
   };
 
   // Extract ingredient names with check marks for owned items
-  const getIngredientNames = (recipeIngredients: string[]): React.ReactNode => {
+  const getIngredientNames = (recipeIngredients: (RecipeIngredient | string)[]): React.ReactNode => {
     const displayIngredients = recipeIngredients.slice(0, 5);
     const hasMore = recipeIngredients.length > 5;
 
     return (
       <View style={styles.ingredientPreviewContainer}>
         {displayIngredients.map((ing, idx) => {
-          const ingredientName = ing.split(' ')[0];
+          const { name: ingredientName } = formatIngredient(ing);
           const have = hasIngredient(ing);
           return (
             <View key={idx} style={styles.ingredientPreviewItem}>
@@ -926,15 +952,40 @@ const BookmarksTab = () => {
   };
 
   // Check if user has an ingredient
-  const hasIngredient = (ingredientName: string): boolean => {
+  // Helper function to format ingredient display
+  const formatIngredient = (ingredient: RecipeIngredient | string): { display: string; name: string } => {
+    if (typeof ingredient === 'string') {
+      // Backward compatibility: handle old string format
+      const cleanedName = ingredient.replace(/\([^)]*\)/g, '')
+        .replace(/약간|조금|적당량|적당히|소량/g, '')
+        .replace(/\d+\/?\d*/g, '')
+        .replace(/개|g|kg|ml|L|큰술|작은술|컵|스푼|조각|장|줄기|송이|알|봉지|팩|통|덩어리|티스푼|테이블스푼|모|병|캔|방울|포기/g, '')
+        .replace(/\s+/g, ' ').trim();
+      return { display: ingredient, name: cleanedName || ingredient };
+    }
+
+    // New structured format
+    // Handle cases where quantity might be null or undefined
+    let quantityStr = '';
+    if (ingredient.quantity != null && !isNaN(ingredient.quantity)) {
+      quantityStr = ingredient.quantity === Math.floor(ingredient.quantity)
+        ? ingredient.quantity.toString()
+        : ingredient.quantity.toFixed(1).replace('.0', '');
+    }
+    const display = `${ingredient.name}${quantityStr ? ' ' + quantityStr : ''}${ingredient.unit || ''}`;
+    return { display, name: ingredient.name };
+  };
+
+  const hasIngredient = (ingredient: RecipeIngredient | string): boolean => {
+    const { name } = formatIngredient(ingredient);
     return ingredients.some(item =>
-      ingredientName.toLowerCase().includes(item.name.toLowerCase()) ||
-      item.name.toLowerCase().includes(ingredientName.toLowerCase())
+      name.toLowerCase().includes(item.name.toLowerCase()) ||
+      item.name.toLowerCase().includes(name.toLowerCase())
     );
   };
 
   // Count how many ingredients user has for a recipe
-  const getAvailableCount = (recipeIngredients: string[]): number => {
+  const getAvailableCount = (recipeIngredients: (RecipeIngredient | string)[]): number => {
     return recipeIngredients.filter(ing => hasIngredient(ing)).length;
   };
 

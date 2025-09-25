@@ -21,9 +21,17 @@ export interface AnalysisResult {
   error?: string;
 }
 
+export interface RecipeIngredient {
+  name: string;
+  quantity: number;
+  unit: string;
+  required?: boolean;
+}
+
 export interface Recipe {
   name: string;
-  ingredients: string[];
+  title?: string; // Optional for backward compatibility
+  ingredients: RecipeIngredient[];
   difficulty: string;
   cookingTime: number;
   instructions: string[];
@@ -317,7 +325,11 @@ JSON format (follow this structure exactly):
   "recipes": [
     {
       "name": "Vegetable Stir Fry",
-      "ingredients": ["onion 1pc", "carrot 2pcs", "soy sauce 2tbsp"],
+      "ingredients": [
+        {"name": "onion", "quantity": 1, "unit": "pc", "required": true},
+        {"name": "carrot", "quantity": 2, "unit": "pcs", "required": true},
+        {"name": "soy sauce", "quantity": 2, "unit": "tbsp", "required": true}
+      ],
       "difficulty": "easy",
       "cookingTime": 15,
       "instructions": ["Prepare all vegetables", "Heat oil in wok", "Stir-fry for 5-7 minutes"]
@@ -327,6 +339,8 @@ JSON format (follow this structure exactly):
 
 Notes:
 - Use double quotes for all strings
+- ingredients must be an array of objects with: name (string), quantity (number), unit (string), required (boolean)
+- quantity must be a number (e.g., use 0.5 for 1/2)
 - difficulty must be "easy", "medium", or "hard" (lowercase)
 - cookingTime should be a number (in minutes)
 - No trailing commas
@@ -359,7 +373,11 @@ JSON 형식 (정확히 이 구조를 따라주세요):
   "recipes": [
     {
       "name": "김치찌개",
-      "ingredients": ["김치 200g", "돼지고기 100g", "두부 1/2모"],
+      "ingredients": [
+        {"name": "김치", "quantity": 200, "unit": "g", "required": true},
+        {"name": "돼지고기", "quantity": 100, "unit": "g", "required": true},
+        {"name": "두부", "quantity": 0.5, "unit": "모", "required": true}
+      ],
       "difficulty": "easy",
       "cookingTime": 20,
       "instructions": ["재료를 준비한다", "양념을 만든다", "끓인다"]
@@ -369,6 +387,8 @@ JSON 형식 (정확히 이 구조를 따라주세요):
 
 주의사항:
 - 문자열은 반드시 큰따옴표("")로 감싸주세요
+- ingredients는 객체 배열이며, 각 객체는 name(재료명), quantity(수량), unit(단위), required(필수여부) 필드를 가집니다
+- quantity는 반드시 숫자로 입력하세요 (예: 1/2모는 0.5로 입력)
 - difficulty는 반드시 "easy", "medium", "hard" 중 하나만 사용하세요 (영어 소문자)
 - cookingTime은 숫자(분 단위)로 입력해주세요
 - 마지막 항목 뒤에 쉼표를 붙이지 마세요

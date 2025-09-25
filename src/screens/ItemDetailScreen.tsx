@@ -134,12 +134,19 @@ export const ItemDetailScreen: React.FC = () => {
         difficulty: r.difficulty as 'easy' | 'medium' | 'hard',
         cookingTime: r.cookingTime,
         servings: 2,
-        ingredients: r.ingredients.map(ing => ({
-          name: ing,
-          quantity: 1,
-          unit: '',
-          required: true
-        })),
+        ingredients: r.ingredients.map(ing => {
+          // Handle both string and structured format
+          if (typeof ing === 'string') {
+            return {
+              name: ing,
+              quantity: 1,
+              unit: '',
+              required: true
+            };
+          }
+          // Already structured format
+          return ing;
+        }),
         instructions: r.instructions || [],
         tags: [],
         category: 'main-dish',

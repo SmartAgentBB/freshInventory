@@ -12,7 +12,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
-import { Recipe } from '../services/AIService';
+import { Recipe, RecipeIngredient } from '../services/AIService';
 import { RecipeService } from '../services/RecipeService';
 import { useAuth } from '../hooks/useAuth';
 import { InventoryService } from '../services/InventoryService';
@@ -31,27 +31,28 @@ const getDifficultyKey = (difficulty: string): string => {
   return difficultyKeys[difficulty?.toLowerCase()] || 'difficulty.medium';
 };
 
-// Extract ingredient name only (remove quantity and unit)
-// e.g., "양파 1/4개" -> "양파", "토마토 2개" -> "토마토", "소금 약간" -> "소금", "청양고추 1/2개 (선택)" -> "청양고추"
-const extractIngredientName = (fullIngredient: string): string => {
-  let cleanedName = fullIngredient;
+// Helper function to format ingredient display
+const formatIngredient = (ingredient: RecipeIngredient | string): { display: string; name: string } => {
+  if (typeof ingredient === 'string') {
+    // Backward compatibility: handle old string format
+    const cleanedName = ingredient.replace(/\([^)]*\)/g, '')
+      .replace(/약간|조금|적당량|적당히|소량/g, '')
+      .replace(/\d+\/?\d*/g, '')
+      .replace(/개|g|kg|ml|L|큰술|작은술|컵|스푼|조각|장|줄기|송이|알|봉지|팩|통|덩어리|티스푼|테이블스푼|모|병|캔|방울|포기/g, '')
+      .replace(/\s+/g, ' ').trim();
+    return { display: ingredient, name: cleanedName || ingredient };
+  }
 
-  // Remove parenthetical notes like (선택), (옵션), etc.
-  cleanedName = cleanedName.replace(/\([^)]*\)/g, '');
-
-  // Remove "약간", "조금", "적당량" etc.
-  cleanedName = cleanedName.replace(/약간|조금|적당량|적당히|소량/g, '');
-
-  // Remove numbers and fractions
-  cleanedName = cleanedName.replace(/\d+\/?\d*/g, '');
-
-  // Remove common units
-  cleanedName = cleanedName.replace(/개|g|kg|ml|L|큰술|작은술|컵|스푼|조각|장|줄기|송이|알|봉지|팩|통|덩어리|티스푼|테이블스푼/g, '');
-
-  // Clean up extra spaces
-  cleanedName = cleanedName.replace(/\s+/g, ' ').trim();
-
-  return cleanedName || fullIngredient; // Fallback to original if parsing fails
+  // New structured format
+  // Handle cases where quantity might be null or undefined
+  let quantityStr = '';
+  if (ingredient.quantity != null && !isNaN(ingredient.quantity)) {
+    quantityStr = ingredient.quantity === Math.floor(ingredient.quantity)
+      ? ingredient.quantity.toString()
+      : ingredient.quantity.toFixed(1).replace('.0', '');
+  }
+  const display = `${ingredient.name}${quantityStr ? ' ' + quantityStr : ''}${ingredient.unit || ''}`;
+  return { display, name: ingredient.name };
 };
 
 export const RecipeDetailScreen = () => {
@@ -110,20 +111,16 @@ export const RecipeDetailScreen = () => {
       const shoppingSet = new Set<string>();
 
       // Check each recipe ingredient against shopping list items
-      recipe.ingredients.forEach(ingredient => {
-        // Handle both string and object formats
-        const ingredientStr = typeof ingredient === 'string'
-          ? ingredient
-          : ingredient?.name || JSON.stringify(ingredient);
-        const ingredientName = extractIngredientName(ingredientStr);
+      recipe.ingredients.forEach((ingredient, idx) => {
+        const { name } = formatIngredient(ingredient);
 
         // Check if this ingredient name matches any shopping item
         const isInShopping = activeItems.some(item =>
-          item.name.toLowerCase() === ingredientName.toLowerCase()
+          item.name.toLowerCase() === name.toLowerCase()
         );
 
         if (isInShopping) {
-          shoppingSet.add(ingredientStr); // Store the full ingredient string for matching
+          shoppingSet.add(idx.toString()); // Store the index for matching
         }
       });
 
@@ -134,10 +131,11 @@ export const RecipeDetailScreen = () => {
   };
 
   // Check if user has an ingredient
-  const hasIngredient = (ingredientName: string): boolean => {
+  const hasIngredient = (ingredient: RecipeIngredient | string): boolean => {
+    const { name } = formatIngredient(ingredient);
     return ingredients.some(item =>
-      ingredientName.toLowerCase().includes(item.name.toLowerCase()) ||
-      item.name.toLowerCase().includes(ingredientName.toLowerCase())
+      name.toLowerCase().includes(item.name.toLowerCase()) ||
+      item.name.toLowerCase().includes(name.toLowerCase())
     );
   };
 
@@ -159,15 +157,16 @@ export const RecipeDetailScreen = () => {
     setDeletingRecipe(false);
   };
 
-  const handleToggleShopping = async (ingredientStr: string) => {
+  const handleToggleShopping = async (ingredient: RecipeIngredient | string, idx: number) => {
     if (!user?.id) return;
 
-    const ingredientName = extractIngredientName(ingredientStr);
+    const { name: ingredientName } = formatIngredient(ingredient);
+    const idxStr = idx.toString();
     const newShoppingItems = new Set(shoppingItems);
 
-    if (shoppingItems.has(ingredientStr)) {
+    if (shoppingItems.has(idxStr)) {
       // Remove from shopping list
-      newShoppingItems.delete(ingredientStr);
+      newShoppingItems.delete(idxStr);
 
       // Remove from database
       try {
@@ -185,7 +184,7 @@ export const RecipeDetailScreen = () => {
           if (!result.success) {
             console.error('Failed to remove from shopping list:', result.error);
             // Revert UI change if deletion failed
-            newShoppingItems.add(ingredientStr);
+            newShoppingItems.add(idxStr);
           } else {
             // Update shopping count badge
             await refreshCount();
@@ -194,11 +193,11 @@ export const RecipeDetailScreen = () => {
       } catch (error) {
         console.error('Error removing from shopping list:', error);
         // Revert UI change if error occurred
-        newShoppingItems.add(ingredientStr);
+        newShoppingItems.add(idxStr);
       }
     } else {
       // Add to shopping list
-      newShoppingItems.add(ingredientStr);
+      newShoppingItems.add(idxStr);
       // Add to shopping list in database with recipe name as memo
       try {
         const recipeName = recipe.title || recipe.name || '';
@@ -206,7 +205,7 @@ export const RecipeDetailScreen = () => {
         if (!result.success) {
           console.error('Failed to add to shopping list:', result.error);
           // Revert UI change if addition failed
-          newShoppingItems.delete(ingredientStr);
+          newShoppingItems.delete(idxStr);
         } else {
           // Update shopping count badge
           await refreshCount();
@@ -214,7 +213,7 @@ export const RecipeDetailScreen = () => {
       } catch (error) {
         console.error('Error adding to shopping list:', error);
         // Revert UI change if error occurred
-        newShoppingItems.delete(ingredientStr);
+        newShoppingItems.delete(idxStr);
       }
     }
 
@@ -264,12 +263,9 @@ export const RecipeDetailScreen = () => {
           </Text>
           <View style={styles.ingredientsList}>
             {recipe.ingredients.map((ingredient, idx) => {
-              // Handle both string and object formats
-              const ingredientStr = typeof ingredient === 'string'
-                ? ingredient
-                : ingredient?.name || JSON.stringify(ingredient);
-              const have = hasIngredient(ingredientStr);
-              const inShopping = shoppingItems.has(ingredientStr);
+              const { display } = formatIngredient(ingredient);
+              const have = hasIngredient(ingredient);
+              const inShopping = shoppingItems.has(idx.toString());
               return (
                 <View key={idx} style={styles.ingredientRow}>
                   <Text
@@ -279,7 +275,7 @@ export const RecipeDetailScreen = () => {
                       have ? styles.hasIngredient : styles.missingIngredient
                     ]}
                   >
-                    • {ingredientStr}
+                    • {display}
                   </Text>
                   {have ? (
                     <Chip
@@ -292,7 +288,7 @@ export const RecipeDetailScreen = () => {
                   ) : (
                     <Button
                       mode="outlined"
-                      onPress={() => handleToggleShopping(ingredientStr)}
+                      onPress={() => handleToggleShopping(ingredient, idx)}
                       icon={inShopping ? "check" : "plus"}
                       style={[
                         styles.shoppingButton,
