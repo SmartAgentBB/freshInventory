@@ -17,9 +17,19 @@
         "simulator": false
       }
     },
-    "production": {}
+    "production": {
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "shiny.sun0@gmail.com",
+        "ascAppId": "6752928483",
+        "appleTeamId": "CL96S2YQ38"
+      }
+    }
   }
 }

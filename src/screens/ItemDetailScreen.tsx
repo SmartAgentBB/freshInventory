@@ -93,18 +93,32 @@ export const ItemDetailScreen: React.FC = () => {
       // Filter recipes that contain this ingredient
       const related = bookmarkedRecipes.filter(recipe => {
         const hasIngredient = recipe.ingredients.some(ingredient => {
-          // Extract just the ingredient name (remove quantity and unit)
-          // e.g., "표고버섯 2개" -> "표고버섯"
-          const ingredientName = ingredient.split(/\s+\d+/)[0].trim();
+          // Handle different ingredient formats
+          let ingredientName: string;
 
-          // Remove spaces and special characters for better matching
+          // Check if ingredient is an object or string
+          if (typeof ingredient === 'object' && ingredient !== null) {
+            // New format: { name: "고구마", amount: "2개", unit: "" }
+            ingredientName = (ingredient as any).name || '';
+          } else if (typeof ingredient === 'string') {
+            // Old format: "고구마 2개"
+            // Extract just the ingredient name (remove quantity and unit)
+            ingredientName = ingredient.split(/\s+\d+/)[0].trim();
+          } else {
+            return false;
+          }
+
+          // Normalize for exact matching
           const normalizedIngredient = ingredientName.replace(/\s+/g, '').toLowerCase();
           const normalizedItemName = itemName.replace(/\s+/g, '').toLowerCase();
 
-          const matches = normalizedIngredient.includes(normalizedItemName) ||
-                         normalizedItemName.includes(normalizedIngredient) ||
-                         ingredientName.toLowerCase().includes(itemName.toLowerCase()) ||
-                         itemName.toLowerCase().includes(ingredientName.toLowerCase());
+          // Exact match only
+          const matches = normalizedIngredient === normalizedItemName;
+
+          // Debug logging
+          if (matches) {
+            console.log(`Matched: "${itemName}" with ingredient "${ingredientName}" in recipe "${recipe.name}"`);
+          }
 
           return matches;
         });

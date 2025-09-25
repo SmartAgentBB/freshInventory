@@ -324,24 +324,51 @@ export class InventoryService {
    */
   async deleteItem(id: string): Promise<boolean> {
     try {
-      // First, fetch the item to get the thumbnail URL
+      // Check if we have a valid session first
+      const { data: { session }, error: sessionError } = await this.supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        console.error('Session error during delete:', sessionError);
+        // Don't throw - just return false to prevent logout
+        return false;
+      }
+
+      // First, fetch the item to get the thumbnail URL and verify ownership
       const { data: itemData, error: fetchError } = await this.supabase
         .from('food_items')
-        .select('thumbnail')
+        .select('thumbnail, user_id')
         .eq('id', id)
         .single();
 
       if (fetchError) {
-        // Continue with deletion even if fetch fails
+        console.error('Error fetching item for deletion:', fetchError);
+        // If item doesn't exist or user doesn't have access, return false
+        if (fetchError.code === 'PGRST116') {
+          console.error('Item not found or access denied');
+          return false;
+        }
+      }
+
+      // Verify user owns this item
+      if (itemData && itemData.user_id !== session.user.id) {
+        console.error('User does not own this item');
+        return false;
       }
 
       // Delete the item from database
       const { error } = await this.supabase
         .from('food_items')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', session.user.id); // Add user_id check for safety
 
       if (error) {
+        console.error('Delete error:', error);
+        // Check if it's an auth error
+        if (error.message?.includes('JWT') || error.message?.includes('token')) {
+          console.error('Auth token issue detected, but not triggering logout');
+          return false;
+        }
         throw new Error(`Failed to delete item: ${error.message}`);
       }
 
@@ -360,12 +387,14 @@ export class InventoryService {
             await deleteImageFromSupabase(filePath);
           }
         } catch (error) {
+          console.error('Error deleting image:', error);
           // Don't fail the whole operation if image deletion fails
         }
       }
 
       return true;
     } catch (error) {
+      console.error('Unexpected error in deleteItem:', error);
       return false;
     }
   }

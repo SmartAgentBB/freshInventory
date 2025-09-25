@@ -17,8 +17,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.smartagent.nengpro",
+      "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "이 앱은 식재료 사진을 촬영하여 AI가 자동으로 인식하고 재고를 관리하기 위해 카메라를 사용합니다.",
+        "NSPhotoLibraryUsageDescription": "이 앱은 식재료 사진을 갤러리에서 선택하여 재고를 관리하기 위해 사진 라이브러리에 접근합니다."
       }
     },
     "android": {
@@ -44,8 +47,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "44b88037-0b73-4cec-8c05-f0c6a57e823a"
+        "projectId": "fee2b32f-2c8f-4c92-ba35-77c8ad276146"
       }
-    }
+    },
+    "owner": "shinysun0"
   }
 }
