@@ -45,6 +45,8 @@ export const ItemDetailScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [relatedRecipes, setRelatedRecipes] = useState<Recipe[]>([]);
   const [isRecommending, setIsRecommending] = useState(false);
+  const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
+  const [recipeLoadRetryCount, setRecipeLoadRetryCount] = useState(0);
 
   const inventoryService = useRef(new InventoryService(
     supabaseClient,
@@ -81,12 +83,21 @@ export const ItemDetailScreen: React.FC = () => {
     }
   };
 
-  const loadRelatedRecipes = async (itemName: string) => {
+  const loadRelatedRecipes = async (itemName: string, retryCount: number = 0) => {
     if (!user?.id) {
       return;
     }
 
+    // Maximum 3 retries
+    const maxRetries = 3;
+    setIsLoadingRecipes(true);
+
     try {
+      // Add small delay for retries to avoid rapid succession
+      if (retryCount > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+      }
+
       // Get all bookmarked recipes
       const bookmarkedRecipes = await recipeService.getBookmarkedRecipes(user.id);
 
@@ -158,8 +169,24 @@ export const ItemDetailScreen: React.FC = () => {
       }));
 
       setRelatedRecipes(recipes);
+      setIsLoadingRecipes(false);
+      setRecipeLoadRetryCount(0);
     } catch (error) {
-      console.error('Error loading related recipes:', error);
+      console.error(`Error loading related recipes (attempt ${retryCount + 1}):`, error);
+
+      // Retry logic for network errors
+      if (retryCount < maxRetries - 1) {
+        console.log(`Retrying to load recipes... (attempt ${retryCount + 2}/${maxRetries})`);
+        setRecipeLoadRetryCount(retryCount + 1);
+        // Recursive retry with incremented count
+        setTimeout(() => loadRelatedRecipes(itemName, retryCount + 1), 1000);
+      } else {
+        console.error('Failed to load recipes after maximum retries');
+        setIsLoadingRecipes(false);
+        setRecipeLoadRetryCount(0);
+        // Set empty array instead of leaving undefined
+        setRelatedRecipes([]);
+      }
     }
   };
 
@@ -643,7 +670,16 @@ export const ItemDetailScreen: React.FC = () => {
         </View>
 
         {/* Related Recipes Section */}
-        {relatedRecipes.length > 0 && (
+        {isLoadingRecipes ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={Colors.primary.main} />
+            <Text variant="bodySmall" style={styles.loadingText}>
+              {recipeLoadRetryCount > 0
+                ? `레시피 불러오는 중... (재시도 ${recipeLoadRetryCount}/3)`
+                : '레시피 불러오는 중...'}
+            </Text>
+          </View>
+        ) : relatedRecipes.length > 0 ? (
           <>
             <View style={styles.recipesDivider} />
             <View style={styles.recipesHeader}>
@@ -672,7 +708,7 @@ export const ItemDetailScreen: React.FC = () => {
               ))}
             </View>
           </>
-        )}
+        ) : null}
       </ScrollView>
 
       {/* Storage Info Modal */}
@@ -1165,5 +1201,17 @@ const styles = StyleSheet.create({
   storageInfoButtonLabel: {
     fontFamily: 'OpenSans-SemiBold',
     fontSize: 14,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    marginHorizontal: Spacing.lg,
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 12,
+    fontFamily: 'OpenSans-Regular',
+    color: Colors.text.secondary,
   },
 });

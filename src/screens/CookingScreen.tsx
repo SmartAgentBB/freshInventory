@@ -525,27 +525,24 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                               onPress={() => handleToggleIngredient(item.id)}
                               activeOpacity={0.7}
                             >
-                              <Chip
+                              <View
                                 style={[
                                   styles.ingredientChip,
                                   { backgroundColor: itemColor }
                                 ]}
-                                textStyle={styles.chipText}
-                                mode="flat"
-                                compact
                               >
-                                <View style={styles.chipContent}>
-                                  {isSelected && (
-                                    <MaterialCommunityIcons
-                                      name="check"
-                                      size={12}
-                                      color="#FFFFFF"
-                                      style={styles.chipCheckIcon}
-                                    />
-                                  )}
-                                  <Text style={styles.chipText}>{item.name}</Text>
-                                </View>
-                              </Chip>
+                                {isSelected && (
+                                  <MaterialCommunityIcons
+                                    name="check"
+                                    size={12}
+                                    color="#FFFFFF"
+                                    style={styles.chipCheckIcon}
+                                  />
+                                )}
+                                <Text style={styles.chipText} numberOfLines={1}>
+                                  {item.name}
+                                </Text>
+                              </View>
                             </TouchableOpacity>
                           );
                         })}
@@ -569,27 +566,24 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                               onPress={() => handleToggleIngredient(item.id)}
                               activeOpacity={0.7}
                             >
-                              <Chip
+                              <View
                                 style={[
                                   styles.ingredientChip,
                                   { backgroundColor: itemColor }
                                 ]}
-                                textStyle={styles.chipText}
-                                mode="flat"
-                                compact
                               >
-                                <View style={styles.chipContent}>
-                                  {isSelected && (
-                                    <MaterialCommunityIcons
-                                      name="check"
-                                      size={12}
-                                      color="#FFFFFF"
-                                      style={styles.chipCheckIcon}
-                                    />
-                                  )}
-                                  <Text style={styles.chipText}>{item.name}</Text>
-                                </View>
-                              </Chip>
+                                {isSelected && (
+                                  <MaterialCommunityIcons
+                                    name="check"
+                                    size={12}
+                                    color="#FFFFFF"
+                                    style={styles.chipCheckIcon}
+                                  />
+                                )}
+                                <Text style={styles.chipText} numberOfLines={1}>
+                                  {item.name}
+                                </Text>
+                              </View>
                             </TouchableOpacity>
                           );
                         })}
@@ -1236,23 +1230,21 @@ const styles = StyleSheet.create({
   ingredientChip: {
     marginVertical: 4,
     marginHorizontal: 2,
-    height: 26,
-    paddingHorizontal: 2.4,
+    minHeight: 28,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 26,
   },
   chipText: {
     color: '#FFFFFF',
     fontFamily: 'OpenSans-Medium',
-    fontSize: 10,
-    lineHeight: 26,
+    fontSize: 11,
     textAlign: 'center',
     textAlignVertical: 'center',
-    marginTop: 0,
-    marginBottom: 0,
-    paddingTop: 0,
-    paddingBottom: 0,
+    includeFontPadding: false,
   },
   emptyCard: {
     margin: Spacing.md,
@@ -1745,13 +1737,8 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     fontFamily: 'OpenSans-Medium',
   },
-  chipContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   chipCheckIcon: {
-    marginRight: 4,
+    marginRight: 3,
   },
   cookingStyleContainer: {
     marginHorizontal: Spacing.md,

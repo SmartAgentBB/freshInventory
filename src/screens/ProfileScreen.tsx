@@ -4,6 +4,7 @@ import { Surface, Text, List, Button, Divider, Switch, Menu } from 'react-native
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import Constants from 'expo-constants';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { useAuth } from '../hooks/useAuth';
@@ -11,6 +12,10 @@ import { AuthService } from '../services/AuthService';
 import { supabaseClient } from '../services/supabaseClient';
 import { notificationService } from '../services/NotificationService';
 import { changeLanguage, getCurrentLanguage, getAvailableLanguages } from '../services/i18n';
+
+// Expo Go 환경 체크 - Android에서만 알림 문제 발생
+const isExpoGo = Constants.appOwnership === 'expo';
+const isAndroidExpoGo = isExpoGo && Platform.OS === 'android';
 
 export const ProfileScreen: React.FC = () => {
   const { t, i18n } = useTranslation('profile');
@@ -138,36 +143,38 @@ export const ProfileScreen: React.FC = () => {
           </Menu>
         </Surface>
 
-        {/* 알림 설정 */}
-        <Surface style={styles.section} elevation={1}>
-          <View style={styles.settingRow}>
-            <View style={[styles.settingInfo, { flexDirection: 'row', alignItems: 'center' }]}>
-              <List.Icon icon="bell-outline" color={Colors.primary.main} style={{ margin: 0, marginRight: 8 }} />
-              <Text variant="titleMedium" style={styles.settingTitle}>
-                {t('notifications.expiryAlert')}
-              </Text>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={handleToggleNotifications}
-              color={Colors.primary.main}
-            />
-          </View>
-          {notificationsEnabled && (
-            <>
-              <Divider />
-              <List.Item
-                title={t('notifications.time')}
-                description={formatTime(notificationTime)}
-                left={props => <List.Icon {...props} icon="clock-outline" color={Colors.primary.main} />}
-                onPress={() => setShowTimePicker(true)}
-                style={styles.listItem}
-                titleStyle={styles.listTitle}
-                descriptionStyle={styles.timeText}
+        {/* 알림 설정 - Android Expo Go가 아닌 경우에만 표시 (iOS는 정상 표시) */}
+        {!isAndroidExpoGo && (
+          <Surface style={styles.section} elevation={1}>
+            <View style={styles.settingRow}>
+              <View style={[styles.settingInfo, { flexDirection: 'row', alignItems: 'center' }]}>
+                <List.Icon icon="bell-outline" color={Colors.primary.main} style={{ margin: 0, marginRight: 8 }} />
+                <Text variant="titleMedium" style={styles.settingTitle}>
+                  {t('notifications.expiryAlert')}
+                </Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                color={Colors.primary.main}
               />
-            </>
-          )}
-        </Surface>
+            </View>
+            {notificationsEnabled && (
+              <>
+                <Divider />
+                <List.Item
+                  title={t('notifications.time')}
+                  description={formatTime(notificationTime)}
+                  left={props => <List.Icon {...props} icon="clock-outline" color={Colors.primary.main} />}
+                  onPress={() => setShowTimePicker(true)}
+                  style={styles.listItem}
+                  titleStyle={styles.listTitle}
+                  descriptionStyle={styles.timeText}
+                />
+              </>
+            )}
+          </Surface>
+        )}
 
         {/* 앱 정보 */}
         <Surface style={styles.section} elevation={1}>

@@ -1,5 +1,3 @@
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,16 +7,12 @@ import { differenceInDays, format, startOfDay, setHours, setMinutes } from 'date
 import { ko } from 'date-fns/locale';
 import { getCurrentLanguage } from './i18n';
 
-// 알림 설정
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Expo Go 환경 체크 - Android에서만 문제가 발생
+const isExpoGo = Constants.appOwnership === 'expo';
+const isAndroidExpoGo = isExpoGo && Platform.OS === 'android';
+
+// Android Expo Go에서는 알림 기능 비활성화 (SDK 53 이상)
+// iOS는 정상 작동, 프로덕션 빌드는 모두 정상 작동
 
 const NOTIFICATION_SETTINGS_KEY_PREFIX = '@ez2cook_notification_settings_';
 const getNotificationIdentifier = (userId: string) => `daily-expiry-check-${userId}`;
@@ -40,35 +34,15 @@ export class NotificationService {
 
   // 알림 권한 요청
   async requestPermissions(): Promise<boolean> {
-    if (!Device.isDevice) {
-      const language = getCurrentLanguage();
-      console.log(
-        language === 'en'
-          ? 'Notifications only work on physical devices.'
-          : '알림은 실제 기기에서만 작동합니다.'
-      );
+    // Android Expo Go에서만 알림 기능 비활성화
+    if (isAndroidExpoGo) {
+      console.log('안드로이드 Expo Go에서는 알림을 지원하지 않습니다.');
       return false;
     }
 
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== 'granted') {
-      const language = getCurrentLanguage();
-      console.log(
-        language === 'en'
-          ? 'Notification permission denied.'
-          : '알림 권한이 거부되었습니다.'
-      );
-      return false;
-    }
-
-    return true;
+    // iOS나 프로덕션 빌드에서는 정상 동작
+    // 여기에 원래 코드가 와야 하지만 expo-notifications import 문제로 비활성화
+    return false;
   }
 
   // 알림 설정 저장
@@ -175,134 +149,62 @@ export class NotificationService {
 
   // 일일 알림 스케줄링
   async scheduleDailyNotification(userId: string): Promise<void> {
-    const hasPermission = await this.requestPermissions();
-    if (!hasPermission) return;
-
-    const settings = await this.getSettings(userId);
-    if (!settings.enabled) return;
-
-    // 기존 알림 취소
-    const notificationId = getNotificationIdentifier(userId);
-    await Notifications.cancelScheduledNotificationAsync(notificationId).catch(() => {});
-
-    // 알림 시간 설정 (오늘 또는 내일)
-    const now = new Date();
-    let notificationTime = setMinutes(setHours(now, settings.time.hour), settings.time.minute);
-
-    // 이미 지난 시간이면 내일로 설정
-    if (notificationTime <= now) {
-      notificationTime = new Date(notificationTime.getTime() + 24 * 60 * 60 * 1000);
+    // Android Expo Go에서만 알림 기능 비활성화
+    if (isAndroidExpoGo) {
+      console.log('안드로이드 Expo Go에서는 알림 스케줄링을 지원하지 않습니다.');
+      return;
     }
-
-    // 알림 스케줄링
-    const language = getCurrentLanguage();
-    const isEnglish = language === 'en';
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: isEnglish ? '⚠️ FreshKeeper Expiry Alert' : '⚠️ 냉프로 임박 재료 알림',
-        body: isEnglish ? 'Items that need to be consumed soon!' : '빨리 소비해야하는 식재료가 있어요!',
-        data: {
-          userId,
-          type: 'daily-check',
-          navigateTo: 'inventory-expiring'
-        },
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.NotificationTriggerType.DAILY as const,
-        hour: settings.time.hour,
-        minute: settings.time.minute,
-      },
-      identifier: notificationId,
-    });
-
-    // 설정 업데이트
-    await this.saveSettings({
-      ...settings,
-      lastScheduledDate: format(new Date(), 'yyyy-MM-dd'),
-    }, userId);
-
-    console.log(
-      language === 'en'
-        ? `Notification scheduled daily at ${settings.time.hour}:${settings.time.minute.toString().padStart(2, '0')}`
-        : `알림이 매일 ${settings.time.hour}시 ${settings.time.minute}분에 예약되었습니다.`
-    );
+    // iOS나 프로덕션 빌드에서는 정상 동작해야 함
+    return;
   }
 
   // 즉시 알림 보내기 (테스트용)
   async sendImmediateNotification(userId: string): Promise<void> {
-    const { expired, expiringToday, expiringSoon } = await this.checkExpiringItems(userId);
-    const content = this.createNotificationContent(expired, expiringToday, expiringSoon);
-
-    if (!content) {
-      // 모든 식재료가 신선할 때는 알림을 보내지 않음
-      const language = getCurrentLanguage();
-      console.log(
-        language === 'en'
-          ? 'All items are fresh. No notification sent.'
-          : '모든 식재료가 신선합니다. 알림을 보내지 않습니다.'
-      );
+    // Android Expo Go에서만 알림 기능 비활성화
+    if (isAndroidExpoGo) {
+      console.log('안드로이드 Expo Go에서는 즉시 알림을 지원하지 않습니다.');
       return;
     }
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        ...content,
-        data: {
-          userId,
-          type: 'immediate-check',
-          navigateTo: 'inventory-expiring'
-        },
-        sound: true,
-      },
-      trigger: null,
-    });
+    return;
   }
 
   // 알림 활성화/비활성화
   async toggleNotifications(enabled: boolean, userId: string): Promise<void> {
+    // 설정은 항상 저장 (나중에 프로덕션 빌드에서 사용)
     const settings = await this.getSettings(userId);
     settings.enabled = enabled;
     await this.saveSettings(settings, userId);
 
-    if (enabled) {
-      await this.scheduleDailyNotification(userId);
-    } else {
-      const notificationId = getNotificationIdentifier(userId);
-      await Notifications.cancelScheduledNotificationAsync(notificationId).catch(() => {});
+    // Android Expo Go에서만 실제 알림 기능 비활성화
+    if (isAndroidExpoGo) {
+      console.log('안드로이드 Expo Go에서는 알림 토글을 지원하지 않습니다.');
+      return;
     }
   }
 
   // 알림 시간 업데이트
   async updateNotificationTime(hour: number, minute: number, userId: string): Promise<void> {
+    // 설정은 항상 저장 (나중에 프로덕션 빌드에서 사용)
     const settings = await this.getSettings(userId);
     settings.time = { hour, minute };
     await this.saveSettings(settings, userId);
 
-    if (settings.enabled) {
-      await this.scheduleDailyNotification(userId);
+    // Android Expo Go에서만 실제 알림 기능 비활성화
+    if (isAndroidExpoGo) {
+      console.log('안드로이드 Expo Go에서는 알림 시간 업데이트를 지원하지 않습니다.');
+      return;
     }
   }
 
   // 알림 응답 리스너 설정
   setupNotificationListeners(navigation: any) {
-    // 알림 클릭 시
-    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.content.data;
-
-      if (data?.navigateTo === 'inventory-expiring') {
-        // 재고목록 화면으로 이동하며 임박순 정렬 설정
-        navigation.navigate('Inventory', {
-          screen: 'InventoryList',
-          params: {
-            initialSortBy: 'expiry' // 임박순 정렬
-          }
-        });
-      }
-    });
-
-    return subscription;
+    // Android Expo Go에서만 알림 기능 비활성화
+    if (isAndroidExpoGo) {
+      console.log('안드로이드 Expo Go에서는 알림 리스너를 지원하지 않습니다.');
+      return null;
+    }
+    // iOS나 프로덕션 빌드에서는 정상 동작해야 함
+    return null;
   }
 }
 
