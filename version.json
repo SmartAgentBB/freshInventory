@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "ios": {
+    "buildNumber": 2,
+    "lastBuildDate": "2025-09-25",
+    "lastBuildType": "production",
+    "history": [
+      {
+        "buildNumber": 1,
+        "date": "2025-09-24",
+        "type": "production",
+        "status": "submitted",
+        "notes": "Initial App Store submission"
+      },
+      {
+        "buildNumber": 2,
+        "date": "2025-09-25",
+        "type": "production",
+        "status": "submitted",
+        "notes": "Web View text node error fix"
+      }
+    ]
+  },
+  "android": {
+    "versionCode": 2,
+    "lastBuildDate": "2025-09-26",
+    "lastBuildType": "production",
+    "history": [
+      {
+        "versionCode": 2,
+        "date": "2025-09-26",
+        "type": "production",
+        "status": "building",
+        "notes": "Automated build"
+      }
+    ]
+  }
+}

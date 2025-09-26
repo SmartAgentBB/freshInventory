@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.smartagent.nengpro",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "이 앱은 식재료 사진을 촬영하여 AI가 자동으로 인식하고 재고를 관리하기 위해 카메라를 사용합니다.",
@@ -30,7 +30,8 @@
         "backgroundColor": "#26A69A"
       },
       "package": "com.smartagent.nengpro",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 1
     },
     "notification": {
       "icon": "./assets/icon.png",
