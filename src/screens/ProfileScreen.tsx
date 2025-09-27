@@ -69,11 +69,11 @@ export const ProfileScreen: React.FC = () => {
   const handleDeleteAccountSuccess = async () => {
     setShowDeleteAccountDialog(false);
     Alert.alert(
-      '회원 탈퇴 완료',
-      '회원 탈퇴가 완료되었습니다.\n이용해 주셔서 감사합니다.',
+      t('messages.deleteAccountSuccess'),
+      t('messages.deleteAccountSuccessMessage'),
       [
         {
-          text: '확인',
+          text: t('messages.confirm'),
           onPress: async () => {
 
             // 1. 먼저 로컬에서 signOut 호출 (상태 초기화)
@@ -264,7 +264,7 @@ export const ProfileScreen: React.FC = () => {
           textColor={Colors.error}
           icon="account-remove"
         >
-          회원 탈퇴
+          {t('account.deleteAccount')}
         </Button>
 
         {/* 회원 탈퇴 다이얼로그 */}

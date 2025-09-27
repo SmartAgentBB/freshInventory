@@ -17,7 +17,7 @@
     "editProfile": "프로필 수정",
     "changePassword": "비밀번호 변경",
     "logout": "로그아웃",
-    "deleteAccount": "계정 삭제"
+    "deleteAccount": "회원 탈퇴"
   },
   "language": {
     "title": "언어 선택",
@@ -49,6 +49,32 @@
   "messages": {
     "logoutConfirm": "정말 로그아웃하시겠습니까?",
     "deleteAccountConfirm": "계정을 삭제하면 모든 데이터가 삭제됩니다. 정말 삭제하시겠습니까?",
-    "changesSaved": "변경사항이 저장되었습니다"
+    "changesSaved": "변경사항이 저장되었습니다",
+    "deleteAccountSuccess": "회원 탈퇴 완료",
+    "deleteAccountSuccessMessage": "회원 탈퇴가 완료되었습니다.\n이용해 주셔서 감사합니다.",
+    "confirm": "확인"
+  },
+  "deleteAccount": {
+    "title": "회원 탈퇴",
+    "initialWarning": "정말로 회원 탈퇴를 진행하시겠습니까?",
+    "dataWarning": "회원님의 데이터가 삭제되며, 복구할 수 없습니다.",
+    "emailConfirmTitle": "이메일 확인",
+    "emailConfirmPrompt": "계정 보호를 위해 이메일을 입력해 주세요.",
+    "emailLabel": "이메일 주소",
+    "currentAccount": "현재 로그인된 계정:",
+    "emailMismatch": "입력한 이메일이 일치하지 않습니다.",
+    "finalConfirmTitle": "최종 확인",
+    "irreversibleWarning": "이 작업은 되돌릴 수 없습니다!",
+    "finalDataWarning": "회원 탈퇴를 진행하면 모든 개인 데이터가 즉시 삭제되며, 복구할 수 없습니다.",
+    "processingTitle": "회원 탈퇴 진행 중",
+    "processingMessage": "회원 탈퇴를 처리하고 있습니다...",
+    "pleaseWait": "잠시만 기다려 주세요.",
+    "deleteError": "회원 탈퇴 중 오류가 발생했습니다.",
+    "unexpectedError": "예기치 않은 오류가 발생했습니다. 다시 시도해 주세요.",
+    "cancel": "취소",
+    "continue": "계속",
+    "previous": "이전",
+    "confirm": "확인",
+    "deleteButton": "회원 탈퇴"
   }
 }

@@ -49,6 +49,32 @@
   "messages": {
     "logoutConfirm": "Are you sure you want to logout?",
     "deleteAccountConfirm": "Deleting your account will remove all data. Are you sure?",
-    "changesSaved": "Changes have been saved"
+    "changesSaved": "Changes have been saved",
+    "deleteAccountSuccess": "Account deletion completed",
+    "deleteAccountSuccessMessage": "Your account has been successfully deleted.\nThank you for using our service.",
+    "confirm": "Confirm"
+  },
+  "deleteAccount": {
+    "title": "Delete Account",
+    "initialWarning": "Are you sure you want to delete your account?",
+    "dataWarning": "Your data will be deleted and cannot be recovered.",
+    "emailConfirmTitle": "Email Confirmation",
+    "emailConfirmPrompt": "Please enter your email address for account security.",
+    "emailLabel": "Email Address",
+    "currentAccount": "Current account:",
+    "emailMismatch": "The email address does not match.",
+    "finalConfirmTitle": "Final Confirmation",
+    "irreversibleWarning": "This action cannot be undone!",
+    "finalDataWarning": "Deleting your account will immediately delete all personal data and cannot be recovered.",
+    "processingTitle": "Processing Account Deletion",
+    "processingMessage": "Processing account deletion...",
+    "pleaseWait": "Please wait.",
+    "deleteError": "An error occurred during account deletion.",
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "previous": "Previous",
+    "confirm": "Confirm",
+    "deleteButton": "Delete Account"
   }
 }

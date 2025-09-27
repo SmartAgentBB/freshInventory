@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Surface,
 } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { accountDeletionService } from '../services/AccountDeletionService';
@@ -30,6 +31,7 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
   onDismiss,
   onDeleteSuccess,
 }) => {
+  const { t } = useTranslation('profile');
   const [step, setStep] = useState<DialogStep>('initial');
   const [emailInput, setEmailInput] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -52,7 +54,7 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
 
   const handleEmailConfirm = () => {
     if (emailInput.toLowerCase() !== userEmail.toLowerCase()) {
-      setEmailError('입력한 이메일이 일치하지 않습니다.');
+      setEmailError(t('deleteAccount.emailMismatch'));
       return;
     }
     setEmailError('');
@@ -70,12 +72,12 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
       if (result.success) {
         onDeleteSuccess();
       } else {
-        setDeleteError(result.error || '회원 탈퇴 중 오류가 발생했습니다.');
+        setDeleteError(result.error || t('deleteAccount.deleteError'));
         setStep('finalConfirm');
         setIsDeleting(false);
       }
     } catch (error) {
-      setDeleteError('예기치 않은 오류가 발생했습니다. 다시 시도해 주세요.');
+      setDeleteError(t('deleteAccount.unexpectedError'));
       setStep('finalConfirm');
       setIsDeleting(false);
     }
@@ -83,25 +85,25 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
 
   const renderInitialDialog = () => (
     <View>
-      <Dialog.Title style={styles.title}>회원 탈퇴</Dialog.Title>
+      <Dialog.Title style={styles.title}>{t('deleteAccount.title')}</Dialog.Title>
       <Dialog.Content>
         <Text variant="bodyLarge" style={styles.warningText}>
-          정말로 회원 탈퇴를 진행하시겠습니까?
+          {t('deleteAccount.initialWarning')}
         </Text>
         <Text variant="bodyMedium" style={styles.infoText}>
-          회원님의 데이터가 삭제되며, 복구할 수 없습니다.
+          {t('deleteAccount.dataWarning')}
         </Text>
       </Dialog.Content>
       <Dialog.Actions>
         <Button onPress={handleDismiss} textColor={Colors.text.secondary}>
-          취소
+          {t('deleteAccount.cancel')}
         </Button>
         <Button
           onPress={handleInitialConfirm}
           textColor={Colors.error}
           mode="text"
         >
-          계속
+          {t('deleteAccount.continue')}
         </Button>
       </Dialog.Actions>
     </View>
@@ -109,13 +111,13 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
 
   const renderEmailConfirmDialog = () => (
     <View>
-      <Dialog.Title style={styles.title}>이메일 확인</Dialog.Title>
+      <Dialog.Title style={styles.title}>{t('deleteAccount.emailConfirmTitle')}</Dialog.Title>
       <Dialog.Content>
         <Text variant="bodyLarge" style={styles.warningText}>
-          계정 보호를 위해 이메일을 입력해 주세요.
+          {t('deleteAccount.emailConfirmPrompt')}
         </Text>
         <TextInput
-          label="이메일 주소"
+          label={t('deleteAccount.emailLabel')}
           value={emailInput}
           onChangeText={setEmailInput}
           mode="outlined"
@@ -132,7 +134,7 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
           </Text>
         ) : null}
         <Text variant="bodySmall" style={styles.hintText}>
-          현재 로그인된 계정: {userEmail}
+          {t('deleteAccount.currentAccount')} {userEmail}
         </Text>
       </Dialog.Content>
       <Dialog.Actions>
@@ -144,14 +146,14 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
           }}
           textColor={Colors.text.secondary}
         >
-          이전
+          {t('deleteAccount.previous')}
         </Button>
         <Button
           onPress={handleEmailConfirm}
           textColor={Colors.error}
           disabled={!emailInput}
         >
-          확인
+          {t('deleteAccount.confirm')}
         </Button>
       </Dialog.Actions>
     </View>
@@ -160,21 +162,16 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
   const renderFinalConfirmDialog = () => (
     <View>
       <Dialog.Title style={[styles.title, styles.dangerTitle]}>
-        ⚠️ 최종 확인
+        ⚠️ {t('deleteAccount.finalConfirmTitle')}
       </Dialog.Title>
       <Dialog.Content>
         <Surface style={styles.dangerSurface} elevation={0}>
           <Text variant="bodyLarge" style={styles.dangerText}>
-            이 작업은 되돌릴 수 없습니다!
+            {t('deleteAccount.irreversibleWarning')}
           </Text>
         </Surface>
         <Text variant="bodyMedium" style={styles.finalWarning}>
-          회원 탈퇴를 진행하면 모든 개인 데이터가 즉시 삭제되며,
-          복구할 수 없습니다.
-        </Text>
-        <Text variant="bodyMedium" style={styles.finalInfo}>
-          같은 이메일로 다시 가입은 가능하지만,
-          기존 데이터는 복구되지 않습니다.
+          {t('deleteAccount.finalDataWarning')}
         </Text>
         {deleteError ? (
           <Text variant="bodySmall" style={styles.errorText}>
@@ -191,7 +188,7 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
           textColor={Colors.text.secondary}
           disabled={isDeleting}
         >
-          이전
+          {t('deleteAccount.previous')}
         </Button>
         <Button
           onPress={handleFinalConfirm}
@@ -201,7 +198,7 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
           disabled={isDeleting}
           style={styles.deleteButton}
         >
-          회원 탈퇴
+          {t('deleteAccount.deleteButton')}
         </Button>
       </Dialog.Actions>
     </View>
@@ -209,7 +206,7 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
 
   const renderProcessingDialog = () => (
     <View>
-      <Dialog.Title style={styles.title}>회원 탈퇴 진행 중</Dialog.Title>
+      <Dialog.Title style={styles.title}>{t('deleteAccount.processingTitle')}</Dialog.Title>
       <Dialog.Content>
         <View style={styles.processingContainer}>
           <ActivityIndicator
@@ -218,10 +215,10 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
             color={Colors.primary.main}
           />
           <Text variant="bodyLarge" style={styles.processingText}>
-            회원 탈퇴를 처리하고 있습니다...
+            {t('deleteAccount.processingMessage')}
           </Text>
           <Text variant="bodySmall" style={styles.processingSubText}>
-            잠시만 기다려 주세요.
+            {t('deleteAccount.pleaseWait')}
           </Text>
         </View>
       </Dialog.Content>
