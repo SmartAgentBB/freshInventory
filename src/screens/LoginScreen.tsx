@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput as RNTextInput } from 'react-native';
+import { View, ScrollView, TouchableOpacity, TextInput as RNTextInput, Alert } from 'react-native';
 import { Surface, Text, ActivityIndicator } from 'react-native-paper';
 import { Colors } from '../constants/colors';
 import { AuthService } from '../services/AuthService';
+import { supabaseClient } from '../services/supabaseClient';
 
 interface LoginScreenProps {
   navigation: any; // In real app, this would be properly typed with React Navigation
@@ -63,18 +64,76 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const result = await authService.signInWithPassword(email.trim(), password.trim());
+      // 먼저 삭제된 계정인지 확인 (테이블이 없어도 안전하게 처리)
+      try {
+        const { data: deletedAccount, error: checkError } = await supabaseClient
+          .from('deleted_accounts')
+          .select('email')
+          .eq('email', email.trim())
+          .single();
 
+        // 에러가 '레코드를 찾을 수 없음'이 아니면 테이블이 없거나 다른 문제
+        if (checkError && checkError.code !== 'PGRST116') {
+          // deleted_accounts 테이블 확인 건너뜀
+        }
+
+        if (deletedAccount) {
+          setLoginError('이 계정은 탈퇴 처리되었습니다. 다른 이메일로 새로운 계정을 만들어 주세요.');
+          setLoading(false);
+          return;
+        }
+      } catch (deletedCheckError) {
+        // deleted_accounts 테이블 체크 실패는 무시하고 계속 진행
+        // deleted_accounts 확인 중 오류 무시
+      }
+
+      // 먼저 로그인을 시도하여 사용자 정보를 가져옴
+      const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim()
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      // 로그인 성공했지만 메타데이터 확인
+      if (authData.user) {
+        const userData = authData.user.user_metadata;
+
+        // 계정이 삭제 표시된 경우
+        if (userData?.deleted === true || userData?.account_status === 'deleted') {
+          // 즉시 로그아웃
+          await supabaseClient.auth.signOut();
+
+          // Alert로 명확하게 알림
+          Alert.alert(
+            '탈퇴한 계정',
+            '이 계정은 탈퇴 처리되었습니다.\n다른 이메일로 새로운 계정을 만들어 주세요.',
+            [{ text: '확인' }],
+            { cancelable: false }
+          );
+
+          setLoginError('이 계정은 탈퇴 처리되었습니다.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 메타데이터 확인 통과 - 정상 로그인 처리
       // AuthFlow will automatically handle navigation when authentication state changes
-      // No need to manually navigate
     } catch (error: any) {
-      console.log('Login error:', error); // Debug log
 
       // Check error message for email verification requirement
       const errorMessage = error?.message || error?.msg || '';
       const errorCode = error?.code || '';
 
-      if (errorMessage.toLowerCase().includes('email not confirmed') ||
+      // 먼저 계정이 삭제된 경우를 확인 (Supabase Auth 에러 메시지에서)
+      if (errorMessage.toLowerCase().includes('deleted') ||
+          errorMessage.toLowerCase().includes('deactivated') ||
+          errorMessage.toLowerCase().includes('account has been deleted')) {
+        setLoginError('이 계정은 탈퇴 처리되었습니다. 다른 이메일로 새로운 계정을 만들어 주세요.');
+      } else if (errorMessage.toLowerCase().includes('email not confirmed') ||
           errorMessage.toLowerCase().includes('email verification') ||
           errorMessage.toLowerCase().includes('confirm your email') ||
           errorMessage.toLowerCase().includes('email_not_confirmed') ||

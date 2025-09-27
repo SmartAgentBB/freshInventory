@@ -3,6 +3,7 @@ import { View, ScrollView, TouchableOpacity, TextInput as RNTextInput } from 're
 import { Surface, Text, ActivityIndicator } from 'react-native-paper';
 import { Colors } from '../constants/colors';
 import { AuthService } from '../services/AuthService';
+import { supabaseClient } from '../services/supabaseClient';
 
 interface SignUpScreenProps {
   navigation: any; // In real app, this would be properly typed with React Navigation
@@ -92,12 +93,28 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
     setSuccessMessage('');
 
     try {
+      // 먼저 삭제된 계정인지 확인
+      const { data: deletedAccount, error: checkError } = await supabaseClient
+        .from('deleted_accounts')
+        .select('email')
+        .eq('email', email.trim())
+        .single();
+
+      // 에러가 '레코드를 찾을 수 없음'이 아니면 테이블 문제
+      if (checkError && checkError.code !== 'PGRST116') {
+        // deleted_accounts 테이블 확인 실패 무시
+      }
+
+      if (deletedAccount) {
+        setSignupError('이 이메일은 탈퇴한 계정입니다. 다른 이메일을 사용해 주세요.');
+        setLoading(false);
+        return;
+      }
+
       const result = await authService.signUp(email.trim(), password.trim());
 
-      console.log('Signup result:', result); // Debug log
 
       if (result.error) {
-        console.log('Signup error details:', result.error); // Debug log
 
         // Check for specific error types
         const errorMessage = result.error.message || result.error.msg || '';
@@ -133,7 +150,6 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
       }
 
     } catch (error: any) {
-      console.error('Signup catch error:', error);
 
       // This should not happen now, but keep as fallback
       setSignupError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');

@@ -19,7 +19,7 @@ export function useAuth(): UseAuthReturn {
         const { data: { session } } = await supabaseClient.auth.getSession();
         setUser(session?.user || null);
       } catch (error) {
-        console.error('Error getting session:', error);
+        // 세션 가져오기 에러 무시
       } finally {
         setLoading(false);
       }
@@ -53,10 +53,16 @@ export function useAuth(): UseAuthReturn {
 
   const signOut = async () => {
     try {
-      await supabaseClient.auth.signOut();
+      // 먼저 로컬 상태를 null로 설정
       setUser(null);
+
+      // 그다음 Supabase 로그아웃 시도 (실패해도 상관없음)
+      supabaseClient.auth.signOut().catch(() => {
+        // Supabase 로그아웃 에러 무시
+      });
     } catch (error) {
-      console.error('Error signing out:', error);
+      // 에러가 나도 로컬 상태는 null로 설정
+      setUser(null);
     }
   };
 

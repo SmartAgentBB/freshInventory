@@ -12,6 +12,7 @@ import { AuthService } from '../services/AuthService';
 import { supabaseClient } from '../services/supabaseClient';
 import { notificationService } from '../services/NotificationService';
 import { changeLanguage, getCurrentLanguage, getAvailableLanguages } from '../services/i18n';
+import { DeleteAccountDialog } from '../components/DeleteAccountDialog';
 
 // Expo Go 환경 체크 - Android에서만 알림 문제 발생
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -27,6 +28,7 @@ export const ProfileScreen: React.FC = () => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [languageMenuVisible, setLanguageMenuVisible] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(getCurrentLanguage());
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const availableLanguages = getAvailableLanguages();
 
   useEffect(() => {
@@ -57,6 +59,51 @@ export const ProfileScreen: React.FC = () => {
           },
         },
       ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    setShowDeleteAccountDialog(true);
+  };
+
+  const handleDeleteAccountSuccess = async () => {
+    setShowDeleteAccountDialog(false);
+    Alert.alert(
+      '회원 탈퇴 완료',
+      '회원 탈퇴가 완료되었습니다.\n이용해 주셔서 감사합니다.',
+      [
+        {
+          text: '확인',
+          onPress: async () => {
+
+            // 1. 먼저 로컬에서 signOut 호출 (상태 초기화)
+            try {
+              signOut();
+            } catch (error) {
+              // 에러 무시
+            }
+
+            // 2. Supabase 세션 강제 종료 시도
+            setTimeout(async () => {
+              try {
+                // 강제로 SIGNED_OUT 이벤트 발생
+                const { error } = await supabaseClient.auth.signOut({ scope: 'local' });
+                if (error) {
+                  // 에러가 있어도 강제로 세션 클리어
+                  await supabaseClient.auth.getSession().then(() => {
+                    // 강제로 auth state 변경 트리거
+                    (supabaseClient.auth as any).session = null;
+                  });
+                }
+              } catch (error) {
+                // 세션 종료 실패 무시
+              }
+
+            }, 100);
+          },
+        },
+      ],
+      { cancelable: false }
     );
   };
 
@@ -207,6 +254,27 @@ export const ProfileScreen: React.FC = () => {
         >
           {t('account.logout')}
         </Button>
+
+        {/* 회원 탈퇴 버튼 */}
+        <Button
+          mode="text"
+          onPress={handleDeleteAccount}
+          style={styles.deleteAccountButton}
+          contentStyle={styles.deleteAccountButtonContent}
+          textColor={Colors.error}
+          icon="account-remove"
+        >
+          회원 탈퇴
+        </Button>
+
+        {/* 회원 탈퇴 다이얼로그 */}
+        <DeleteAccountDialog
+          visible={showDeleteAccountDialog}
+          userEmail={user?.email || ''}
+          userId={user?.id || ''}
+          onDismiss={() => setShowDeleteAccountDialog(false)}
+          onDeleteSuccess={handleDeleteAccountSuccess}
+        />
       </Surface>
     </ScrollView>
   );
@@ -265,5 +333,11 @@ const styles = StyleSheet.create({
   },
   selectedLanguage: {
     backgroundColor: Colors.primary.container,
+  },
+  deleteAccountButton: {
+    marginTop: Spacing.md,
+  },
+  deleteAccountButtonContent: {
+    paddingVertical: Spacing.xs,
   },
 });

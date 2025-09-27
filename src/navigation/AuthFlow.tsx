@@ -1,87 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 import { Surface, Text, ActivityIndicator } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Colors } from '../constants/colors';
-import { AuthService } from '../services/AuthService';
+import { useAuth } from '../hooks/useAuth';
 import { LoginScreen } from '../screens/LoginScreen';
 import { SignUpScreen } from '../screens/SignUpScreen';
 import { MainNavigator } from './MainNavigator';
-import { User, Session } from '@supabase/supabase-js';
 
 const Stack = createStackNavigator();
 
 export const AuthFlow: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const authService = new AuthService();
-
-  useEffect(() => {
-    let mounted = true;
-
-    const checkAuthState = async () => {
-      try {
-        setLoading(true);
-
-        // Check if user is currently authenticated
-        const authenticated = await authService.isAuthenticated();
-        
-        if (mounted) {
-          setIsAuthenticated(authenticated);
-        }
-      } catch (error) {
-        console.error('Auth state check error:', error);
-        if (mounted) {
-          setIsAuthenticated(false);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    // Listen to auth state changes
-    const { unsubscribe } = authService.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
-
-      if (!mounted) return;
-
-      switch (event) {
-        case 'SIGNED_IN':
-        case 'TOKEN_REFRESHED':
-          setIsAuthenticated(true);
-          setLoading(false);
-          break;
-        case 'SIGNED_OUT':
-          setIsAuthenticated(false);
-          setLoading(false);
-          break;
-        default:
-          // For other events, check authentication status
-          try {
-            const authenticated = await authService.isAuthenticated();
-            setIsAuthenticated(authenticated);
-            setLoading(false);
-          } catch (error) {
-            console.error('Auth state check error:', error);
-            setIsAuthenticated(false);
-            setLoading(false);
-          }
-          break;
-      }
-    });
-
-    // Initial auth state check
-    checkAuthState();
-
-    return () => {
-      mounted = false;
-      unsubscribe();
-    };
-  }, []);
+  const { user, loading } = useAuth();
 
   // Loading screen
   if (loading) {
@@ -130,10 +61,10 @@ export const AuthFlow: React.FC = () => {
   }
 
   // Authentication stack for login/signup
-  if (!isAuthenticated) {
+  if (!user) {
     return (
       <NavigationContainer>
-        <Stack.Navigator 
+        <Stack.Navigator
           initialRouteName="Login"
           screenOptions={{
             headerShown: false,
