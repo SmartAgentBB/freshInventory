@@ -6,8 +6,15 @@ AI 기반 식재료 관리 React Native 앱 (Expo SDK 54)
 ## 🏗 아키텍처
 - **Frontend**: React Native + TypeScript + React Native Paper
 - **Backend**: Supabase (PostgreSQL + Auth + Storage)
-- **AI Service**: Google Gemini API
+- **AI Service**: Google Gemini API (`gemini-2.5-flash-lite`)
 - **Package**: `com.smartagent.nengpro`
+
+### AI 모델 설정
+- **필수**: 모든 AI 서비스에서 `gemini-2.5-flash-lite` 모델 사용
+- **적용 위치**:
+  - `src/services/AIService.ts` (이미지 분석, 레시피 생성)
+  - `src/services/StorageInfoService.ts` (식재료 보관 정보)
+- **이유**: `gemini-1.5-flash`는 v1beta API에서 지원되지 않음
 
 ## 📱 핵심 기능
 1. **AI 식재료 인식**: 사진으로 자동 식재료 등록
@@ -79,6 +86,10 @@ npm test
 1. **알림 설정 문제**: 사용자별 AsyncStorage 키 분리로 해결
 2. **이메일 인증 리다이렉션**: 딥링크 스킴 설정 필요
 3. **Expo Go 알림**: 실제 기기에서만 작동
+4. **키보드 입력창 가림 문제**:
+   - `KeyboardAvoidingView` 대신 `measureInWindow` + 자동 스크롤 사용
+   - `Keyboard.addListener('keyboardDidShow')`로 키보드 높이 감지
+   - iOS/Android 모두 일관되게 작동
 
 ## 📝 코드 컨벤션
 ### 파일 구조
@@ -122,6 +133,58 @@ EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
 - **접근성**: 모든 인터랙티브 요소에 접근성 레이블
 - **성능**: 이미지 최적화, 메모이제이션 활용
 - **보안**: 민감 정보 노출 금지, 환경 변수 사용
+
+## 🔧 플랫폼별 고려사항
+
+### 키보드 처리
+- **문제**: `KeyboardAvoidingView`는 iOS/Android에서 일관성 없이 작동
+- **해결책**: 다음 패턴 사용
+  ```typescript
+  // ScrollView ref 및 상태
+  const scrollViewRef = useRef<ScrollView>(null);
+  const inputContainerRef = useRef<View>(null);
+  const [scrollOffset, setScrollOffset] = useState(0);
+
+  // ScrollView 설정
+  <ScrollView
+    ref={scrollViewRef}
+    onScroll={(e) => setScrollOffset(e.nativeEvent.contentOffset.y)}
+    scrollEventThrottle={16}
+  >
+    <View ref={inputContainerRef}>
+      <TextInput
+        onFocus={() => {
+          const keyboardListener = Keyboard.addListener('keyboardDidShow', (e) => {
+            inputContainerRef.current?.measureInWindow((x, y, width, height) => {
+              const keyboardHeight = e.endCoordinates.height;
+              const screenHeight = Dimensions.get('window').height;
+              const inputBottom = y + height;
+              const visibleScreen = screenHeight - keyboardHeight;
+
+              if (inputBottom > visibleScreen - 20) {
+                const scrollTo = scrollOffset + (inputBottom - visibleScreen + 100);
+                scrollViewRef.current?.scrollTo({ y: scrollTo, animated: true });
+              }
+            });
+            keyboardListener.remove();
+          });
+        }}
+      />
+    </View>
+  </ScrollView>
+  ```
+
+### QR 코드로 모바일 테스트
+```bash
+# 로컬 네트워크로 Expo 서버 시작
+npx expo start
+
+# 터널 모드 (ngrok 타임아웃 이슈 가능)
+npx expo start --tunnel
+
+# 수동 QR 코드 생성
+npx qrcode-terminal "exp://YOUR_IP:8081"
+```
 
 ## 🔄 Git 워크플로우
 
