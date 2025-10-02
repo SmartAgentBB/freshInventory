@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Linking, KeyboardAvoidingView, Platform, Keyboard, Dimensions, findNodeHandle } from 'react-native';
 import { Surface, Text, Button, Chip, ActivityIndicator, FAB, Card, Divider, TextInput, IconButton, Menu, Switch } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useIsFocused } from '@react-navigation/native';
@@ -52,19 +52,32 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   const [cookingStyleInput, setCookingStyleInput] = useState('');
   const { user } = useAuth();
   const isFocused = useIsFocused();
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const inputContainerRef = React.useRef<View>(null);
+  const [scrollOffset, setScrollOffset] = useState(0);
 
   // useMemo를 사용하여 서비스 인스턴스들을 한 번만 생성
   const inventoryService = useMemo(() => {
-    // InventoryService creation with supabaseClient
-    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
-                   process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-    return new InventoryService(supabaseClient, apiKey);
+    try {
+      // InventoryService creation with supabaseClient
+      const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
+                     process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+      return new InventoryService(supabaseClient, apiKey);
+    } catch (error) {
+      console.error('Failed to create InventoryService:', error);
+      // Return null instead of throwing to prevent crashes
+      return null;
+    }
   }, []);
 
   const aiService = useMemo(() => {
-    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
-                   process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-    return new AIService();
+    try {
+      return new AIService();
+    } catch (error) {
+      console.error('Failed to create AIService:', error);
+      // Return null instead of throwing to prevent crashes
+      return null;
+    }
   }, []);
 
   // Handle initial recommendations from ItemDetailScreen
@@ -89,12 +102,23 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
     try {
       // Get all bookmarked recipes at once to avoid multiple API calls
       const bookmarkedList = await recipeService.getBookmarkedRecipes(user.id);
-      const bookmarkedNames = new Set(bookmarkedList.map(r => r.name));
+
+      // Defensive null check for bookmarkedList
+      if (!bookmarkedList || !Array.isArray(bookmarkedList)) {
+        setBookmarkedRecipes(new Set());
+        return;
+      }
+
+      const bookmarkedNames = new Set(
+        bookmarkedList
+          .filter(r => r && r.name && typeof r.name === 'string')
+          .map(r => r.name)
+      );
 
       // Check which of the recommendations are bookmarked
       const bookmarked = new Set<string>();
       for (const recipe of recommendations) {
-        if (bookmarkedNames.has(recipe.name)) {
+        if (recipe && recipe.name && bookmarkedNames.has(recipe.name)) {
           bookmarked.add(recipe.name);
         }
       }
@@ -172,11 +196,24 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
         return;
       }
 
+      if (!inventoryService) {
+        console.error('InventoryService not available');
+        setIngredients([]);
+        return;
+      }
+
       // Loading ingredients for user
 
       // 과일 제외하고 재고가 있는 항목만 가져오기
       const items = await inventoryService.getCookingIngredients(user.id);
       // Loaded ingredients successfully
+
+      // Validate items array
+      if (!Array.isArray(items)) {
+        console.error('Invalid items received:', items);
+        setIngredients([]);
+        return;
+      }
 
       // 재고목록과 동일한 임박순 정렬 적용
       const sortedItems = [...items].sort(sortByUrgency);
@@ -184,7 +221,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
 
       // 전체 선택이 활성화된 경우 모든 재료를 선택
       if (selectAll) {
-        const allIds = new Set(sortedItems.map(item => item.id));
+        const allIds = new Set(sortedItems.map(item => item?.id).filter(Boolean));
         setSelectedIngredients(allIds);
       }
     } catch (error) {
@@ -341,8 +378,15 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
     try {
       setRecommending(true);
 
+      if (!aiService) {
+        console.error('AI Service not available');
+        alert('AI 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        setRecommending(false);
+        return;
+      }
+
       // 선택된 재료만 필터링
-      const selectedItems = ingredients.filter(item => selectedIngredients.has(item.id));
+      const selectedItems = ingredients.filter(item => item && selectedIngredients.has(item.id));
 
       if (selectedItems.length === 0) {
         alert(t('recommend.selectIngredientsAlert'));
@@ -365,14 +409,18 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
       });
 
       // Create prioritized ingredient list (without expiry info)
-      const ingredientInfo = sortedIngredients.map(item => item.name);
+      const ingredientInfo = sortedIngredients
+        .filter(item => item && item.name && typeof item.name === 'string')
+        .map(item => item.name);
 
       // AI 추천 API 호출 (사용자 입력 스타일 포함)
-      const result = await aiService.generateRecipeSuggestions(ingredientInfo, cookingStyleInput.trim(), i18n.language);
+      const result = await aiService!.generateRecipeSuggestions(ingredientInfo, cookingStyleInput.trim(), i18n.language);
       // Received recommendations result
 
-      if (result.success && result.recipes.length > 0) {
-        setRecommendations(result.recipes);
+      if (result && result.success && result.recipes && result.recipes.length > 0) {
+        // Validate recipes array
+        const validRecipes = result.recipes.filter(r => r && r.name);
+        setRecommendations(validRecipes);
         setShowRecommendations(true);
       } else {
         // Log the error for debugging
@@ -410,26 +458,32 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   // Check if user has an ingredient
   // Helper function to format ingredient display
   const formatIngredient = (ingredient: RecipeIngredient | string): { display: string; name: string } => {
-    if (typeof ingredient === 'string') {
-      // Backward compatibility: handle old string format
-      const cleanedName = ingredient.replace(/\([^)]*\)/g, '')
-        .replace(/약간|조금|적당량|적당히|소량/g, '')
-        .replace(/\d+\/?\d*/g, '')
-        .replace(/개|g|kg|ml|L|큰술|작은술|컵|스푼|조각|장|줄기|송이|알|봉지|팩|통|덩어리|티스푼|테이블스푼|모|병|캔|방울|포기/g, '')
-        .replace(/\s+/g, ' ').trim();
-      return { display: ingredient, name: cleanedName || ingredient };
-    }
+    try {
+      if (typeof ingredient === 'string') {
+        // Backward compatibility: handle old string format
+        const cleanedName = ingredient.replace(/\([^)]*\)/g, '')
+          .replace(/약간|조금|적당량|적당히|소량/g, '')
+          .replace(/\d+\/?\d*/g, '')
+          .replace(/개|g|kg|ml|L|큰술|작은술|컵|스푼|조각|장|줄기|송이|알|봉지|팩|통|덩어리|티스푼|테이블스푼|모|병|캔|방울|포기/g, '')
+          .replace(/\s+/g, ' ').trim();
+        return { display: ingredient, name: cleanedName || ingredient };
+      }
 
-    // New structured format
-    // Handle cases where quantity might be null or undefined
-    let quantityStr = '';
-    if (ingredient.quantity != null && !isNaN(ingredient.quantity)) {
-      quantityStr = ingredient.quantity === Math.floor(ingredient.quantity)
-        ? ingredient.quantity.toString()
-        : ingredient.quantity.toFixed(1).replace('.0', '');
+      // New structured format
+      // Handle cases where quantity might be null or undefined
+      const name = String(ingredient?.name || '');
+      let quantityStr = '';
+      if (ingredient && ingredient.quantity != null && !isNaN(ingredient.quantity)) {
+        quantityStr = ingredient.quantity === Math.floor(ingredient.quantity)
+          ? ingredient.quantity.toString()
+          : ingredient.quantity.toFixed(1).replace('.0', '');
+      }
+      const display = `${name}${quantityStr ? ' ' + quantityStr : ''}${ingredient?.unit || ''}`;
+      return { display, name };
+    } catch (error) {
+      console.error('Error formatting ingredient:', error);
+      return { display: String(ingredient || ''), name: String(ingredient || '') };
     }
-    const display = `${ingredient.name}${quantityStr ? ' ' + quantityStr : ''}${ingredient.unit || ''}`;
-    return { display, name: ingredient.name };
   };
 
   const hasIngredient = (ingredient: RecipeIngredient | string): boolean => {
@@ -450,7 +504,14 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        onScroll={(e) => setScrollOffset(e.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={16}
+      >
         {/* 안내 메시지 및 색상 범례 */}
         <Surface style={styles.infoCard} elevation={1}>
           <Text variant="bodySmall" style={styles.infoText}>
@@ -597,7 +658,10 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
             {/* 요리 스타일 입력 및 추천받기 버튼 */}
             {ingredients.length > 0 && !showRecommendations && (
               <>
-                <View style={styles.cookingStyleContainer}>
+                <View
+                  ref={inputContainerRef}
+                  style={styles.cookingStyleContainer}
+                >
                   <TextInput
                     value={cookingStyleInput}
                     onChangeText={setCookingStyleInput}
@@ -610,6 +674,32 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                     outlineColor={Colors.border.light}
                     activeOutlineColor={Colors.primary.main}
                     dense
+                    onFocus={() => {
+                      // 키보드 높이를 가져와서 스크롤 계산
+                      const keyboardDidShowListener = Keyboard.addListener(
+                        'keyboardDidShow',
+                        (e) => {
+                          if (inputContainerRef.current) {
+                            inputContainerRef.current.measureInWindow((x, y, width, height) => {
+                              const keyboardHeight = e.endCoordinates.height;
+                              const screenHeight = Dimensions.get('window').height;
+                              const inputBottom = y + height;
+                              const visibleScreen = screenHeight - keyboardHeight;
+
+                              // 입력창이 키보드에 가려지는지 확인
+                              if (inputBottom > visibleScreen - 20) {
+                                const scrollTo = scrollOffset + (inputBottom - visibleScreen + 100);
+                                scrollViewRef.current?.scrollTo({
+                                  y: scrollTo,
+                                  animated: true,
+                                });
+                              }
+                            });
+                          }
+                          keyboardDidShowListener.remove();
+                        }
+                      );
+                    }}
                     right={
                       cookingStyleInput ? (
                         <TextInput.Icon
@@ -794,9 +884,14 @@ const BookmarksTab = () => {
 
   // Service instances
   const inventoryService = useMemo(() => {
-    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
-                   process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-    return new InventoryService(supabaseClient, apiKey);
+    try {
+      const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
+                     process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+      return new InventoryService(supabaseClient, apiKey);
+    } catch (error) {
+      console.error('Failed to create InventoryService in BookmarksTab:', error);
+      return null;
+    }
   }, []);
 
   useEffect(() => {
@@ -810,8 +905,13 @@ const BookmarksTab = () => {
     if (!user?.id) return;
 
     try {
+      if (!inventoryService) {
+        console.error('InventoryService not available in BookmarksTab');
+        setIngredients([]);
+        return;
+      }
       const items = await inventoryService.getCookingIngredients(user.id);
-      setIngredients(items);
+      setIngredients(Array.isArray(items) ? items : []);
     } catch (error) {
       console.error('Failed to load ingredients:', error);
       setIngredients([]);
@@ -948,26 +1048,32 @@ const BookmarksTab = () => {
   // Check if user has an ingredient
   // Helper function to format ingredient display
   const formatIngredient = (ingredient: RecipeIngredient | string): { display: string; name: string } => {
-    if (typeof ingredient === 'string') {
-      // Backward compatibility: handle old string format
-      const cleanedName = ingredient.replace(/\([^)]*\)/g, '')
-        .replace(/약간|조금|적당량|적당히|소량/g, '')
-        .replace(/\d+\/?\d*/g, '')
-        .replace(/개|g|kg|ml|L|큰술|작은술|컵|스푼|조각|장|줄기|송이|알|봉지|팩|통|덩어리|티스푼|테이블스푼|모|병|캔|방울|포기/g, '')
-        .replace(/\s+/g, ' ').trim();
-      return { display: ingredient, name: cleanedName || ingredient };
-    }
+    try {
+      if (typeof ingredient === 'string') {
+        // Backward compatibility: handle old string format
+        const cleanedName = ingredient.replace(/\([^)]*\)/g, '')
+          .replace(/약간|조금|적당량|적당히|소량/g, '')
+          .replace(/\d+\/?\d*/g, '')
+          .replace(/개|g|kg|ml|L|큰술|작은술|컵|스푼|조각|장|줄기|송이|알|봉지|팩|통|덩어리|티스푼|테이블스푼|모|병|캔|방울|포기/g, '')
+          .replace(/\s+/g, ' ').trim();
+        return { display: ingredient, name: cleanedName || ingredient };
+      }
 
-    // New structured format
-    // Handle cases where quantity might be null or undefined
-    let quantityStr = '';
-    if (ingredient.quantity != null && !isNaN(ingredient.quantity)) {
-      quantityStr = ingredient.quantity === Math.floor(ingredient.quantity)
-        ? ingredient.quantity.toString()
-        : ingredient.quantity.toFixed(1).replace('.0', '');
+      // New structured format
+      // Handle cases where quantity might be null or undefined
+      const name = String(ingredient?.name || '');
+      let quantityStr = '';
+      if (ingredient && ingredient.quantity != null && !isNaN(ingredient.quantity)) {
+        quantityStr = ingredient.quantity === Math.floor(ingredient.quantity)
+          ? ingredient.quantity.toString()
+          : ingredient.quantity.toFixed(1).replace('.0', '');
+      }
+      const display = `${name}${quantityStr ? ' ' + quantityStr : ''}${ingredient?.unit || ''}`;
+      return { display, name };
+    } catch (error) {
+      console.error('Error formatting ingredient:', error);
+      return { display: String(ingredient || ''), name: String(ingredient || '') };
     }
-    const display = `${ingredient.name}${quantityStr ? ' ' + quantityStr : ''}${ingredient.unit || ''}`;
-    return { display, name: ingredient.name };
   };
 
   const hasIngredient = (ingredient: RecipeIngredient | string): boolean => {

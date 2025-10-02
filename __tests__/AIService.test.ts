@@ -52,7 +52,7 @@ describe('AIService', () => {
       
       new AIService();
       
-      expect(mockGetModel).toHaveBeenCalledWith({ model: 'gemini-1.5-flash' });
+      expect(mockGetModel).toHaveBeenCalledWith({ model: 'gemini-2.5-flash-lite' });
     });
 
     it('should handle missing API key in production', () => {

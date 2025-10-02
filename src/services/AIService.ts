@@ -56,20 +56,29 @@ export interface ExpiredItemsResult {
 }
 
 export class AIService {
-  private genAI: GoogleGenerativeAI;
-  private model: any;
+  private genAI: GoogleGenerativeAI | null = null;
+  private model: any = null;
   private cache: Map<string, any> = new Map();
 
   constructor() {
-    // In test environment, allow demo key
-    const isTestEnvironment = process.env.NODE_ENV === 'test';
-    
-    if (!isTestEnvironment && (!API_KEY || API_KEY === 'AIzaSyBX3jvhUe8YourDemoKeyForTesting')) {
-      throw new Error('Google AI API key is not configured');
-    }
+    try {
+      // In test environment, allow demo key
+      const isTestEnvironment = process.env.NODE_ENV === 'test';
 
-    this.genAI = new GoogleGenerativeAI(API_KEY);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+      if (!isTestEnvironment && (!API_KEY || API_KEY === 'AIzaSyBX3jvhUe8YourDemoKeyForTesting')) {
+        console.warn('Google AI API key is not configured properly');
+        // Don't throw error, just disable the service
+        return;
+      }
+
+      this.genAI = new GoogleGenerativeAI(API_KEY);
+      this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+    } catch (error) {
+      console.error('Failed to initialize AI Service:', error);
+      // Don't throw error to prevent app crashes
+      this.genAI = null;
+      this.model = null;
+    }
   }
 
   /**
@@ -102,6 +111,16 @@ export class AIService {
    */
   async analyzeImage(imageUri: string): Promise<AnalysisResult> {
     try {
+      // Check if AI service is available
+      if (!this.model || !this.genAI) {
+        console.error('AI Service not initialized for image analysis');
+        return {
+          success: false,
+          items: [],
+          error: 'AI 서비스를 사용할 수 없습니다',
+        };
+      }
+
       // Get current language
       const language = getCurrentLanguage();
       const isEnglish = language === 'en';
@@ -207,11 +226,22 @@ export class AIService {
       try {
         const parsed = JSON.parse(text);
         // AI Service parsed JSON successfully
-        
+
         const validItems = this.validateFoodItems(parsed.items || []);
-        
+
         // AI Service validated items
-        
+
+        // Check if no items were found
+        if (validItems.length === 0) {
+          return {
+            success: false,
+            items: [],
+            error: isEnglish
+              ? 'No food items detected in the image. Please upload a photo containing food items.'
+              : '식재료를 감지하지 못했습니다. 식재료를 포함하는 사진을 업로드해주세요.',
+          };
+        }
+
         const analysisResult = {
           success: true,
           items: validItems,
@@ -219,15 +249,41 @@ export class AIService {
 
         // Cache the result
         this.cache.set(cacheKey, analysisResult);
-        
+
         return analysisResult;
       } catch (parseError) {
         console.error('Failed to parse AI response:', parseError);
         console.error('Raw response:', text);
+
+        // Check if the response indicates no food items found
+        const noFoodPatterns = [
+          /not find any/i,
+          /no.*food/i,
+          /cannot.*detect/i,
+          /unable.*to.*find/i,
+          /식재료.*없/,
+          /감지.*못/,
+          /찾을.*수.*없/,
+        ];
+
+        const isNoFoodResponse = noFoodPatterns.some(pattern => pattern.test(text));
+
+        if (isNoFoodResponse) {
+          return {
+            success: false,
+            items: [],
+            error: isEnglish
+              ? 'No food items detected in the image. Please upload a photo containing food items.'
+              : '식재료를 감지하지 못했습니다. 식재료를 포함하는 사진을 업로드해주세요.',
+          };
+        }
+
         return {
           success: false,
           items: [],
-          error: 'Failed to parse AI response',
+          error: isEnglish
+            ? 'Failed to analyze the image. Please try again.'
+            : '이미지 분석에 실패했습니다. 다시 시도해주세요.',
         };
       }
     } catch (error) {
@@ -272,6 +328,16 @@ export class AIService {
    */
   async generateRecipeSuggestions(ingredients: string[], cookingStyle?: string, language: string = 'ko'): Promise<RecipeResult> {
     try {
+      // Check if AI service is available
+      if (!this.model || !this.genAI) {
+        console.error('AI Service not initialized');
+        return {
+          success: false,
+          recipes: [],
+          error: 'AI 서비스를 사용할 수 없습니다',
+        };
+      }
+
       if (!ingredients || ingredients.length === 0) {
         return {
           success: false,
