@@ -7,6 +7,9 @@ import { Colors } from '../constants/colors';
 import { useAuth } from '../hooks/useAuth';
 import { LoginScreen } from '../screens/LoginScreen';
 import { SignUpScreen } from '../screens/SignUpScreen';
+import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
+import { VerifyResetCodeScreen } from '../screens/VerifyResetCodeScreen';
+import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
 import { MainNavigator } from './MainNavigator';
 
 const Stack = createStackNavigator();
@@ -73,6 +76,34 @@ export const AuthFlow: React.FC = () => {
         >
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="VerifyResetCode" component={VerifyResetCodeScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  }
+
+  // Check if user needs to reset password
+  const passwordResetRequired = user?.user_metadata?.password_reset_required === true;
+
+  // If password reset is required, show only the reset password screen
+  if (passwordResetRequired) {
+    return (
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            cardStyle: { backgroundColor: Colors.background.default }
+          }}
+        >
+          <Stack.Screen
+            name="ResetPassword"
+            component={ResetPasswordScreen}
+            options={{
+              gestureEnabled: false, // Prevent swipe back
+            }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     );
