@@ -1,8 +1,8 @@
 {
   "version": "1.0.0",
   "ios": {
-    "buildNumber": 2,
-    "lastBuildDate": "2025-09-25",
+    "buildNumber": 4,
+    "lastBuildDate": "2025-10-14",
     "lastBuildType": "production",
     "history": [
       {
@@ -18,6 +18,20 @@
         "type": "production",
         "status": "submitted",
         "notes": "Web View text node error fix"
+      },
+      {
+        "buildNumber": 3,
+        "date": "2025-10-14",
+        "type": "production",
+        "status": "building",
+        "notes": "Build number incremented"
+      },
+      {
+        "buildNumber": 4,
+        "date": "2025-10-14",
+        "type": "production",
+        "status": "building",
+        "notes": "Automated build"
       }
     ]
   },
@@ -30,7 +44,7 @@
         "versionCode": 2,
         "date": "2025-09-26",
         "type": "production",
-        "status": "building",
+        "status": "failed",
         "notes": "Automated build"
       }
     ]
