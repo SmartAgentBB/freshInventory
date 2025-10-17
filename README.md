@@ -56,9 +56,10 @@ AI 기반 식재료 인식과 스마트한 재고 관리로 요리를 더 쉽고
   - 실시간 데이터 동기화
   - 이미지 스토리지
   - 사용자 인증 (Email, OAuth)
-- **Google Gemini AI**:
+- **Google Gemini AI** (`gemini-2.5-flash-lite`):
   - 이미지 기반 식재료 인식
   - 레시피 생성 및 추천
+  - 식재료 보관 정보 제공
 
 ### 주요 라이브러리
 - **expo-image-picker**: 카메라/갤러리 접근
@@ -147,8 +148,26 @@ npx expo start
 ```
 
 5. **모바일에서 테스트**
-- Expo Go 앱에서 QR 코드 스캔
-- 또는 터미널에 표시된 URL 직접 입력
+
+**방법 1: QR 코드 스캔 (권장)**
+- PC와 모바일이 같은 Wi-Fi에 연결되어 있어야 합니다
+- Android: Expo Go 앱 실행 → "Scan QR Code" → 터미널의 QR 코드 스캔
+- iOS: Expo Go 앱 설치 → iPhone 카메라로 QR 코드 스캔 → "Expo Go에서 열기"
+
+**방법 2: 터널 모드 (다른 네트워크)**
+```bash
+npx expo start --tunnel
+```
+
+**방법 3: 수동 QR 코드 생성**
+```bash
+# IP 주소 확인
+ipconfig  # Windows
+ifconfig  # Mac/Linux
+
+# QR 코드 생성 (YOUR_IP를 실제 IP로 변경)
+npx qrcode-terminal "exp://YOUR_IP:8081"
+```
 
 ## 🔧 주요 서비스
 
@@ -195,6 +214,45 @@ npm run type-check
 npm run lint
 ```
 
+## 🏗️ 빌드 및 배포
+
+### 빌드 번호 관리
+```bash
+# 현재 빌드 상태 확인
+npm run build:status
+
+# iOS 빌드 번호 증가
+npm run bump:ios
+
+# Android 버전 코드 증가
+npm run bump:android
+
+# 앱 버전 증가
+npm run bump:version
+```
+
+### 자동 빌드 및 제출
+```bash
+# iOS 자동 빌드 및 App Store 제출
+npm run build:ios
+
+# Android 자동 빌드 및 Play Store 제출
+npm run build:android
+```
+
+상세한 빌드 가이드는 [BUILD_GUIDE.md](./BUILD_GUIDE.md)를 참고하세요.
+
+## 📚 문서
+
+프로젝트의 상세한 문서들:
+
+- **[CLAUDE.md](./CLAUDE.md)**: 개발 가이드 및 아키텍처 설명
+- **[BUILD_GUIDE.md](./BUILD_GUIDE.md)**: 빌드 및 배포 프로세스
+- **[FAQ.md](./FAQ.md)**: 사용자를 위한 자주 묻는 질문
+- **[iOS_26_CRASH_FIX.md](./iOS_26_CRASH_FIX.md)**: iOS 26.0 크래시 문제 해결
+- **[PRIVACY_POLICY.md](./PRIVACY_POLICY.md)**: 개인정보 보호정책
+- **[USER_GUIDE.md](./USER_GUIDE.md)**: 사용자 매뉴얼
+
 ## 📱 지원 플랫폼
 
 - iOS 13.0 이상
@@ -208,20 +266,34 @@ npm run lint
 - 안전한 이미지 업로드
 - OAuth 2.0 소셜 로그인
 
+## ⚠️ 알려진 이슈 및 해결
+
+### 해결된 이슈
+1. **iOS 26.0 크래시**: null/undefined 객체 접근 → 방어적 프로그래밍으로 해결
+2. **키보드 입력창 가림**: KeyboardAvoidingView 문제 → measureInWindow + 자동 스크롤로 해결
+3. **계정 전환 시 로그아웃**: 식재료 삭제 버그 → 서비스 초기화 개선으로 해결
+4. **레시피 매칭 오류**: 재료 데이터 구조 개선으로 해결
+
+### 현재 제한사항
+- Expo Go에서 알림 기능은 실제 기기에서만 작동
+- 터널 모드는 느리고 타임아웃 발생 가능
+- iOS 26.0 베타 버전 일부 기능 제한 가능
+
 ## 📈 최근 업데이트
 
-### v1.2.0 (2025.01)
-- ✨ 커스텀 슬라이더 컴포넌트 추가
-- 🖼️ 이미지 전체 화면 보기 기능 추가
-- 🔐 소셜 로그인 기능 구현 (Google, GitHub)
-- 📧 이메일 인증 회원가입 추가
-- 🎨 앱 아이콘 및 스플래시 화면 업데이트
-- 🐛 다양한 버그 수정 및 성능 개선
+### v1.0.0 (2025.10)
+- 🔐 **비밀번호 재설정 기능**: 이메일 OTP 기반 비밀번호 복구
+- 🗑️ **회원 탈퇴 기능**: 다국어 지원 포함
+- 🤖 **AI 모델 개선**: Gemini 2.5 Flash Lite로 전환
+- ⌨️ **키보드 처리 개선**: iOS/Android 일관성 향상
+- 🍳 **레시피 시스템 개선**: 재료 데이터 구조 최적화
+- 🐛 **iOS 26.0 크래시 수정**: null 체크 및 에러 처리 강화
+- 🔧 **계정 전환 버그 수정**: 식재료 삭제 시 로그아웃 문제 해결
+- 📱 **Expo Go 호환성 개선**: Android 플랫폼 안정화
 
-### v1.1.0 (2024.12)
-- 요리 추천 기능 개선
-- 장보기 리스트 자동 완료 처리
-- UI/UX 개선사항 반영
+### 이전 버전
+- v1.1.0: 요리 추천 기능, 장보기 리스트 자동 완료
+- v1.2.0: 커스텀 슬라이더, 이미지 전체 화면 보기, 소셜 로그인
 
 ## 🤝 기여하기
 
@@ -237,13 +309,23 @@ npm run lint
 
 ## 👥 팀
 
-- 개발: [Your Name]
+- 개발: SmartAgent Team
 - 디자인: Material Design 3 가이드라인 기반
-- AI: Google Gemini, Claude
+- AI: Google Gemini 2.5 Flash Lite, Claude
+
+## 📊 프로젝트 통계
+
+- **앱 버전**: 1.0.0
+- **iOS 빌드**: 4 (App Store 제출 완료)
+- **Android 빌드**: 2 (개발 중)
+- **지원 언어**: 한국어
+- **패키지명**: com.smartagent.nengpro
 
 ## 📞 문의
 
-프로젝트에 대한 문의사항이 있으시면 이슈를 생성해주세요.
+- **이메일**: nengpro.contact@gmail.com
+- **버그 리포트**: [GitHub Issues](https://github.com/yourusername/ez2cook/issues)
+- **피드백**: https://forms.gle/EvWcgNRqpMRXYei59
 
 ---
 
