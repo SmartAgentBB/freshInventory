@@ -392,7 +392,7 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
     const isInShoppingList = shoppingListItems.includes(item.name);
 
     return (
-      <View key={index} style={{ marginBottom: Spacing.sm }}>
+      <View key={index} style={{ marginBottom: Spacing.xs }}>
         <Surface style={styles.itemCard} elevation={1}>
         {/* Delete button positioned absolutely at top-right */}
         <IconButton
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.paper,
     borderRadius: 16,
     marginBottom: Spacing.md,
-    padding: Spacing.lg,
+    padding: Spacing.md, // Reduced from Spacing.lg (24 -> 16)
     position: 'relative',
     borderWidth: 1,
     borderColor: Colors.border.light,
@@ -739,17 +739,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 12,
     elevation: 2,
+    overflow: 'hidden',
   },
   itemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   thumbnailContainer: {
-    marginRight: Spacing.md,
+    marginRight: Spacing.sm, // Reduced from Spacing.md (16 -> 8)
   },
   contentContainer: {
     flex: 1,
-    paddingRight: Spacing.lg, // Space for delete button
+    paddingRight: Spacing.md, // Reduced padding for wider name input (16 instead of 24)
   },
   nameInput: {
     backgroundColor: Colors.background.paper,
@@ -779,7 +780,7 @@ const styles = StyleSheet.create({
   quantityControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6, // Reduced from 8 to 6 (75% of original)
   },
   unitRow: {
     flexDirection: 'row',
@@ -839,11 +840,11 @@ const styles = StyleSheet.create({
     height: 28,
   },
   quantityText: {
-    minWidth: 30,
+    minWidth: 24, // Reduced from 30 to 24
     textAlign: 'center',
     fontFamily: 'OpenSans-Medium',
     color: Colors.primary.main,
-    marginHorizontal: Spacing.xs,
+    marginHorizontal: 4, // Reduced from Spacing.xs (8) to 4
     fontSize: 14,
   },
   deleteButton: {
