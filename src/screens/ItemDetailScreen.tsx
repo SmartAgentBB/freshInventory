@@ -586,17 +586,19 @@ export const ItemDetailScreen: React.FC = () => {
                 {currentRemains}%
               </Text>
             </View>
-            <Slider
-              value={currentRemains}
-              onValueChange={handleSliderChange}
-              minimumValue={0}
-              maximumValue={Math.round((item.remains || 1) * 100)}
-              step={5}
-              minimumTrackTintColor={isFrozen ? '#4A90E2' : Colors.primary.main}
-              maximumTrackTintColor="#9AA0A6"
-              thumbTintColor={isFrozen ? '#00695C' : '#00897B'}
-              style={styles.slider}
-            />
+            <View style={styles.sliderContainer}>
+              <Slider
+                value={currentRemains}
+                onValueChange={handleSliderChange}
+                minimumValue={0}
+                maximumValue={Math.round((item.remains || 1) * 100)}
+                step={5}
+                minimumTrackTintColor={isFrozen ? '#4A90E2' : Colors.primary.main}
+                maximumTrackTintColor="#E0E0E0"
+                thumbTintColor={isFrozen ? '#00695C' : '#00897B'}
+                style={styles.slider}
+              />
+            </View>
           </View>
         </Surface>
 
@@ -984,9 +986,14 @@ const styles = StyleSheet.create({
     color: Colors.primary.main,
     fontFamily: 'OpenSans-Bold',
   },
+  sliderContainer: {
+    width: '100%',
+    paddingHorizontal: Spacing.xs,
+  },
   slider: {
     width: '100%',
-    height: 40,
+    height: 20,
+    marginVertical: Spacing.sm,
   },
   actionButtons: {
     flexDirection: 'row',
