@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, StyleSheet, Image, Dimensions, Platform, Alert, TouchableOpacity } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Slider from '@react-native-community/slider';
 import { RecipeCard } from '../components/RecipeCard';
-import { CustomSlider } from '../components/CustomSlider';
 import {
   Surface,
   Text,
@@ -225,10 +225,13 @@ export const ItemDetailScreen: React.FC = () => {
   };
 
   const handleSliderChange = (value: number) => {
+    // 5% 단위로 반올림
+    const rounded = Math.round(value / 5) * 5;
+
     // 기존 남은양보다 작게만 조절 가능 (0 ~ 기존값 범위)
     const originalRemains = Math.round((item?.remains || 1) * 100);
-    if (value >= 0 && value <= originalRemains) {
-      setCurrentRemains(Math.round(value));
+    if (rounded >= 0 && rounded <= originalRemains) {
+      setCurrentRemains(rounded);
     }
   };
 
@@ -578,49 +581,22 @@ export const ItemDetailScreen: React.FC = () => {
             </Button>
           </View>
           <View style={styles.remainsContent}>
-            <View style={styles.sliderRow}>
-              <IconButton
-                icon="minus"
-                mode="contained"
-                containerColor={isFrozen ? '#4A90E2' : Colors.primary.main}
-                iconColor="white"
-                size={20}
-                onPress={() => {
-                  const newValue = Math.max(0, currentRemains - 5);
-                  handleSliderChange(newValue);
-                }}
-                disabled={currentRemains <= 0}
-              />
-              <View style={styles.percentageContainer}>
-                <Text variant="titleMedium" style={[styles.percentText, isFrozen && { color: '#4A90E2' }]}>
-                  {currentRemains}%
-                </Text>
-                <View style={styles.progressBarContainer}>
-                  <View
-                    style={[
-                      styles.progressBar,
-                      {
-                        width: `${currentRemains}%`,
-                        backgroundColor: isFrozen ? '#4A90E2' : Colors.primary.main
-                      }
-                    ]}
-                  />
-                </View>
-              </View>
-              <IconButton
-                icon="plus"
-                mode="contained"
-                containerColor={isFrozen ? '#4A90E2' : Colors.primary.main}
-                iconColor="white"
-                size={20}
-                onPress={() => {
-                  const originalRemains = Math.round((item.remains || 1) * 100);
-                  const newValue = Math.min(originalRemains, currentRemains + 5);
-                  handleSliderChange(newValue);
-                }}
-                disabled={currentRemains >= Math.round((item.remains || 1) * 100)}
-              />
+            <View style={styles.percentageHeader}>
+              <Text variant="titleMedium" style={[styles.percentText, isFrozen && { color: '#4A90E2' }]}>
+                {currentRemains}%
+              </Text>
             </View>
+            <Slider
+              value={currentRemains}
+              onValueChange={handleSliderChange}
+              minimumValue={0}
+              maximumValue={Math.round((item.remains || 1) * 100)}
+              step={5}
+              minimumTrackTintColor={isFrozen ? '#4A90E2' : Colors.primary.main}
+              maximumTrackTintColor="#9AA0A6"
+              thumbTintColor={isFrozen ? '#00695C' : '#00897B'}
+              style={styles.slider}
+            />
           </View>
         </Surface>
 
@@ -1000,32 +976,17 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     fontFamily: 'OpenSans-SemiBold',
   },
-  sliderRow: {
-    flexDirection: 'row',
+  percentageHeader: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  percentageContainer: {
-    flex: 1,
-    alignItems: 'center',
-    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   percentText: {
     color: Colors.primary.main,
     fontFamily: 'OpenSans-Bold',
-    marginBottom: 4,  // Further reduced to make card more compact
   },
-  progressBarContainer: {
+  slider: {
     width: '100%',
-    height: 8,
-    backgroundColor: Colors.background.default,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: Colors.primary.main,
+    height: 40,
   },
   actionButtons: {
     flexDirection: 'row',
