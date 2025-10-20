@@ -587,6 +587,8 @@ export const ItemDetailScreen: React.FC = () => {
               </Text>
             </View>
             <View style={styles.sliderContainer}>
+              {/* Background track to show full width */}
+              <View style={styles.sliderBackground} />
               <Slider
                 value={currentRemains}
                 onValueChange={handleSliderChange}
@@ -594,7 +596,7 @@ export const ItemDetailScreen: React.FC = () => {
                 maximumValue={Math.round((item.remains || 1) * 100)}
                 step={5}
                 minimumTrackTintColor={isFrozen ? '#4A90E2' : Colors.primary.main}
-                maximumTrackTintColor="#E0E0E0"
+                maximumTrackTintColor="transparent"
                 thumbTintColor={isFrozen ? '#00695C' : '#00897B'}
                 style={styles.slider}
               />
@@ -989,11 +991,23 @@ const styles = StyleSheet.create({
   sliderContainer: {
     width: '100%',
     paddingHorizontal: Spacing.xs,
+    position: 'relative',
+    justifyContent: 'center',
+    height: 40,
+  },
+  sliderBackground: {
+    position: 'absolute',
+    left: Spacing.xs,
+    right: Spacing.xs,
+    height: 8,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    top: '50%',
+    marginTop: -4, // Half of height to center
   },
   slider: {
     width: '100%',
-    height: 20,
-    marginVertical: Spacing.sm,
+    height: 40,
   },
   actionButtons: {
     flexDirection: 'row',
