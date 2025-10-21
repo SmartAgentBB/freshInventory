@@ -42,6 +42,27 @@ import { Surface, Text, Button } from 'react-native-paper';
 import { View, Text } from 'react-native';
 ```
 
+### 빈 상태 화면 (Empty State)
+- **원칙**: 모든 빈 화면에 사용 가이드 제공
+- **적용 화면**:
+  - `InventoryScreen`: 식재료 추가 안내
+  - `CookingScreen`: 요리 추천 사용법 안내
+- **구성 요소**:
+  - 아이콘 (MaterialCommunityIcons)
+  - 안내 텍스트 (다국어 지원)
+  - 액션 버튼 (선택적)
+- **다국어**: `src/locales/[lang]/inventory.json`, `cooking.json`
+
+### 주요 커스텀 컴포넌트
+#### CustomSlider
+- **위치**: `src/components/CustomSlider.tsx`
+- **용도**: 식재료 남은양 조절 (0-100%)
+- **사용처**: `ItemDetailScreen`
+- **특징**:
+  - 시각적 피드백 (민트 그린 색상)
+  - 실시간 퍼센트 표시
+  - 접근성 지원
+
 ## 🔐 인증 시스템
 ### 사용자별 설정 분리
 ```typescript
@@ -90,6 +111,10 @@ npm test
    - `KeyboardAvoidingView` 대신 `measureInWindow` + 자동 스크롤 사용
    - `Keyboard.addListener('keyboardDidShow')`로 키보드 높이 감지
    - iOS/Android 모두 일관되게 작동
+5. **안드로이드 재고 상세 화면 뒤로가기 에러**:
+   - 스택 네비게이터에서 뒤로가기 시 크래시 발생
+   - 방어적 네비게이션 체크 및 에러 바운더리 추가
+   - `src/navigation/InventoryStackNavigator.tsx` 참고
 
 ## 📝 코드 컨벤션
 ### 파일 구조
@@ -173,6 +198,20 @@ EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
     </View>
   </ScrollView>
   ```
+
+### 안드로이드 하단 네비게이션 바
+- **문제**: 안드로이드 시스템 버튼(뒤로가기, 홈, 멀티태스킹)이 하단 탭 바를 가림
+- **해결책**: 플랫폼별 높이 및 패딩 조정
+  ```typescript
+  // BottomTabNavigation.tsx 참고
+  const tabBarStyle = {
+    height: Platform.OS === 'android' ? 94 : 84,
+    paddingBottom: Platform.OS === 'android' ? 50 : 24,
+    paddingTop: 4,
+  };
+  ```
+- **적용 위치**: `src/navigation/BottomTabNavigation.tsx`
+- **핵심**: 안드로이드는 시스템 네비게이션 바 높이만큼 추가 패딩 필요
 
 ### QR 코드로 모바일 테스트
 ```bash
