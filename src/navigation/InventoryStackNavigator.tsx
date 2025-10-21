@@ -19,9 +19,20 @@ export const InventoryStackNavigator = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
+        // 안드로이드 메모리 관리 개선: 백그라운드 화면 유지
+        detachInactiveScreens: false,
+        // 화면 전환 시에도 상태 유지
+        freezeOnBlur: false,
       }}
     >
-      <Stack.Screen name="InventoryList" component={InventoryScreen} />
+      <Stack.Screen
+        name="InventoryList"
+        component={InventoryScreen}
+        options={{
+          // InventoryList는 절대 언마운트하지 않음 (스택 보존)
+          unmountOnBlur: false,
+        }}
+      />
       <Stack.Screen
         name="ItemDetail"
         component={ItemDetailScreen}

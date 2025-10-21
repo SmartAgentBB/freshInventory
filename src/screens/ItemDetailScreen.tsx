@@ -191,7 +191,17 @@ export const ItemDetailScreen: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigation.goBack();
+    // 안드로이드 메모리 부족 등으로 네비게이션 스택이 손실된 경우 방어 처리
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      // 스택이 비어있으면 InventoryList로 리셋
+      console.warn('[ItemDetail] Navigation stack is empty. Resetting to InventoryList');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'InventoryList' }],
+      });
+    }
   };
 
   const handleGetRecommendations = async () => {
@@ -249,7 +259,7 @@ export const ItemDetailScreen: React.FC = () => {
       });
 
       // Navigate back with updated item
-      navigation.goBack();
+      handleBack();
     } catch (error) {
       console.error('Error updating remains:', error);
       Alert.alert(t('itemDetail.errors.error'), t('itemDetail.errors.updateFailed'));
@@ -308,7 +318,7 @@ export const ItemDetailScreen: React.FC = () => {
         status: 'consumed',
         remains: 0
       });
-      navigation.goBack();
+      handleBack();
     } catch (error) {
       console.error('Error consuming item:', error);
       Alert.alert('오류', '소비 처리에 실패했습니다.');
@@ -319,14 +329,14 @@ export const ItemDetailScreen: React.FC = () => {
 
   const handleFreeze = async () => {
     if (!item) return;
-    
+
     setIsLoading(true);
     try {
       await inventoryService.updateItem(item.id, {
         status: 'frozen',
         frozenDate: new Date()
       });
-      navigation.goBack();
+      handleBack();
     } catch (error) {
       console.error('Error freezing item:', error);
       Alert.alert(t('itemDetail.errors.error'), t('itemDetail.errors.freezeFailed'));
@@ -380,7 +390,7 @@ export const ItemDetailScreen: React.FC = () => {
         status: 'disposed',
         remains: 0
       });
-      navigation.goBack();
+      handleBack();
     } catch (error) {
       console.error('Error disposing item:', error);
       Alert.alert(t('itemDetail.errors.error'), t('itemDetail.errors.disposeFailed'));
