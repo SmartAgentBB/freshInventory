@@ -10,8 +10,10 @@
   "empty": {
     "title": "No items in inventory",
     "subtitle": "Press + button to add items",
-    "fresh": "No items in inventory",
+    "fresh": "No inventory registered yet!",
+    "freshGuide": "Press the + button at the bottom right to\ntake a photo of ingredients or select from your gallery.\n\nAI will automatically recognize ingredients in seconds.\nYou can register multiple ingredients at once from a single photo!",
     "frozen": "No frozen items",
+    "frozenGuide": "No frozen items.\n\nTap the ❄ Freeze button on the item detail screen.\nFrozen items will be displayed here.",
     "history": "No consumed items",
     "default": "No items"
   },

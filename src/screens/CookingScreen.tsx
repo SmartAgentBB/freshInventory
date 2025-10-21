@@ -989,10 +989,10 @@ const BookmarksTab = () => {
   if (savedRecipes.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <Text variant="headlineSmall" style={styles.emptyText}>
+        <Text variant="bodyLarge" style={styles.emptyMainText}>
           {t('bookmarks.empty')}
         </Text>
-        <Text variant="bodyMedium" style={styles.emptySubText}>
+        <Text variant="bodyMedium" style={styles.emptySubTextCentered}>
           {t('bookmarks.emptyDesc')}
         </Text>
       </View>
@@ -1364,10 +1364,26 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Medium',
     marginBottom: Spacing.xs,
   },
+  emptyMainText: {
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-Regular',
+    textAlign: 'center',
+    lineHeight: 24,
+    fontSize: 16,
+    marginBottom: Spacing.sm,
+  },
   emptySubText: {
     color: Colors.text.disabled,
     fontFamily: 'OpenSans-Regular',
     textAlign: 'center',
+  },
+  emptySubTextCentered: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontSize: 14,
+    paddingHorizontal: Spacing.lg,
   },
   recommendButtonContainer: {
     marginTop: Spacing.sm,

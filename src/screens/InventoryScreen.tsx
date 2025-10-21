@@ -290,9 +290,9 @@ export const InventoryScreen: React.FC = () => {
   const getEmptyMessage = (): string => {
     switch (activeTab) {
       case 'fresh':
-        return t('empty.fresh');
+        return t('empty.freshGuide');
       case 'frozen':
-        return t('empty.frozen');
+        return t('empty.frozenGuide');
       case 'history':
         return t('empty.history');
       default:
@@ -479,9 +479,29 @@ export const InventoryScreen: React.FC = () => {
           <View style={styles.itemsList}>
             {getCurrentItems().length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Text variant="bodyLarge" style={styles.emptyText}>
-                  {getEmptyMessage()}
-                </Text>
+                {activeTab === 'fresh' ? (
+                  <>
+                    <Text variant="bodyLarge" style={styles.emptyMainText}>
+                      {t('empty.fresh')}
+                    </Text>
+                    <Text variant="bodyMedium" style={styles.emptySubText}>
+                      {t('empty.freshGuide')}
+                    </Text>
+                  </>
+                ) : activeTab === 'frozen' ? (
+                  <>
+                    <Text variant="bodyLarge" style={styles.emptyMainText}>
+                      {t('empty.frozen')}
+                    </Text>
+                    <Text variant="bodyMedium" style={styles.emptySubText}>
+                      {t('empty.frozenGuide').replace(t('empty.frozen') + '.', '').trim()}
+                    </Text>
+                  </>
+                ) : (
+                  <Text variant="bodyLarge" style={styles.emptyText}>
+                    {getEmptyMessage()}
+                  </Text>
+                )}
               </View>
             ) : (
               getCurrentItems().map(item =>
@@ -826,10 +846,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 100,
+    paddingHorizontal: Spacing.lg,
   },
   emptyText: {
     color: Colors.text.secondary,
     fontFamily: 'OpenSans-Regular',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  emptyMainText: {
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-Regular',
+    textAlign: 'center',
+    lineHeight: 24,
+    fontSize: 16,
+  },
+  emptySubText: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontSize: 14,
+    marginTop: Spacing.sm,
   },
   historyActions: {
     paddingHorizontal: Spacing.md,

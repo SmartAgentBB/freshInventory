@@ -42,8 +42,8 @@
     "hard": "Hard"
   },
   "bookmarks": {
-    "empty": "No saved recipes",
-    "emptyDesc": "Bookmarked recipes will appear here",
+    "empty": "No saved recipes.",
+    "emptyDesc": "Save your favorite recipes from the Recommendations tab\nand they will appear here.",
     "sortBy": {
       "recent": "Recent",
       "ingredients": "By Available"
