@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
 import { InventoryStackNavigator } from './InventoryStackNavigator';
 import { CookingStackNavigator } from './CookingStackNavigator';
@@ -15,24 +16,29 @@ const Tab = createBottomTabNavigator();
 export const BottomTabNavigation = () => {
   const { t } = useTranslation('common');
   const { activeItemCount } = useShoppingCount();
+  const insets = useSafeAreaInsets();
+
+  // 하단 네비게이션 바 스타일
+  // 안드로이드: paddingBottom을 늘려서 시스템 버튼 위로 올림
+  const tabBarStyle = {
+    backgroundColor: Colors.background.paper,
+    borderTopColor: Colors.border.light,
+    borderTopWidth: 1,
+    height: Platform.OS === 'android' ? 94 : 84, // 안드로이드는 높이 증가
+    paddingBottom: Platform.OS === 'android' ? 50 : 24, // 안드로이드는 하단 패딩 증가
+    paddingTop: 4,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  };
 
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: Colors.background.paper,
-          borderTopColor: Colors.border.light,
-          borderTopWidth: 1,
-          height: 84,
-          paddingBottom: 24,
-          paddingTop: 4,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
-          elevation: 10,
-        },
+        tabBarStyle,
         tabBarActiveTintColor: Colors.primary.main,  // 선택된 탭: 민트색 포인트
         tabBarInactiveTintColor: Colors.text.secondary, // 선택 안된 탭: 회색
         tabBarLabelStyle: {
