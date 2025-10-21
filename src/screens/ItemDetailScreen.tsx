@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, StyleSheet, Image, Dimensions, Platform, Alert, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { View, ScrollView, StyleSheet, Image, Dimensions, Platform, Alert, Animated, PanResponder, TouchableOpacity } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Slider from '@react-native-community/slider';
 import { RecipeCard } from '../components/RecipeCard';
 import {
   Surface,
@@ -67,6 +66,7 @@ export const ItemDetailScreen: React.FC = () => {
     if (params?.item) {
       setItem(params.item);
       setCurrentRemains(Math.round((params.item.remains || 1) * 100));
+
       loadStorageInfo(params.item.name);
       if (user?.id) {
         loadRelatedRecipes(params.item.name);
@@ -224,25 +224,15 @@ export const ItemDetailScreen: React.FC = () => {
     }
   };
 
-  const handleSliderChange = (value: number) => {
-    // 5% 단위로 반올림
-    const rounded = Math.round(value / 5) * 5;
-
-    // 기존 남은양보다 작게만 조절 가능 (0 ~ 기존값 범위)
-    const originalRemains = Math.round((item?.remains || 1) * 100);
-    if (rounded >= 0 && rounded <= originalRemains) {
-      setCurrentRemains(rounded);
-    }
-  };
 
   const handleUpdateRemains = async () => {
     if (!item) return;
-    
+
     setIsLoading(true);
     try {
       const newRemains = currentRemains / 100;
       const oldRemains = item.remains || 1;
-      
+
       // Add history record if remains changed
       if (Math.abs(oldRemains - newRemains) > 0.01) {
         await inventoryService.addHistoryRecord(
@@ -252,12 +242,12 @@ export const ItemDetailScreen: React.FC = () => {
           false           // waste = false for normal consumption
         );
       }
-      
+
       // Update item
       await inventoryService.updateItem(item.id, {
         remains: newRemains
       });
-      
+
       // Navigate back with updated item
       navigation.goBack();
     } catch (error) {
@@ -266,6 +256,12 @@ export const ItemDetailScreen: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Slider configuration
+  const SLIDER_WIDTH = screenWidth - (Spacing.md * 4); // Account for card and wrapper padding
+  const updateCurrentRemains = (value: number) => {
+    setCurrentRemains(value);
   };
 
   const handleConsume = async () => {
@@ -582,25 +578,16 @@ export const ItemDetailScreen: React.FC = () => {
           </View>
           <View style={styles.remainsContent}>
             <View style={styles.percentageHeader}>
-              <Text variant="titleMedium" style={[styles.percentText, isFrozen && { color: '#4A90E2' }]}>
+              <Text variant="bodyLarge" style={[styles.percentText, isFrozen && { color: '#4A90E2' }]}>
                 {currentRemains}%
               </Text>
             </View>
-            <View style={styles.sliderContainer}>
-              {/* Background track to show full width */}
-              <View style={styles.sliderBackground} />
-              <Slider
-                value={currentRemains}
-                onValueChange={handleSliderChange}
-                minimumValue={0}
-                maximumValue={Math.round((item.remains || 1) * 100)}
-                step={5}
-                minimumTrackTintColor={isFrozen ? '#4A90E2' : Colors.primary.main}
-                maximumTrackTintColor="transparent"
-                thumbTintColor={isFrozen ? '#00695C' : '#00897B'}
-                style={styles.slider}
-              />
-            </View>
+            <CappedSlider
+              value={currentRemains}
+              maxCap={Math.round((item.remains || 1) * 100)}
+              onChange={updateCurrentRemains}
+              isFrozen={isFrozen}
+            />
           </View>
         </Surface>
 
@@ -773,6 +760,180 @@ export const ItemDetailScreen: React.FC = () => {
   );
 };
 
+// CappedSlider Component - Pure JavaScript implementation
+interface CappedSliderProps {
+  value: number;          // 0-100
+  maxCap: number;         // 0-100, 상한선
+  onChange: (v: number) => void;
+  disabled?: boolean;
+  isFrozen?: boolean;
+}
+
+const CappedSlider: React.FC<CappedSliderProps> = ({
+  value,
+  maxCap,
+  onChange,
+  disabled = false,
+  isFrozen = false,
+}) => {
+  // 상수 정의
+  const TRACK_HEIGHT = 10;
+  const THUMB_WIDTH = 16;
+  const THUMB_HEIGHT = 32;
+  const THUMB_CONTAINER_SIZE = 40;
+  const STEP = 5; // 5% 단위
+
+  const [trackWidth, setTrackWidth] = useState(0);
+
+  // 유틸리티 함수
+  const clamp = useCallback((v: number) => Math.max(0, Math.min(v, maxCap)), [maxCap]);
+
+  const pctToX = useCallback((pct: number) => {
+    if (trackWidth <= 0) return 0;
+    return (pct / 100) * trackWidth;
+  }, [trackWidth]);
+
+  const xToPct = useCallback((x: number) => {
+    if (trackWidth <= 0) return 0;
+    return (x / trackWidth) * 100;
+  }, [trackWidth]);
+
+  // 핸들 위치 계산
+  const thumbX = useMemo(() => pctToX(value), [value, pctToX]);
+
+  const thumbContainerLeft = useMemo(() => {
+    if (trackWidth <= 0) return 0;
+    return Math.max(
+      0,
+      Math.min(thumbX - THUMB_CONTAINER_SIZE / 2, trackWidth - THUMB_CONTAINER_SIZE)
+    );
+  }, [thumbX, trackWidth]);
+
+  // 이벤트 핸들러
+  const onTrackLayout = (e: any) => {
+    setTrackWidth(e.nativeEvent.layout.width);
+  };
+
+  const moveTo = useCallback((x: number) => {
+    const clampedX = Math.max(0, Math.min(x, trackWidth));
+    let nextPct = xToPct(clampedX);
+    nextPct = Math.round(nextPct / STEP) * STEP;
+    nextPct = clamp(nextPct);
+    onChange(nextPct);
+  }, [trackWidth, xToPct, clamp, onChange]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => !disabled,
+        onMoveShouldSetPanResponder: () => !disabled,
+        onPanResponderMove: (_, gesture) => moveTo(thumbX + gesture.dx),
+        onPanResponderRelease: (_, gesture) => moveTo(thumbX + gesture.dx),
+      }),
+    [disabled, moveTo, thumbX]
+  );
+
+  const onTrackPress = (e: any) => {
+    if (!disabled) {
+      moveTo(e.nativeEvent.locationX);
+    }
+  };
+
+  const trackColor = isFrozen ? '#4A90E2' : Colors.primary.main;
+
+  return (
+    <View style={sliderStyles.container}>
+      <View style={sliderStyles.sliderWrapper}>
+        <TouchableOpacity onPress={onTrackPress} activeOpacity={0.95} disabled={disabled}>
+          <View onLayout={onTrackLayout} style={sliderStyles.track}>
+            <View
+              style={[
+                sliderStyles.activeFill,
+                {
+                  width: trackWidth ? Math.min(thumbX, pctToX(maxCap)) : 0,
+                  backgroundColor: trackColor,
+                },
+              ]}
+            />
+            {maxCap < 100 && trackWidth > 0 && (
+              <View
+                style={[sliderStyles.maxLimitIndicator, { left: pctToX(maxCap) - 1 }]}
+              />
+            )}
+          </View>
+        </TouchableOpacity>
+
+        <View
+          {...panResponder.panHandlers}
+          style={[sliderStyles.thumbContainer, { left: thumbContainerLeft }]}
+        >
+          <View
+            style={[
+              sliderStyles.thumb,
+              {
+                backgroundColor: trackColor,
+                width: THUMB_WIDTH,
+                height: THUMB_HEIGHT,
+                borderRadius: THUMB_WIDTH / 2,
+              },
+            ]}
+          />
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const sliderStyles = StyleSheet.create({
+  container: {
+    width: '100%',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.lg,
+  },
+  sliderWrapper: {
+    position: 'relative',
+    height: 40,
+    justifyContent: 'center',
+  },
+  track: {
+    height: 10,
+    backgroundColor: '#E8F5F2',
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  activeFill: {
+    position: 'absolute',
+    left: 0,
+    height: 10,
+    borderRadius: 5,
+  },
+  maxLimitIndicator: {
+    position: 'absolute',
+    width: 2,
+    height: 14,
+    backgroundColor: '#F44336',
+    top: -2,
+  },
+  thumbContainer: {
+    position: 'absolute',
+    top: 0,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    pointerEvents: 'box-only',
+  },
+  thumb: {
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
+});
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -870,7 +1031,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,  // Reduced to 80% of original height
+    paddingVertical: Spacing.xs,  // Further reduced
     borderWidth: 1,
     borderColor: Colors.border.light,
     shadowColor: '#000',
@@ -982,32 +1143,11 @@ const styles = StyleSheet.create({
   },
   percentageHeader: {
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   percentText: {
     color: Colors.primary.main,
     fontFamily: 'OpenSans-Bold',
-  },
-  sliderContainer: {
-    width: '100%',
-    paddingHorizontal: Spacing.xs,
-    position: 'relative',
-    justifyContent: 'center',
-    height: 40,
-  },
-  sliderBackground: {
-    position: 'absolute',
-    left: Spacing.xs,
-    right: Spacing.xs,
-    height: 8,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 4,
-    top: '50%',
-    marginTop: -4, // Half of height to center
-  },
-  slider: {
-    width: '100%',
-    height: 40,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -1083,14 +1223,6 @@ const styles = StyleSheet.create({
   },
   recommendButtonContent: {
     paddingVertical: Spacing.xs,
-  },
-  sliderContainer: {
-    width: '100%',
-    paddingVertical: Spacing.sm,
-  },
-  slider: {
-    marginHorizontal: Spacing.md,
-    marginVertical: Spacing.sm,
   },
   sliderButtons: {
     flexDirection: 'row',
