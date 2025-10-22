@@ -588,7 +588,7 @@ export const ItemDetailScreen: React.FC = () => {
           </View>
           <View style={styles.remainsContent}>
             <View style={styles.percentageHeader}>
-              <Text variant="bodyLarge" style={[styles.percentText, isFrozen && { color: '#4A90E2' }]}>
+              <Text variant="headlineSmall" style={[styles.percentText, isFrozen && { color: '#4A90E2' }]}>
                 {currentRemains}%
               </Text>
             </View>
@@ -787,10 +787,8 @@ const CappedSlider: React.FC<CappedSliderProps> = ({
   isFrozen = false,
 }) => {
   // 상수 정의
-  const TRACK_HEIGHT = 10;
   const THUMB_WIDTH = 16;
   const THUMB_HEIGHT = 32;
-  const THUMB_CONTAINER_SIZE = 40;
   const STEP = 5; // 5% 단위
 
   const [trackWidth, setTrackWidth] = useState(0);
@@ -800,23 +798,23 @@ const CappedSlider: React.FC<CappedSliderProps> = ({
 
   const pctToX = useCallback((pct: number) => {
     if (trackWidth <= 0) return 0;
-    return (pct / 100) * trackWidth;
+    // 0%: x = 0, 100%: x = trackWidth - THUMB_WIDTH (새 디자인)
+    return (pct / 100) * (trackWidth - THUMB_WIDTH);
   }, [trackWidth]);
 
   const xToPct = useCallback((x: number) => {
     if (trackWidth <= 0) return 0;
-    return (x / trackWidth) * 100;
+    // 역계산: x를 pct로 변환 (새 디자인)
+    return (x / (trackWidth - THUMB_WIDTH)) * 100;
   }, [trackWidth]);
 
-  // 핸들 위치 계산
+  // 핸들 위치 계산 (원래 방식으로 복원)
   const thumbX = useMemo(() => pctToX(value), [value, pctToX]);
 
   const thumbContainerLeft = useMemo(() => {
     if (trackWidth <= 0) return 0;
-    return Math.max(
-      0,
-      Math.min(thumbX - THUMB_CONTAINER_SIZE / 2, trackWidth - THUMB_CONTAINER_SIZE)
-    );
+    // 새 디자인: thumbX가 이미 올바른 left 위치
+    return thumbX;
   }, [thumbX, trackWidth]);
 
   // 이벤트 핸들러
@@ -825,7 +823,7 @@ const CappedSlider: React.FC<CappedSliderProps> = ({
   };
 
   const moveTo = useCallback((x: number) => {
-    const clampedX = Math.max(0, Math.min(x, trackWidth));
+    const clampedX = Math.max(0, Math.min(x, trackWidth - THUMB_WIDTH));
     let nextPct = xToPct(clampedX);
     nextPct = Math.round(nextPct / STEP) * STEP;
     nextPct = clamp(nextPct);
@@ -856,6 +854,28 @@ const CappedSlider: React.FC<CappedSliderProps> = ({
       <View style={sliderStyles.sliderWrapper}>
         <TouchableOpacity onPress={onTrackPress} activeOpacity={0.95} disabled={disabled}>
           <View onLayout={onTrackLayout} style={sliderStyles.track}>
+            {/* Available range (0 ~ maxCap): 연한 민트색 */}
+            <View
+              style={[
+                sliderStyles.availableRange,
+                {
+                  width: trackWidth ? pctToX(maxCap) : 0,
+                },
+              ]}
+            />
+            {/* Disabled range (maxCap ~ 100%): 연한 회색 */}
+            {maxCap < 100 && trackWidth > 0 && (
+              <View
+                style={[
+                  sliderStyles.disabledRange,
+                  {
+                    left: pctToX(maxCap),
+                    width: trackWidth - pctToX(maxCap),
+                  },
+                ]}
+              />
+            )}
+            {/* Active fill (0 ~ current value): 민트색 */}
             <View
               style={[
                 sliderStyles.activeFill,
@@ -865,11 +885,6 @@ const CappedSlider: React.FC<CappedSliderProps> = ({
                 },
               ]}
             />
-            {maxCap < 100 && trackWidth > 0 && (
-              <View
-                style={[sliderStyles.maxLimitIndicator, { left: pctToX(maxCap) - 1 }]}
-              />
-            )}
           </View>
         </TouchableOpacity>
 
@@ -898,7 +913,7 @@ const sliderStyles = StyleSheet.create({
   container: {
     width: '100%',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.sm,  // 24px → 8px로 축소
   },
   sliderWrapper: {
     position: 'relative',
@@ -906,35 +921,51 @@ const sliderStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   track: {
-    height: 10,
-    backgroundColor: '#E8F5F2',
-    borderRadius: 5,
+    height: 12,
+    backgroundColor: 'transparent', // 투명 배경 (자식 요소들이 색상 담당)
+    borderRadius: 4,
     overflow: 'hidden',
+    position: 'relative',
+  },
+  availableRange: {
+    position: 'absolute',
+    left: 0,
+    height: 12,
+    backgroundColor: '#E8F5F2', // 연한 민트색
+    borderTopLeftRadius: 4,
+    borderBottomLeftRadius: 4,
+    borderTopRightRadius: 0, // 오른쪽은 각지게
+    borderBottomRightRadius: 0, // 오른쪽은 각지게
+  },
+  disabledRange: {
+    position: 'absolute',
+    height: 12,
+    backgroundColor: '#F5F5F5', // 연한 회색
+    borderTopLeftRadius: 0, // 왼쪽은 각지게
+    borderBottomLeftRadius: 0, // 왼쪽은 각지게
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
   },
   activeFill: {
     position: 'absolute',
     left: 0,
-    height: 10,
-    borderRadius: 5,
-  },
-  maxLimitIndicator: {
-    position: 'absolute',
-    width: 2,
-    height: 14,
-    backgroundColor: '#F44336',
-    top: -2,
+    height: 12,
+    borderTopLeftRadius: 4,
+    borderBottomLeftRadius: 4,
+    borderTopRightRadius: 0,  // 오른쪽은 직각
+    borderBottomRightRadius: 0,  // 오른쪽은 직각
   },
   thumbContainer: {
     position: 'absolute',
     top: 0,
-    width: 40,
+    width: 16,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
     pointerEvents: 'box-only',
   },
   thumb: {
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#FFFFFF',
     elevation: 3,
     shadowColor: '#000',
@@ -1041,7 +1072,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xs,  // Further reduced
+    paddingVertical: Spacing.sm,  // 8px
     borderWidth: 1,
     borderColor: Colors.border.light,
     shadowColor: '#000',
@@ -1054,7 +1085,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.xs,  // Further reduced spacing
+    marginBottom: Spacing.xs,  // 4px로 축소
   },
   cardTitle: {
     color: Colors.text.primary,
@@ -1153,7 +1184,7 @@ const styles = StyleSheet.create({
   },
   percentageHeader: {
     alignItems: 'center',
-    marginBottom: Spacing.xs,
+    marginBottom: 0,  // 여백 제거
   },
   percentText: {
     color: Colors.primary.main,
