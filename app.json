@@ -30,7 +30,7 @@
         "backgroundColor": "#26A69A"
       },
       "package": "com.smartagent.nengpro",
-      "versionCode": 2
+      "versionCode": 3
     },
     "notification": {
       "icon": "./assets/icon.png",
