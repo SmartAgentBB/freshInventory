@@ -60,10 +60,10 @@ npm run build:android
 2. **EAS Secret 확인**
    ```bash
    # 등록된 Secret 목록 확인
-   eas secret:list
+   eas env:list
 
    # 필수 Secret이 없다면 추가
-   eas secret:create --scope project --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value YOUR_API_KEY --type string
+   eas env:create --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value YOUR_API_KEY --type string
    ```
 
 3. **테스트 실행**
@@ -192,10 +192,10 @@ npm run build:android
 npm run validate-env
 
 # 2. EAS Secret 등록
-eas secret:create --scope project --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value YOUR_API_KEY --type string
+eas env:create --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value YOUR_API_KEY --type string
 
 # 3. Secret 등록 확인
-eas secret:list
+eas env:list
 
 # 4. 재빌드 및 재배포
 npm run bump:ios  # 또는 npm run bump:android
@@ -218,16 +218,20 @@ eas whoami
 
 ### 환경 변수 확인
 ```bash
-# 로컬 환경 변수 확인
+# 로컬 환경 변수 확인 (.env 파일 자동 로드)
 npm run validate-env
 
-# EAS Secret 목록 확인
-eas secret:list
+# EAS Secret 목록 확인 (새 명령어 사용)
+eas env:list
 
-# 특정 Secret 삭제 후 재등록
-eas secret:delete --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
-eas secret:create --scope project --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value YOUR_API_KEY --type string
+# 특정 Secret 삭제 후 재등록 (새 명령어 사용)
+eas env:delete EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
+eas env:create --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value YOUR_API_KEY --type string
 ```
+
+**참고**:
+- `validate-env` 스크립트는 `.env` 파일의 환경 변수를 자동으로 로드합니다.
+- `eas secret:*` 명령어는 deprecated되었으며, `eas env:*` 명령어를 사용하세요.
 
 ### 빌드 실패 시
 1. `npm run build:status`로 현재 상태 확인
@@ -288,14 +292,14 @@ EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY  # Gemini API Key (AI 기능 필수!)
 ### EAS Secret 등록 방법
 ```bash
 # 1. 프로젝트 레벨로 등록 (권장)
-eas secret:create --scope project --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value YOUR_API_KEY --type string
+eas env:create --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value YOUR_API_KEY --type string
 
 # 2. 등록 확인
-eas secret:list
+eas env:list
 
 # 3. 값 업데이트가 필요한 경우
-eas secret:delete --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
-eas secret:create --scope project --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value NEW_API_KEY --type string
+eas env:delete EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
+eas env:create --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value NEW_API_KEY --type string
 ```
 
 ## 📚 관련 문서

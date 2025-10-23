@@ -5,6 +5,9 @@
  * 프로덕션 빌드 전 필수 환경 변수가 설정되어 있는지 확인
  */
 
+// .env 파일 로드 (로컬 개발 환경)
+require('dotenv').config();
+
 const requiredEnvVars = [
   'EXPO_PUBLIC_SUPABASE_URL',
   'EXPO_PUBLIC_SUPABASE_ANON_KEY',
