@@ -281,6 +281,13 @@ npm run build:android
 
 ## 📈 최근 업데이트
 
+### v1.0.0 (2025.10.27)
+- ⌨️ **식재료 저장 화면 키보드 자동 스크롤**: 하단 입력창 터치 시 키보드가 가리는 문제 해결
+  - ScrollView ref와 Keyboard 이벤트 리스너 활용
+  - measureInWindow로 정확한 입력창 위치 계산
+  - iOS/Android 모두 일관된 동작 보장
+  - `src/components/AddItemWithImage.tsx` 적용
+
 ### v1.0.0 (2025.10.21)
 - 🎨 **식재료 상세 화면 남은양 조절 슬라이더**: 직관적인 슬라이더 UI로 식재료 잔량 조절 기능 구현
 - 📖 **빈 상태 화면 UX 개선**: 사용 가이드 추가로 신규 사용자 온보딩 개선

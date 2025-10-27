@@ -164,6 +164,7 @@ EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
 ### 키보드 처리
 - **문제**: `KeyboardAvoidingView`는 iOS/Android에서 일관성 없이 작동
 - **해결책**: 다음 패턴 사용
+- **적용 사례**: `src/components/AddItemWithImage.tsx` (2025.10.27)
   ```typescript
   // ScrollView ref 및 상태
   const scrollViewRef = useRef<ScrollView>(null);
@@ -198,6 +199,10 @@ EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
     </View>
   </ScrollView>
   ```
+- **장점**:
+  - iOS/Android 모두 일관된 동작
+  - 정확한 위치 계산으로 입력창이 항상 보임
+  - 추가 라이브러리 불필요
 
 ### 안드로이드 하단 네비게이션 바
 - **문제**: 안드로이드 시스템 버튼(뒤로가기, 홈, 멀티태스킹)이 하단 탭 바를 가림
