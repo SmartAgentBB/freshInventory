@@ -941,7 +941,7 @@ const styles = StyleSheet.create({
   imageButtonsContainer: {
     position: 'absolute',
     right: Spacing.lg,
-    bottom: 80,
+    bottom: 112,
     alignItems: 'flex-end',
   },
   imageButton: {
