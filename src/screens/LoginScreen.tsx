@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, TextInput as RNTextInput, Alert } from 'react-native';
 import { Surface, Text, ActivityIndicator } from 'react-native-paper';
 import { Colors } from '../constants/colors';
@@ -138,7 +138,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           errorMessage.toLowerCase().includes('confirm your email') ||
           errorMessage.toLowerCase().includes('email_not_confirmed') ||
           errorCode === 'email_not_confirmed') {
-        setLoginError('이메일 인증을 진행해주세요. 가입 시 입력한 이메일을 확인해주세요.');
+        // 미인증 계정 확인 알림
+        Alert.alert(
+          '이메일 인증이 필요합니다',
+          '등록하신 이메일 주소로 발송된 확인 링크를 클릭하여 인증을 완료해주세요.\n\n이메일이 보이지 않으면 스팸 폴더를 확인해주세요.',
+          [
+            {
+              text: '확인',
+              onPress: () => {
+                setLoginError('');
+              }
+            }
+          ],
+          { cancelable: false }
+        );
+        return;
       } else if (errorMessage.toLowerCase().includes('invalid login credentials') ||
                  errorMessage.toLowerCase().includes('invalid email or password') ||
                  errorCode === 'invalid_credentials') {
@@ -352,6 +366,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             )}
           </TouchableOpacity>
 
+          {/* Forgot Password Link */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ForgotPassword')}
+            style={{
+              alignItems: 'center',
+              marginBottom: 16
+            }}
+          >
+            <Text
+              variant="bodyMedium"
+              style={{
+                color: Colors.primary.main,
+                fontFamily: 'OpenSans-Regular',
+                textDecorationLine: 'underline'
+              }}
+            >
+              비밀번호를 잊으셨나요?
+            </Text>
+          </TouchableOpacity>
+
           {/* Sign Up Link */}
           <TouchableOpacity
             onPress={handleSignUpPress}
@@ -359,7 +393,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               alignItems: 'center'
             }}
           >
-            <Text 
+            <Text
               variant="bodyMedium"
               style={{
                 color: Colors.primary.main,

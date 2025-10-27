@@ -7,6 +7,7 @@ import { Colors } from '../constants/colors';
 import { useAuth } from '../hooks/useAuth';
 import { LoginScreen } from '../screens/LoginScreen';
 import { SignUpScreen } from '../screens/SignUpScreen';
+import { EmailVerificationScreen } from '../screens/EmailVerificationScreen';
 import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
 import { VerifyResetCodeScreen } from '../screens/VerifyResetCodeScreen';
 import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
@@ -76,6 +77,7 @@ export const AuthFlow: React.FC = () => {
         >
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="EmailVerification" component={EmailVerificationScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="VerifyResetCode" component={VerifyResetCodeScreen} />
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />

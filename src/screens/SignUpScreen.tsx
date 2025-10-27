@@ -138,12 +138,12 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
 
       // Show success message only if signup was successful
       if (result.data?.user) {
-        setSuccessMessage('회원가입이 완료되었습니다. 이메일을 확인해주세요.');
+        setSuccessMessage('회원가입이 완료되었습니다. 이제 이메일을 인증해주세요.');
 
-        // Navigate to login after delay
+        // Navigate to EmailVerification screen after delay
         setTimeout(() => {
-          navigation.navigate('Login');
-        }, 2000);
+          navigation.navigate('EmailVerification', { email: email.trim() });
+        }, 1500);
       } else {
         // If no error but also no user, something went wrong
         setSignupError('회원가입 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
