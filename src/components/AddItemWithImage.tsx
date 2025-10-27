@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,6 +8,8 @@ import {
   Image,
   TouchableOpacity,
   Text as RNText,
+  Keyboard,
+  Dimensions,
 } from 'react-native';
 import {
   Surface,
@@ -81,6 +83,11 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
   const [shoppingListItems, setShoppingListItems] = useState<string[]>([]);
   const [showShoppingNotification, setShowShoppingNotification] = useState(false);
   const [checkedShoppingItems, setCheckedShoppingItems] = useState<{ [key: string]: boolean }>({});
+
+  // Refs and state for keyboard handling
+  const scrollViewRef = useRef<ScrollView>(null);
+  const inputContainerRefs = useRef<{ [key: number]: View | null }>({});
+  const [scrollOffset, setScrollOffset] = useState(0);
 
   const aiService = new AIService();
   const shoppingService = new ShoppingService(supabaseClient);
@@ -404,8 +411,11 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
           mode="text"
           testID={`item-${index}-delete`}
         />
-        
-        <View style={styles.itemContainer}>
+
+        <View
+          ref={(ref) => (inputContainerRefs.current[index] = ref)}
+          style={styles.itemContainer}
+        >
           {/* Thumbnail */}
           <View style={styles.thumbnailContainer}>
             {item.thumbnail ? (
@@ -435,6 +445,22 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
               activeOutlineColor={Colors.primary.main}
               contentStyle={styles.nameInputContent}
               testID={`item-${index}-name-input`}
+              onFocus={() => {
+                const keyboardListener = Keyboard.addListener('keyboardDidShow', (e) => {
+                  inputContainerRefs.current[index]?.measureInWindow((x, y, width, height) => {
+                    const keyboardHeight = e.endCoordinates.height;
+                    const screenHeight = Dimensions.get('window').height;
+                    const inputBottom = y + height;
+                    const visibleScreen = screenHeight - keyboardHeight;
+
+                    if (inputBottom > visibleScreen - 20) {
+                      const scrollTo = scrollOffset + (inputBottom - visibleScreen + 100);
+                      scrollViewRef.current?.scrollTo({ y: scrollTo, animated: true });
+                    }
+                  });
+                  keyboardListener.remove();
+                });
+              }}
             />
             
             {/* Quantity and Unit section */}
@@ -597,7 +623,12 @@ export const AddItemWithImage: React.FC<AddItemWithImageProps> = ({
   }, [initialImageUri]);
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      ref={scrollViewRef}
+      style={styles.container}
+      onScroll={(e) => setScrollOffset(e.nativeEvent.contentOffset.y)}
+      scrollEventThrottle={16}
+    >
       <Surface style={styles.content} elevation={0}>
         {!hideImageSelection && (
           <>
