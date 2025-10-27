@@ -347,7 +347,7 @@ export const InventoryScreen: React.FC = () => {
                 left={<TextInput.Icon icon="magnify" color={Colors.text.secondary} />}
                 right={searchQuery ? (
                   <TextInput.Icon
-                    icon="close"
+                    icon="backspace-outline"
                     color={Colors.text.secondary}
                     onPress={() => setSearchQuery('')}
                   />
