@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabaseClient } from '../services/supabaseClient';
+import { promptTemplateService } from '../services/PromptTemplateService';
 
 interface UseAuthReturn {
   user: User | null;
@@ -29,16 +30,33 @@ export function useAuth(): UseAuthReturn {
 
     // Listen for auth changes
     const { data: authListener } = supabaseClient.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         // Only update user state for legitimate auth events
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
           setUser(session?.user || null);
+
+          // 로그인 시 프롬프트 템플릿 동기화
+          if (event === 'SIGNED_IN') {
+            console.log('[Auth] User signed in, syncing prompt templates...');
+            promptTemplateService.syncPrompts().catch((error) => {
+              console.error('[Auth] Failed to sync prompts on login:', error);
+              // 동기화 실패해도 앱 사용에는 영향 없음 (fallback 사용)
+            });
+          }
         } else if (event === 'SIGNED_OUT') {
           // Only clear user if explicitly signed out
           setUser(null);
+          // 로그아웃 시 메모리 캐시만 초기화 (AsyncStorage는 유지)
+          promptTemplateService.clearMemoryCache();
         } else if (event === 'INITIAL_SESSION') {
           // Handle initial session
           setUser(session?.user || null);
+
+          // 초기 세션이 있으면 백그라운드에서 자동 동기화 시도
+          if (session?.user) {
+            console.log('[Auth] Initial session detected, checking prompt sync...');
+            promptTemplateService.autoSync();
+          }
         }
 
         setLoading(false);

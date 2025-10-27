@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getCurrentLanguage } from './i18n';
+import { promptTemplateService } from './PromptTemplateService';
 
 // For testing, use a fallback key if environment variable is not set
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY ||
@@ -145,8 +146,11 @@ export class AIService {
       // Convert image to base64
       const base64Image = await this.imageToBase64(imageUri);
 
+      // Get prompt from template
       const prompt = isEnglish
-        ? `Detect all of the prominent food items in the image and provide detailed information in English.
+        ? await promptTemplateService.getPrompt(
+            'ingredient_analysis_en',
+            `Detect all of the prominent food items in the image and provide detailed information in English.
       The box_2d should be [ymin, xmin, ymax, xmax] normalized to 0-1000.
 
       For each ingredient, include the following information:
@@ -174,7 +178,10 @@ export class AIService {
           }
         ]
       }`
-        : `Detect all of the prominent food items in the image and provide detailed information in Korean.
+          )
+        : await promptTemplateService.getPrompt(
+            'ingredient_analysis_ko',
+            `Detect all of the prominent food items in the image and provide detailed information in Korean.
       The box_2d should be [ymin, xmin, ymax, xmax] normalized to 0-1000.
 
       각 식재료에 대해 다음 정보를 포함해주세요:
@@ -199,7 +206,8 @@ export class AIService {
             "box_2d": [100, 200, 500, 600]
           }
         ]
-      }`;
+      }`
+          );
 
       const imagePart = {
         inlineData: {
@@ -353,28 +361,34 @@ export class AIService {
         return this.cache.get(cacheKey);
       }
 
-      // Generate prompt based on language
+      // Generate prompt from template
       let prompt: string;
 
-      if (language === 'en') {
-        const stylePrompt = cookingStyle
-          ? `\nUser preference: ${cookingStyle}\nPlease incorporate this preference into your recommendations.\n`
-          : '';
+      // 요리 스타일 유무에 따라 다른 프롬프트 사용
+      const hasCookingStyle = cookingStyle && cookingStyle.trim().length > 0;
 
-        prompt = `You are an experienced international chef. Please respond only in valid JSON format.
+      if (language === 'en') {
+        if (hasCookingStyle) {
+          // 영어 - 요리 스타일 있을 때
+          const fallbackPrompt = `You are an experienced international chef. Please respond only in valid JSON format.
 
 Available ingredients:
-${ingredients.join(', ')}
-${stylePrompt}
+{{ingredients}}
+
+🎯 **User preferred cooking style: {{cookingStyle}}**
+
+**Important: Prioritize the cooking style above when recommending recipes!**
+
 Suggest 3-5 recipes using these ingredients.
 
 Important guidelines:
-1. Recommend popular, well-known international dishes (Western, Asian fusion, Mediterranean, etc.).
-2. Don't force all ingredients into one dish. Use different main ingredients for variety.
-3. Prioritize ingredients marked with (임박/urgent) or expiring soon.
-4. Consider using ingredients marked with (주의/caution).
-5. Each recipe must include at least 1 of the user's available ingredients.
-6. Provide clear, easy-to-follow cooking instructions in English.
+1. **Make the cooking style your TOP PRIORITY when selecting recipes**
+2. Recommend popular, well-known international dishes (Western, Asian fusion, Mediterranean, etc.)
+3. Don't force all ingredients into one dish. Use different main ingredients for variety
+4. Prioritize ingredients marked with (임박/urgent) or expiring soon
+5. Consider using ingredients marked with (주의/caution)
+6. Each recipe must include at least 1 of the user's available ingredients
+7. Provide clear, easy-to-follow cooking instructions in English
 
 ⚠️ IMPORTANT: Response must be valid JSON only. No other text or explanations.
 
@@ -403,26 +417,93 @@ Notes:
 - cookingTime should be a number (in minutes)
 - No trailing commas
 - Return only JSON, no other text`;
-      } else {
-        // Korean prompt (default)
-        const stylePrompt = cookingStyle
-          ? `\n사용자 요청사항: ${cookingStyle}\n이 요청사항을 최대한 반영하여 추천해주세요.\n`
-          : '';
 
-        prompt = `당신은 30년차 한식 요리 연구가입니다. 반드시 유효한 JSON 형식으로만 응답해주세요.
+          prompt = await promptTemplateService.getPromptWithVariables(
+            'recipe_recommendation_en',
+            {
+              ingredients: ingredients.join(', '),
+              cookingStyle: cookingStyle,
+            },
+            fallbackPrompt
+          );
+        } else {
+          // 영어 - 요리 스타일 없을 때
+          const fallbackPrompt = `You are an experienced international chef. Please respond only in valid JSON format.
+
+Available ingredients:
+{{ingredients}}
+
+Suggest 3-5 diverse recipes using these ingredients.
+
+Important guidelines:
+1. Recommend popular, well-known international dishes (Western, Asian fusion, Mediterranean, etc.)
+2. Include various cooking methods (stir-fry, bake, grill, simmer, etc.)
+3. Mix difficulty levels (from easy to intermediate)
+4. Don't force all ingredients into one dish. Use different main ingredients for variety
+5. Prioritize ingredients marked with (임박/urgent) or expiring soon
+6. Consider using ingredients marked with (주의/caution)
+7. Each recipe must include at least 1 of the user's available ingredients
+8. Provide clear, easy-to-follow cooking instructions in English
+
+⚠️ IMPORTANT: Response must be valid JSON only. No other text or explanations.
+
+JSON format (follow this structure exactly):
+{
+  "recipes": [
+    {
+      "name": "Vegetable Stir Fry",
+      "ingredients": [
+        {"name": "onion", "quantity": 1, "unit": "pc", "required": true},
+        {"name": "carrot", "quantity": 2, "unit": "pcs", "required": true},
+        {"name": "soy sauce", "quantity": 2, "unit": "tbsp", "required": true}
+      ],
+      "difficulty": "easy",
+      "cookingTime": 15,
+      "instructions": ["Prepare all vegetables", "Heat oil in wok", "Stir-fry for 5-7 minutes"]
+    }
+  ]
+}
+
+Notes:
+- Use double quotes for all strings
+- ingredients must be an array of objects with: name (string), quantity (number), unit (string), required (boolean)
+- quantity must be a number (e.g., use 0.5 for 1/2)
+- difficulty must be "easy", "medium", or "hard" (lowercase)
+- cookingTime should be a number (in minutes)
+- No trailing commas
+- Return only JSON, no other text`;
+
+          prompt = await promptTemplateService.getPromptWithVariables(
+            'recipe_recommendation_en_no_style',
+            {
+              ingredients: ingredients.join(', '),
+            },
+            fallbackPrompt
+          );
+        }
+      } else {
+        // 한국어
+        if (hasCookingStyle) {
+          // 한국어 - 요리 스타일 있을 때
+          const fallbackPrompt = `당신은 30년차 한식 요리 연구가입니다. 반드시 유효한 JSON 형식으로만 응답해주세요.
 
 보유한 식재료:
-${ingredients.join(', ')}
-${stylePrompt}
+{{ingredients}}
+
+🎯 **사용자가 원하는 요리 스타일: {{cookingStyle}}**
+
+**중요: 위에 명시된 요리 스타일을 최우선으로 고려하여 레시피를 추천해주세요!**
+
 위 식재료를 활용하여 만들 수 있는 요리를 3-5개 추천해주세요.
 
-중요한 원칙:
-1. 반드시 실제로 존재하고 대중적으로 잘 알려진 한국 요리만 추천해주세요.
-2. 모든 재료를 한 요리에 억지로 넣지 말고, 각 요리마다 다른 주재료를 활용하여 다양한 선택지를 제공해주세요.
-3. (임박) 표시가 있는 재료를 우선적으로 활용하는 요리를 먼저 추천해주세요.
-4. (주의) 표시가 있는 재료도 활용하도록 고려해주세요.
-5. 각 요리에 필수 재료 중 사용자가 가진 재료가 1개 이상 포함되어야 합니다.
-6. 조리 방법은 구체적이고 따라하기 쉽게 설명해주세요.
+추가 원칙:
+1. **요리 스타일을 레시피 선정의 최우선 기준으로 삼으세요**
+2. 반드시 실제로 존재하고 대중적으로 잘 알려진 한국 요리만 추천해주세요
+3. 모든 재료를 한 요리에 억지로 넣지 말고, 각 요리마다 다른 주재료를 활용하여 다양한 선택지를 제공해주세요
+4. (임박) 표시가 있는 재료를 우선적으로 활용하는 요리를 먼저 추천해주세요
+5. (주의) 표시가 있는 재료도 활용하도록 고려해주세요
+6. 각 요리에 필수 재료 중 사용자가 가진 재료가 1개 이상 포함되어야 합니다
+7. 조리 방법은 구체적이고 따라하기 쉽게 설명해주세요
 
 ⚠️ 중요: 응답은 반드시 유효한 JSON 형식이어야 합니다. 다른 텍스트나 설명 없이 오직 JSON만 반환해주세요.
 
@@ -451,6 +532,70 @@ JSON 형식 (정확히 이 구조를 따라주세요):
 - cookingTime은 숫자(분 단위)로 입력해주세요
 - 마지막 항목 뒤에 쉼표를 붙이지 마세요
 - JSON 외의 다른 텍스트는 절대 포함하지 마세요`;
+
+          prompt = await promptTemplateService.getPromptWithVariables(
+            'recipe_recommendation_ko',
+            {
+              ingredients: ingredients.join(', '),
+              cookingStyle: cookingStyle,
+            },
+            fallbackPrompt
+          );
+        } else {
+          // 한국어 - 요리 스타일 없을 때
+          const fallbackPrompt = `당신은 30년차 한식 요리 연구가입니다. 반드시 유효한 JSON 형식으로만 응답해주세요.
+
+보유한 식재료:
+{{ingredients}}
+
+위 식재료를 활용하여 만들 수 있는 다양한 요리를 3-5개 추천해주세요.
+
+추천 원칙:
+1. 반드시 실제로 존재하고 대중적으로 잘 알려진 한국 요리만 추천해주세요
+2. 다양한 조리법을 포함하세요 (찌개, 볶음, 조림, 무침 등)
+3. 난이도가 다양한 요리를 섞어서 추천하세요 (쉬운 것부터 중급까지)
+4. 모든 재료를 한 요리에 억지로 넣지 말고, 각 요리마다 다른 주재료를 활용하여 다양한 선택지를 제공해주세요
+5. (임박) 표시가 있는 재료를 우선적으로 활용하는 요리를 먼저 추천해주세요
+6. (주의) 표시가 있는 재료도 활용하도록 고려해주세요
+7. 각 요리에 필수 재료 중 사용자가 가진 재료가 1개 이상 포함되어야 합니다
+8. 조리 방법은 구체적이고 따라하기 쉽게 설명해주세요
+
+⚠️ 중요: 응답은 반드시 유효한 JSON 형식이어야 합니다. 다른 텍스트나 설명 없이 오직 JSON만 반환해주세요.
+
+JSON 형식 (정확히 이 구조를 따라주세요):
+{
+  "recipes": [
+    {
+      "name": "김치찌개",
+      "ingredients": [
+        {"name": "김치", "quantity": 200, "unit": "g", "required": true},
+        {"name": "돼지고기", "quantity": 100, "unit": "g", "required": true},
+        {"name": "두부", "quantity": 0.5, "unit": "모", "required": true}
+      ],
+      "difficulty": "easy",
+      "cookingTime": 20,
+      "instructions": ["재료를 준비한다", "양념을 만든다", "끓인다"]
+    }
+  ]
+}
+
+주의사항:
+- 문자열은 반드시 큰따옴표("")로 감싸주세요
+- ingredients는 객체 배열이며, 각 객체는 name(재료명), quantity(수량), unit(단위), required(필수여부) 필드를 가집니다
+- quantity는 반드시 숫자로 입력하세요 (예: 1/2모는 0.5로 입력)
+- difficulty는 반드시 "easy", "medium", "hard" 중 하나만 사용하세요 (영어 소문자)
+- cookingTime은 숫자(분 단위)로 입력해주세요
+- 마지막 항목 뒤에 쉼표를 붙이지 마세요
+- JSON 외의 다른 텍스트는 절대 포함하지 마세요`;
+
+          prompt = await promptTemplateService.getPromptWithVariables(
+            'recipe_recommendation_ko_no_style',
+            {
+              ingredients: ingredients.join(', '),
+            },
+            fallbackPrompt
+          );
+        }
       }
 
       const result = await this.model.generateContent(prompt);
@@ -588,8 +733,10 @@ JSON 형식 (정확히 이 구조를 따라주세요):
     try {
       const base64Image = await this.imageToBase64(imageUri);
 
-      const prompt = `이미지에서 상한 것 같거나 유통기한이 지난 것으로 보이는 식재료를 찾아주세요.
-      
+      const prompt = await promptTemplateService.getPrompt(
+        'expired_detection_ko',
+        `이미지에서 상한 것 같거나 유통기한이 지난 것으로 보이는 식재료를 찾아주세요.
+
       JSON 형식으로 반환:
       {
         "expiredItems": [
@@ -599,7 +746,8 @@ JSON 형식 (정확히 이 구조를 따라주세요):
             "confidence": 0.0-1.0 (확신도)
           }
         ]
-      }`;
+      }`
+      );
 
       const imagePart = {
         inlineData: {
@@ -653,9 +801,13 @@ JSON 형식 (정확히 이 구조를 따라주세요):
    */
   async categorizeFood(foodName: string): Promise<string> {
     try {
-      const prompt = `"${foodName}"는 다음 카테고리 중 어디에 속하나요? 
+      const prompt = await promptTemplateService.getPromptWithVariables(
+        'categorization_ko',
+        { foodName },
+        `"${foodName}"는 다음 카테고리 중 어디에 속하나요?
       과일, 채소, 육류, 유제품, 곡물, 조미료, 기타
-      카테고리 이름만 반환해주세요.`;
+      카테고리 이름만 반환해주세요.`
+      );
 
       const result = await this.model.generateContent(prompt);
       const response = await result.response;

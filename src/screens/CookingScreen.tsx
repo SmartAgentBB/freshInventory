@@ -617,7 +617,14 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                 icon="tune-variant"
                 size={24}
                 iconColor={Colors.primary.main}
-                onPress={() => setShowCookingStyleInput(!showCookingStyleInput)}
+                onPress={() => {
+                  const newValue = !showCookingStyleInput;
+                  setShowCookingStyleInput(newValue);
+                  // 입력창을 숨길 때만 요리 스타일 초기화
+                  if (!newValue) {
+                    setCookingStyleInput('');
+                  }
+                }}
                 style={styles.tuneButton}
               />
             </View>
@@ -749,7 +756,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
                     setShowRecommendations(false);
                     setRecommendations([]);
                     setCurrentIngredientContext(null); // Clear the specific ingredient context
-                    setCookingStyleInput(''); // Clear cooking style input
+                    // 요리 스타일 입력은 유지 (사용자가 다시 입력할 필요 없음)
                   }}
                   icon="refresh"
                   style={styles.recommendButton}
