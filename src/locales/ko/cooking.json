@@ -1,8 +1,8 @@
 {
   "title": "요리",
   "tabs": {
-    "bookmarks": "요리책",
-    "recommend": "요리 추천"
+    "bookmarks": "저장한 레시피",
+    "recommend": "AI 요리 추천"
   },
   "recommend": {
     "title": "AI 요리 추천",
@@ -43,7 +43,7 @@
   },
   "bookmarks": {
     "empty": "저장된 레시피가 없습니다.",
-    "emptyDesc": "요리 추천 탭에서 마음에 드는 요리를\n저장하면 이곳에서 볼 수 있습니다.",
+    "emptyDesc": "AI 요리 추천 탭에서\n 마음에 드는 추천 레시피를 저장하면\n 여기서 다시 볼 수 있어요.",
     "sortBy": {
       "recent": "최신순",
       "ingredients": "보유재료순"
