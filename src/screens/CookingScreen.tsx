@@ -50,6 +50,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   const [selectedIngredients, setSelectedIngredients] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(true);
   const [cookingStyleInput, setCookingStyleInput] = useState('');
+  const [showCookingStyleInput, setShowCookingStyleInput] = useState(false);
   const { user } = useAuth();
   const isFocused = useIsFocused();
   const scrollViewRef = React.useRef<ScrollView>(null);
@@ -541,17 +542,85 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
           </View>
         </Surface>
 
+        {/* 요리 스타일 입력 */}
+        {ingredients.length > 0 && showCookingStyleInput && (
+          <View
+            ref={inputContainerRef}
+            style={styles.cookingStyleContainer}
+          >
+            <TextInput
+              value={cookingStyleInput}
+              onChangeText={setCookingStyleInput}
+              placeholder={t('recommend.styleInput.placeholder')}
+              placeholderTextColor={Colors.text.disabled}
+              mode="outlined"
+              multiline={false}
+              numberOfLines={1}
+              style={styles.cookingStyleInput}
+              outlineColor={Colors.border.light}
+              activeOutlineColor={Colors.primary.main}
+              dense
+              onFocus={() => {
+                // 키보드 높이를 가져와서 스크롤 계산
+                const keyboardDidShowListener = Keyboard.addListener(
+                  'keyboardDidShow',
+                  (e) => {
+                    if (inputContainerRef.current) {
+                      inputContainerRef.current.measureInWindow((x, y, width, height) => {
+                        const keyboardHeight = e.endCoordinates.height;
+                        const screenHeight = Dimensions.get('window').height;
+                        const inputBottom = y + height;
+                        const visibleScreen = screenHeight - keyboardHeight;
+
+                        // 입력창이 키보드에 가려지는지 확인
+                        if (inputBottom > visibleScreen - 20) {
+                          const scrollTo = scrollOffset + (inputBottom - visibleScreen + 100);
+                          scrollViewRef.current?.scrollTo({
+                            y: scrollTo,
+                            animated: true,
+                          });
+                        }
+                      });
+                    }
+                    keyboardDidShowListener.remove();
+                  }
+                );
+              }}
+              right={
+                cookingStyleInput ? (
+                  <TextInput.Icon
+                    icon="backspace-outline"
+                    onPress={() => setCookingStyleInput('')}
+                  />
+                ) : null
+              }
+            />
+            <Text variant="bodySmall" style={styles.cookingStyleHint}>
+              {t('recommend.styleInput.hint')}
+            </Text>
+          </View>
+        )}
+
         {/* 전체 선택 토글 */}
         {ingredients.length > 0 && (
           <View style={styles.selectAllContainer}>
             <Text variant="bodyMedium" style={styles.selectAllText}>
               {t('recommend.selectAll')}
             </Text>
-            <Switch
-              value={selectAll}
-              onValueChange={handleToggleSelectAll}
-              color={Colors.primary.main}
-            />
+            <View style={styles.selectAllControls}>
+              <Switch
+                value={selectAll}
+                onValueChange={handleToggleSelectAll}
+                color={Colors.primary.main}
+              />
+              <IconButton
+                icon="tune-variant"
+                size={24}
+                iconColor={Colors.primary.main}
+                onPress={() => setShowCookingStyleInput(!showCookingStyleInput)}
+                style={styles.tuneButton}
+              />
+            </View>
           </View>
         )}
 
@@ -655,77 +724,20 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
               );
             })()}
 
-            {/* 요리 스타일 입력 및 추천받기 버튼 */}
+            {/* 추천받기 버튼 */}
             {ingredients.length > 0 && !showRecommendations && (
-              <>
-                <View
-                  ref={inputContainerRef}
-                  style={styles.cookingStyleContainer}
+              <View style={styles.recommendButtonContainer}>
+                <Button
+                  mode="contained"
+                  onPress={handleRecommend}
+                  loading={recommending}
+                  icon="chef-hat"
+                  style={styles.recommendButton}
+                  contentStyle={styles.recommendButtonContent}
                 >
-                  <TextInput
-                    value={cookingStyleInput}
-                    onChangeText={setCookingStyleInput}
-                    placeholder={t('recommend.styleInput.placeholder')}
-                    placeholderTextColor={Colors.text.disabled}
-                    mode="outlined"
-                    multiline
-                    numberOfLines={2}
-                    style={styles.cookingStyleInput}
-                    outlineColor={Colors.border.light}
-                    activeOutlineColor={Colors.primary.main}
-                    dense
-                    onFocus={() => {
-                      // 키보드 높이를 가져와서 스크롤 계산
-                      const keyboardDidShowListener = Keyboard.addListener(
-                        'keyboardDidShow',
-                        (e) => {
-                          if (inputContainerRef.current) {
-                            inputContainerRef.current.measureInWindow((x, y, width, height) => {
-                              const keyboardHeight = e.endCoordinates.height;
-                              const screenHeight = Dimensions.get('window').height;
-                              const inputBottom = y + height;
-                              const visibleScreen = screenHeight - keyboardHeight;
-
-                              // 입력창이 키보드에 가려지는지 확인
-                              if (inputBottom > visibleScreen - 20) {
-                                const scrollTo = scrollOffset + (inputBottom - visibleScreen + 100);
-                                scrollViewRef.current?.scrollTo({
-                                  y: scrollTo,
-                                  animated: true,
-                                });
-                              }
-                            });
-                          }
-                          keyboardDidShowListener.remove();
-                        }
-                      );
-                    }}
-                    right={
-                      cookingStyleInput ? (
-                        <TextInput.Icon
-                          icon="close"
-                          onPress={() => setCookingStyleInput('')}
-                        />
-                      ) : null
-                    }
-                  />
-                  <Text variant="bodySmall" style={styles.cookingStyleHint}>
-                    {t('recommend.styleInput.hint')}
-                  </Text>
-                </View>
-                <View style={styles.recommendButtonContainer}>
-                  <Button
-                    mode="contained"
-                    onPress={handleRecommend}
-                    loading={recommending}
-                    icon="chef-hat"
-                    style={styles.recommendButton}
-                    contentStyle={styles.recommendButtonContent}
-                  >
-                    {t('recommend.getRecommendation')}
-                  </Button>
-                </View>
-              </>
+                  {t('recommend.getRecommendation')}
+                </Button>
+              </View>
             )}
 
             {/* 다시 추천받기 버튼 */}
@@ -1231,7 +1243,7 @@ const BookmarksTab = () => {
 export const CookingScreen = () => {
   const { t } = useTranslation('cooking');
   const route = useRoute();
-  const [activeTab, setActiveTab] = useState<TabType>('bookmarks');
+  const [activeTab, setActiveTab] = useState<TabType>('recommend');
   const [passedRecommendations, setPassedRecommendations] = useState<Recipe[] | null>(null);
   const [fromIngredient, setFromIngredient] = useState<string | null>(null);
 
@@ -1269,8 +1281,8 @@ export const CookingScreen = () => {
     <View style={styles.mainContainer}>
       {/* Tabs */}
       <View style={styles.tabContainer}>
-        <TabButton tab="bookmarks" label={t('tabs.bookmarks')} />
         <TabButton tab="recommend" label={t('tabs.recommend')} />
+        <TabButton tab="bookmarks" label={t('tabs.bookmarks')} />
       </View>
 
       {/* Tab Content */}
@@ -1848,16 +1860,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.md,
     marginHorizontal: Spacing.md,
     marginTop: Spacing.xs,
     marginBottom: Spacing.xs,
     backgroundColor: Colors.background.paper,
     borderRadius: 8,
+    minHeight: 56,
   },
   selectAllText: {
     color: Colors.text.primary,
     fontFamily: 'OpenSans-Medium',
+  },
+  selectAllControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  tuneButton: {
+    margin: 0,
   },
   chipCheckIcon: {
     marginRight: 3,
@@ -1871,7 +1892,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.paper,
     fontSize: 14,
     fontFamily: 'OpenSans-Regular',
-    minHeight: 56,
+    minHeight: 28,
+    paddingVertical: Platform.OS === 'android' ? 4 : 2,
+    textAlignVertical: 'center',
   },
   cookingStyleHint: {
     color: Colors.text.disabled,
