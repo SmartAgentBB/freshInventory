@@ -811,20 +811,29 @@ const styles = StyleSheet.create({
   },
   addButton: {
     justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 24,
     minWidth: 80,
-    height: 36,
+    height: 48,
   },
   addButtonDisabled: {
-    borderColor: Colors.text.secondary,
+    borderColor: Colors.text.disabled,
   },
   addButtonLabel: {
     fontFamily: 'OpenSans-SemiBold',
     fontSize: 14,
+    lineHeight: 16,
+    marginVertical: 0,
+    marginHorizontal: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   addButtonContent: {
-    height: 36,
+    height: 48,
     paddingHorizontal: 16,
+    paddingVertical: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   divider: {
     marginVertical: Spacing.sm,
