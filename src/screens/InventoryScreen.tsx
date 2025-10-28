@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, Platform, RefreshControl } from 'react-native';
 import { Text, ActivityIndicator, FAB, Chip, IconButton, Surface, TextInput } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -44,6 +44,7 @@ export const InventoryScreen: React.FC = () => {
   const [frozenSortType, setFrozenSortType] = useState<SortType>('newest');
   const [shoppingListItems, setShoppingListItems] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const searchInputRef = useRef<any>(null);
 
   // 알림에서 네비게이션된 경우 임박순 정렬 설정
   useEffect(() => {
@@ -52,6 +53,16 @@ export const InventoryScreen: React.FC = () => {
       setFrozenSortType('urgent');
     }
   }, [route.params]);
+
+  // 검색창이 표시될 때 자동으로 포커스하고 키보드 표시
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) {
+      // 약간의 지연을 두어 렌더링이 완료된 후 포커스
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [showSearch]);
   
   const loadData = async (isRefreshing = false) => {
     console.log('LoadData called with isRefreshing:', isRefreshing);
@@ -336,6 +347,7 @@ export const InventoryScreen: React.FC = () => {
           <View style={styles.searchContainer}>
             <View style={styles.searchInputWrapper}>
               <TextInput
+                ref={searchInputRef}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder={t('search.placeholder')}
