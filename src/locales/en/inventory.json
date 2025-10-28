@@ -85,6 +85,7 @@
     "disposeConfirm": "Confirm Disposal",
     "disposeMessage": "Are you sure you want to dispose \"{{name}}\"?",
     "cancel": "Cancel",
+    "completelyConsumed": "Completely Used",
     "getRecipes": "Get Recipe Suggestions",
     "recipesWithIngredient": "Recipes using this ingredient",
     "savedRecipesDesc": "Saved recipes that use this ingredient",

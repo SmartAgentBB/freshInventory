@@ -171,7 +171,21 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
             {/* Registration/Frozen Date and D-day/Frozen days Row */}
             <View style={[styles.infoRow, { flex: 1, alignItems: 'center' }]}>
               <Text variant="bodySmall" style={styles.infoText}>
-                {isFrozen ? `${i18n.language === 'en' ? 'Frozen' : '냉동'}: ${formattedFrozenDate}` : `${i18n.language === 'en' ? t('itemDetail.registrationDate') : '등록'}: ${formattedDate}`}
+                {isFrozen ? (
+                  <>
+                    <Text style={[styles.infoLabel]}>
+                      {i18n.language === 'en' ? 'Frozen' : '냉동'}
+                    </Text>
+                    {` ${formattedFrozenDate}`}
+                  </>
+                ) : (
+                  <>
+                    <Text style={[styles.infoLabel]}>
+                      {i18n.language === 'en' ? t('itemDetail.registrationDate') : '등록'}
+                    </Text>
+                    {` ${formattedDate}`}
+                  </>
+                )}
               </Text>
               {isFrozen ? (
                 <View style={[styles.dDayBadge, { backgroundColor: '#4A90E2' }]}>
@@ -197,7 +211,10 @@ export const FoodItemCard: React.FC<FoodItemCardProps> = ({
             {/* Quantity and Remains Row */}
             <View style={styles.infoRow}>
               <Text variant="bodySmall" style={styles.infoText}>
-                {i18n.language === 'en' ? t('itemDetail.quantity') : '수량'}: {item.quantity}{i18n.language === 'en' && item.unit === '개' ? t('itemDetail.pieces') : i18n.language === 'en' && item.unit === '팩' ? t('itemDetail.packs') : item.unit}
+                <Text style={[styles.infoLabel]}>
+                  {i18n.language === 'en' ? t('itemDetail.quantity') : '수량'}
+                </Text>
+                {` ${item.quantity}${i18n.language === 'en' && item.unit === '개' ? t('itemDetail.pieces') : i18n.language === 'en' && item.unit === '팩' ? t('itemDetail.packs') : item.unit}`}
               </Text>
               <Text variant="bodySmall" style={styles.infoText}>
                 {Math.round(remainsPercent)}%
@@ -302,6 +319,11 @@ const styles = StyleSheet.create({
     marginBottom: 0, // Remove spacing
   },
   infoText: {
+    color: Colors.text.secondary,
+    fontFamily: 'OpenSans-Regular',
+    fontSize: 13,
+  },
+  infoLabel: {
     color: Colors.text.secondary,
     fontFamily: 'OpenSans-Regular',
     fontSize: 13,

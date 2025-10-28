@@ -81,9 +81,9 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
             {isFullyConsumed && (
               <View style={styles.checkmarkBadge}>
                 <MaterialCommunityIcons
-                  name="check"
+                  name="thumb-up-outline"
                   size={24}
-                  color="rgba(117, 117, 117, 0.5)"
+                  color={Colors.primary.main}
                 />
               </View>
             )}

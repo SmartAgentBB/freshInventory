@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-url-polyfill/auto';
 
 // Use hardcoded values for now since environment variables might not be available
@@ -8,15 +9,29 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 export const initializeSupabase = (): SupabaseClient => {
   const url = SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
   const key = SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  
+
   if (!url || !key) {
     // Return a mock client for development/testing if no credentials
     console.warn('Supabase credentials not found, using mock client');
-    // For now, still use the hardcoded values
-    return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // For now, still use the hardcoded values with proper auth config
+    return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
   }
-  
-  return createClient(url, key);
+
+  return createClient(url, key, {
+    auth: {
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  });
 };
 
 // Create the default client instance

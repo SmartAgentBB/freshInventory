@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 3.0.0"
+    "version": ">= 3.0.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -20,6 +21,10 @@
     "production": {
       "ios": {
         "buildConfiguration": "Release"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "credentialsSource": "remote"
       }
     }
   },
@@ -29,6 +34,10 @@
         "appleId": "shiny.sun0@gmail.com",
         "ascAppId": "6752928483",
         "appleTeamId": "CL96S2YQ38"
+      },
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
       }
     }
   }

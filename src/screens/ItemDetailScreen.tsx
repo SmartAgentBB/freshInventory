@@ -598,6 +598,19 @@ export const ItemDetailScreen: React.FC = () => {
               onChange={updateCurrentRemains}
               isFrozen={isFrozen}
             />
+            {currentRemains === 0 && (
+              <View style={styles.completelyConsumedIndicator}>
+                <MaterialCommunityIcons
+                  name="thumb-up-outline"
+                  size={20}
+                  color={Colors.primary.main}
+                  style={styles.consumedIcon}
+                />
+                <Text variant="bodySmall" style={styles.consumedText}>
+                  {t('itemDetail.completelyConsumed')}
+                </Text>
+              </View>
+            )}
           </View>
         </Surface>
 
@@ -1368,5 +1381,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'OpenSans-Regular',
     color: Colors.text.secondary,
+  },
+  completelyConsumedIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: '#E8F5F2',
+    borderRadius: 8,
+    gap: Spacing.sm,
+  },
+  consumedIcon: {
+    marginRight: 4,
+  },
+  consumedText: {
+    color: Colors.primary.main,
+    fontFamily: 'OpenSans-SemiBold',
+    fontSize: 14,
   },
 });

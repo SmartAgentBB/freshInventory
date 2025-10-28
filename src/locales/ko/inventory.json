@@ -3,7 +3,7 @@
   "tabs": {
     "fresh": "재고목록",
     "frozen": "냉동보관",
-    "history": "소비완료",
+    "history": "소진된 재료",
     "current": "재고목록",
     "expired": "지난기록"
   },
@@ -85,6 +85,7 @@
     "disposeConfirm": "폐기 확인",
     "disposeMessage": "\"{{name}}\"을(를) 폐기 처리하시겠습니까?",
     "cancel": "취소",
+    "completelyConsumed": "완전 소진",
     "getRecipes": "요리 추천받기",
     "recipesWithIngredient": "이 재료로 만들 수 있는 요리",
     "savedRecipesDesc": "요리책에 저장된 레시피 중 이 재료를 사용하는 요리",

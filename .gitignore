@@ -85,3 +85,5 @@ build/
 *.egg-info/
 
 .mcp.json
+
+google-service-account.json

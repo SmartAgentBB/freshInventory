@@ -116,7 +116,15 @@
       "Bash(ipconfig)",
       "Bash(npm i:*)",
       "Bash(git push:*)",
-      "WebFetch(domain:expo.dev)"
+      "WebFetch(domain:expo.dev)",
+      "Bash(adb uninstall:*)",
+      "Bash(eas build:*)",
+      "Bash(npm run validate-env:*)",
+      "Bash(del /s /q node_modules)",
+      "Bash(npm cache clean --force)",
+      "Bash(git log:*)",
+      "Bash(eas secret:list:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []
