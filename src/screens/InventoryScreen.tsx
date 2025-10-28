@@ -382,6 +382,7 @@ export const InventoryScreen: React.FC = () => {
                   styles.sortChipText,
                   (activeTab === 'fresh' ? freshSortType : frozenSortType) === 'newest' && styles.activeSortChipText
                 ]}
+                rippleColor="transparent"
                 compact
               >
                 {t('sort.newest')}
@@ -397,6 +398,7 @@ export const InventoryScreen: React.FC = () => {
                   styles.sortChipText,
                   (activeTab === 'fresh' ? freshSortType : frozenSortType) === 'oldest' && styles.activeSortChipText
                 ]}
+                rippleColor="transparent"
                 compact
               >
                 {t('sort.oldest')}
@@ -413,6 +415,7 @@ export const InventoryScreen: React.FC = () => {
                     styles.sortChipText,
                     freshSortType === 'urgent' && styles.activeSortChipText
                   ]}
+                  rippleColor="transparent"
                   compact
                 >
                   {t('sort.urgent')}
@@ -427,7 +430,16 @@ export const InventoryScreen: React.FC = () => {
                 <IconButton
                   icon="magnify"
                   size={20}
-                  onPress={() => setShowSearch(!showSearch)}
+                  onPress={() => {
+                    if (showSearch) {
+                      // 검색창 닫기 시 검색 조건 초기화
+                      setShowSearch(false);
+                      setSearchQuery('');
+                    } else {
+                      // 검색창 열기
+                      setShowSearch(true);
+                    }
+                  }}
                 />
               )}
             </View>
@@ -709,7 +721,6 @@ const styles = StyleSheet.create({
     color: Colors.primary.main,
     fontFamily: 'OpenSans-Bold',
     fontWeight: '700',
-    fontWeight: '600',
   },
   searchContainer: {
     paddingHorizontal: Spacing.md,
