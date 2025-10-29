@@ -1,8 +1,8 @@
 {
   "version": "1.0.0",
   "ios": {
-    "buildNumber": 6,
-    "lastBuildDate": "2025-10-28",
+    "buildNumber": 8,
+    "lastBuildDate": "2025-10-29",
     "lastBuildType": "production",
     "history": [
       {
@@ -43,6 +43,20 @@
       {
         "buildNumber": 6,
         "date": "2025-10-28",
+        "type": "production",
+        "status": "failed",
+        "notes": "Automated build"
+      },
+      {
+        "buildNumber": 7,
+        "date": "2025-10-29",
+        "type": "production",
+        "status": "building",
+        "notes": "Build number incremented"
+      },
+      {
+        "buildNumber": 8,
+        "date": "2025-10-29",
         "type": "production",
         "status": "building",
         "notes": "Automated build"
