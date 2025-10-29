@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "ios": {
     "buildNumber": 8,
     "lastBuildDate": "2025-10-29",
@@ -58,7 +58,7 @@
         "buildNumber": 8,
         "date": "2025-10-29",
         "type": "production",
-        "status": "building",
+        "status": "failed",
         "notes": "Automated build"
       }
     ]

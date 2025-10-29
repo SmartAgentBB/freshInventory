@@ -142,36 +142,89 @@ npm run build:android
 
 ## 🔄 버전 정책
 
-### 앱 버전 (Semantic Versioning)
+### 세 가지 버전의 역할
+
+| 항목 | 설정 위치 | 사용자 화면 | 증가 시기 |
+|------|---------|----------|---------|
+| **expo.version** | app.json | "버전 1.0.1" (iOS/Android 공통) | **새 릴리스마다** |
+| **iOS buildNumber** | app.json + version.json | 내부 식별용 | **매 제출마다** |
+| **Android versionCode** | app.json + version.json | 내부 식별용 | **매 제출마다** |
+
+### 앱 버전 (expo.version) - iOS & Android 공통
+**Semantic Versioning 사용:**
 - **Major (1.x.x)**: 큰 기능 변경, 호환성 깨짐
 - **Minor (x.1.x)**: 새 기능 추가
 - **Patch (x.x.1)**: 버그 수정
 
-### 빌드 번호
-- **iOS buildNumber**: 매 제출마다 증가 (1, 2, 3...)
-- **Android versionCode**: 매 제출마다 증가 (1, 2, 3...)
+**중요**: expo.version은 iOS/Android 모두 동일하게 표시됩니다
+```json
+{
+  "expo": {
+    "version": "1.0.1"  // iOS와 Android 모두 이 값 사용
+  }
+}
+```
+
+### 빌드 번호 - 플랫폼별 독립 관리
+- **iOS buildNumber**: 매 제출마다 증가 (1, 2, 3...) - iOS만 관리
+- **Android versionCode**: 매 제출마다 증가 (1, 2, 3...) - Android만 관리
+
+**권장**: iOS와 Android의 빌드 번호를 동기화 유지
+```json
+{
+  "version": "1.0.1",
+  "ios": {
+    "buildNumber": 8
+  },
+  "android": {
+    "versionCode": 8  // iOS와 동일하게 유지
+  }
+}
+```
 
 ## ⚠️ 주의사항
 
-1. **빌드 번호 중복 방지**
-   - 이미 제출한 빌드 번호는 재사용 불가
-   - 실패한 빌드도 번호 증가 필요
+1. **expo.version 중복 제출 금지** 🚨
+   - **문제**: "You've already submitted this version of the app" 에러
+   - **원인**: 같은 expo.version으로 중복 제출 시도
+   - **해결**: 새 릴리스 전 반드시 `npm run bump:version` 또는 수동으로 version 증가
+   - **예시**:
+     ```bash
+     npm run bump:version  # 1.0.0 → 1.0.1 (버그 수정)
+     npm run bump:version  # 1.0.1 → 1.1.0 (새 기능)
+     ```
 
-2. **커밋 순서**
+2. **buildNumber와 versionCode 중복 방지**
+   - 이미 제출한 buildNumber/versionCode는 재사용 불가
+   - 실패한 빌드도 번호 증가 필요 (App Store/Play Store 규정)
+   - **권장**: iOS와 Android의 빌드 번호를 동기화 유지
+
+3. **커밋 순서**
    - 빌드 전 반드시 버전 변경사항 커밋
+   - buildNumber만 올림 (새 릴리스 아님):
+     ```bash
+     npm run bump:ios
+     git commit -m "chore: bump iOS build number to X"
+     ```
+   - 새 버전으로 릴리스할 때 (버그 수정, 신기능 등):
+     ```bash
+     npm run bump:version  # 버전과 buildNumber 동시 증가
+     git commit -m "chore: bump version to X.X.X"
+     ```
    - 빌드 후 성공/실패 상태 기록
 
-3. **환경 변수 관리** 🔐
+4. **환경 변수 관리** 🔐
    - `.env` 파일은 개발 환경에서만 사용됨
    - 프로덕션 빌드는 **반드시 EAS Secret 사용**
    - 빌드 전 `npm run validate-env` 실행 필수
    - API 키 누락 시 AI 기능 완전 차단됨
 
-4. **프로덕션 체크리스트**
+5. **프로덕션 체크리스트**
    - [ ] 환경 변수 검증 (`npm run validate-env`)
-   - [ ] EAS Secret 등록 확인 (`eas secret:list`)
+   - [ ] EAS Secret 등록 확인 (`eas env:list`)
    - [ ] 테스트 완료 (`npm test`, `npm run type-check`)
-   - [ ] 빌드 번호 증가
+   - [ ] **expo.version 확인** - 새 릴리스인가? 아니면 내부 빌드만?
+   - [ ] 버전/빌드 번호 증가 (`npm run bump:version` 또는 `npm run bump:ios`/`npm run bump:android`)
    - [ ] 변경사항 커밋
    - [ ] 빌드 실행
    - [ ] TestFlight/Internal Testing에서 AI 기능 검증 ⚠️
@@ -179,6 +232,34 @@ npm run build:android
    - [ ] 스토어 제출
 
 ## 🔧 트러블슈팅
+
+### 🚨 App Store 제출 시 "이미 제출한 버전" 에러
+
+**증상**: `You've already submitted this version of the app.`
+
+**원인**: expo.version이 변경되지 않았는데 제출 시도
+
+**해결 방법**:
+```bash
+# 현재 app.json의 expo.version 확인
+cat app.json | grep '"version"'
+
+# 새 릴리스라면 버전 증가
+npm run bump:version  # 또는 수동으로 version 변경
+
+# 버전만 올리고 buildNumber도 함께 증가하려면
+npm run bump:version
+
+# 변경사항 커밋
+git add app.json version.json
+git commit -m "chore: bump version to X.X.X"
+
+# 재빌드
+eas build --platform ios --profile production
+
+# 재제출
+eas submit --platform ios --latest
+```
 
 ### 🚨 AI 기능이 작동하지 않을 때
 
@@ -310,4 +391,4 @@ eas env:create --name EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY --value NEW_API_KEY -
 
 ---
 
-*Last Updated: 2025-10-17*
+*Last Updated: 2025-10-29*
