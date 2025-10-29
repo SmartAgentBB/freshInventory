@@ -7,7 +7,8 @@
   "recommend": {
     "title": "AI 요리 추천",
     "subtitle": "보유 재료로 AI가 추천하는 요리를 만들어보세요",
-    "selectAll": "전체 선택",
+    "selectAll": "보유 재료",
+    "allLabel": "전체",
     "selectIngredients": "재료 선택",
     "selectIngredientsAlert": "요리에 사용할 재료를 선택해주세요.",
     "noIngredients": "재료가 없습니다",

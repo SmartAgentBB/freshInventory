@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Linking, KeyboardAvoidingView, Platform, Keyboard, Dimensions, findNodeHandle } from 'react-native';
 import { Surface, Text, Button, Chip, ActivityIndicator, FAB, Card, Divider, TextInput, IconButton, Menu, Switch } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -55,6 +55,7 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
   const isFocused = useIsFocused();
   const scrollViewRef = React.useRef<ScrollView>(null);
   const inputContainerRef = React.useRef<View>(null);
+  const cookingStyleInputRef = React.useRef<any>(null);
   const [scrollOffset, setScrollOffset] = useState(0);
 
   // useMemo를 사용하여 서비스 인스턴스들을 한 번만 생성
@@ -513,223 +514,243 @@ const CookingRecommendTab: React.FC<CookingRecommendTabProps> = ({
         onScroll={(e) => setScrollOffset(e.nativeEvent.contentOffset.y)}
         scrollEventThrottle={16}
       >
-        {/* 안내 메시지 및 색상 범례 */}
-        <Surface style={styles.infoCard} elevation={1}>
-          <Text variant="bodySmall" style={styles.infoText}>
-            {t('recommend.subtitle')}
-          </Text>
-          <View style={styles.legendContainer}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#F44336' }]} />
-              <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.expired')}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#FF9800' }]} />
-              <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('status.urgent')}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#FFC107' }]} />
-              <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.warning')}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#4CAF50' }]} />
-              <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.fresh')}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#2196F3' }]} />
-              <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.frozen')}</Text>
-            </View>
-          </View>
-        </Surface>
-
-        {/* 요리 스타일 입력 */}
-        {ingredients.length > 0 && showCookingStyleInput && (
-          <View
-            ref={inputContainerRef}
-            style={styles.cookingStyleContainer}
-          >
-            <TextInput
-              value={cookingStyleInput}
-              onChangeText={setCookingStyleInput}
-              placeholder={t('recommend.styleInput.placeholder')}
-              placeholderTextColor={Colors.text.disabled}
-              mode="outlined"
-              multiline={false}
-              numberOfLines={1}
-              style={styles.cookingStyleInput}
-              outlineColor={Colors.border.light}
-              activeOutlineColor={Colors.primary.main}
-              dense
-              onFocus={() => {
-                // 키보드 높이를 가져와서 스크롤 계산
-                const keyboardDidShowListener = Keyboard.addListener(
-                  'keyboardDidShow',
-                  (e) => {
-                    if (inputContainerRef.current) {
-                      inputContainerRef.current.measureInWindow((x, y, width, height) => {
-                        const keyboardHeight = e.endCoordinates.height;
-                        const screenHeight = Dimensions.get('window').height;
-                        const inputBottom = y + height;
-                        const visibleScreen = screenHeight - keyboardHeight;
-
-                        // 입력창이 키보드에 가려지는지 확인
-                        if (inputBottom > visibleScreen - 20) {
-                          const scrollTo = scrollOffset + (inputBottom - visibleScreen + 100);
-                          scrollViewRef.current?.scrollTo({
-                            y: scrollTo,
-                            animated: true,
-                          });
-                        }
-                      });
-                    }
-                    keyboardDidShowListener.remove();
-                  }
-                );
-              }}
-              right={
-                cookingStyleInput ? (
-                  <TextInput.Icon
-                    icon="backspace-outline"
-                    onPress={() => setCookingStyleInput('')}
-                  />
-                ) : null
-              }
-            />
-            <Text variant="bodySmall" style={styles.cookingStyleHint}>
-              {t('recommend.styleInput.hint')}
-            </Text>
-          </View>
-        )}
-
-        {/* 전체 선택 토글 */}
+        {/* 요리 스타일 입력 및 재료 선택 카드 */}
         {ingredients.length > 0 && (
-          <View style={styles.selectAllContainer}>
-            <Text variant="bodyMedium" style={styles.selectAllText}>
-              {t('recommend.selectAll')}
-            </Text>
-            <View style={styles.selectAllControls}>
-              <Switch
-                value={selectAll}
-                onValueChange={handleToggleSelectAll}
-                color={Colors.primary.main}
-              />
-              <IconButton
-                icon="tune-variant"
-                size={24}
-                iconColor={Colors.primary.main}
-                onPress={() => {
-                  const newValue = !showCookingStyleInput;
-                  setShowCookingStyleInput(newValue);
-                  // 입력창을 숨길 때만 요리 스타일 초기화
-                  if (!newValue) {
-                    setCookingStyleInput('');
-                  }
-                }}
-                style={styles.tuneButton}
-              />
-            </View>
-          </View>
+          <Card style={styles.ingredientSelectionCard} mode="outlined">
+            <Card.Content>
+              {/* 보유 재료 토글 */}
+              <View style={styles.selectAllContainer}>
+                <Text variant="titleMedium" style={styles.selectAllText}>
+                  {t('recommend.selectAll')}
+                </Text>
+                <View style={styles.selectAllControls}>
+                  <Text variant="bodyMedium" style={styles.allLabel}>
+                    {t('recommend.allLabel')}
+                  </Text>
+                  <Switch
+                    value={selectAll}
+                    onValueChange={handleToggleSelectAll}
+                    color={Colors.primary.main}
+                  />
+                  <IconButton
+                    icon="tune-variant"
+                    size={24}
+                    iconColor={Colors.primary.main}
+                    onPress={() => {
+                      const newValue = !showCookingStyleInput;
+                      setShowCookingStyleInput(newValue);
+                      // 입력창을 숨길 때만 요리 스타일 초기화
+                      if (!newValue) {
+                        setCookingStyleInput('');
+                      } else {
+                        // 입력창을 열 때 자동 포커스 및 키보드 표시
+                        setTimeout(() => {
+                          cookingStyleInputRef.current?.focus();
+                        }, 100);
+                      }
+                    }}
+                    style={styles.tuneButton}
+                  />
+                </View>
+              </View>
+
+              {/* 요리 스타일 입력 */}
+              {showCookingStyleInput && (
+                <>
+                  <Divider style={styles.dividerInCard} />
+                  <View
+                    ref={inputContainerRef}
+                    style={styles.cookingStyleInputWrapper}
+                  >
+                    <TextInput
+                      ref={cookingStyleInputRef}
+                      value={cookingStyleInput}
+                      onChangeText={setCookingStyleInput}
+                      placeholder={t('recommend.styleInput.placeholder')}
+                      placeholderTextColor={Colors.text.disabled}
+                      mode="outlined"
+                      multiline={false}
+                      numberOfLines={1}
+                      style={styles.cookingStyleInput}
+                      outlineColor={Colors.border.light}
+                      activeOutlineColor={Colors.primary.main}
+                      dense
+                      onSubmitEditing={handleRecommend}
+                      onFocus={() => {
+                        // 키보드 높이를 가져와서 스크롤 계산
+                        const keyboardDidShowListener = Keyboard.addListener(
+                          'keyboardDidShow',
+                          (e) => {
+                            if (inputContainerRef.current) {
+                              inputContainerRef.current.measureInWindow((x, y, width, height) => {
+                                const keyboardHeight = e.endCoordinates.height;
+                                const screenHeight = Dimensions.get('window').height;
+                                const inputBottom = y + height;
+                                const visibleScreen = screenHeight - keyboardHeight;
+
+                                // 입력창이 키보드에 가려지는지 확인
+                                if (inputBottom > visibleScreen - 20) {
+                                  const scrollTo = scrollOffset + (inputBottom - visibleScreen + 100);
+                                  scrollViewRef.current?.scrollTo({
+                                    y: scrollTo,
+                                    animated: true,
+                                  });
+                                }
+                              });
+                            }
+                            keyboardDidShowListener.remove();
+                          }
+                        );
+                      }}
+                      left={<TextInput.Icon icon="silverware-clean" color={Colors.text.secondary} />}
+                      right={
+                        cookingStyleInput ? (
+                          <TextInput.Icon
+                            icon="backspace-outline"
+                            onPress={() => setCookingStyleInput('')}
+                          />
+                        ) : null
+                      }
+                    />
+                  </View>
+                  <Text variant="bodySmall" style={styles.cookingStyleHint}>
+                    {t('recommend.styleInput.hint')}
+                  </Text>
+                  <Divider style={styles.dividerInCard} />
+                </>
+              )}
+
+              {/* 안내 메시지 및 색상 범례 */}
+              {!showCookingStyleInput && (
+                <>
+                  <Divider style={styles.dividerInCard} />
+                </>
+              )}
+              <Text variant="bodySmall" style={styles.infoText}>
+                {t('recommend.subtitle')}
+              </Text>
+              <View style={styles.legendContainer}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendColor, { backgroundColor: '#F44336' }]} />
+                  <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.expired')}</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendColor, { backgroundColor: '#FF9800' }]} />
+                  <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('status.urgent')}</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendColor, { backgroundColor: '#FFC107' }]} />
+                  <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.warning')}</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendColor, { backgroundColor: '#4CAF50' }]} />
+                  <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.fresh')}</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendColor, { backgroundColor: '#2196F3' }]} />
+                  <Text variant="bodySmall" style={{ fontSize: 11 }}>{t('common:status.frozen')}</Text>
+                </View>
+              </View>
+
+              {/* 신선 재료 섹션 */}
+              {(() => {
+                const frozen = ingredients.filter(item => item.status === 'frozen');
+                const fresh = ingredients.filter(item => item.status !== 'frozen');
+                const sortedFrozen = [...frozen].sort(sortByUrgency);
+                const sortedFresh = [...fresh].sort(sortByUrgency);
+
+                return (
+                  <>
+                    {sortedFresh.length > 0 && (
+                      <>
+                        <Text variant="titleMedium" style={styles.cardSectionTitle}>
+                          🥬 {t('categories.fresh')} ({sortedFresh.length})
+                        </Text>
+                        <View style={styles.chipContainer}>
+                          {sortedFresh.map((item) => {
+                            const isSelected = selectedIngredients.has(item.id);
+                            const itemColor = getExpiryColor(item);
+                            return (
+                              <TouchableOpacity
+                                key={item.id}
+                                onPress={() => handleToggleIngredient(item.id)}
+                                activeOpacity={0.7}
+                              >
+                                <View
+                                  style={[
+                                    styles.ingredientChip,
+                                    { backgroundColor: itemColor }
+                                  ]}
+                                >
+                                  {isSelected && (
+                                    <MaterialCommunityIcons
+                                      name="check"
+                                      size={12}
+                                      color="#FFFFFF"
+                                      style={styles.chipCheckIcon}
+                                    />
+                                  )}
+                                  <Text style={styles.chipText} numberOfLines={1}>
+                                    {item.name}
+                                  </Text>
+                                </View>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </>
+                    )}
+
+                    {/* 냉동 재료 섹션 */}
+                    {sortedFrozen.length > 0 && (
+                      <>
+                        <Text variant="titleMedium" style={styles.cardSectionTitle}>
+                          ❄️ {t('categories.frozen')} ({sortedFrozen.length})
+                        </Text>
+                        <View style={styles.chipContainer}>
+                          {sortedFrozen.map((item) => {
+                            const isSelected = selectedIngredients.has(item.id);
+                            const itemColor = getExpiryColor(item);
+                            return (
+                              <TouchableOpacity
+                                key={item.id}
+                                onPress={() => handleToggleIngredient(item.id)}
+                                activeOpacity={0.7}
+                              >
+                                <View
+                                  style={[
+                                    styles.ingredientChip,
+                                    { backgroundColor: itemColor }
+                                  ]}
+                                >
+                                  {isSelected && (
+                                    <MaterialCommunityIcons
+                                      name="check"
+                                      size={12}
+                                      color="#FFFFFF"
+                                      style={styles.chipCheckIcon}
+                                    />
+                                  )}
+                                  <Text style={styles.chipText} numberOfLines={1}>
+                                    {item.name}
+                                  </Text>
+                                </View>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
+            </Card.Content>
+          </Card>
         )}
 
         {/* 재료 칩 목록 - 카테고리별로 분류 */}
         {ingredients.length > 0 ? (
           <>
-            {/* 냉동 재료와 신선 재료를 분리하여 표시 */}
-            {(() => {
-              // 냉동과 신선 재료 분리
-              const frozen = ingredients.filter(item => item.status === 'frozen');
-              const fresh = ingredients.filter(item => item.status !== 'frozen');
-
-              // 각각 임박순 정렬
-              const sortedFrozen = [...frozen].sort(sortByUrgency);
-              const sortedFresh = [...fresh].sort(sortByUrgency);
-
-              return (
-                <>
-                  {/* 신선 재료 섹션 (냉동이 아닌 모든 재료) */}
-                  {sortedFresh.length > 0 && (
-                    <>
-                      <Text variant="titleMedium" style={styles.sectionTitle}>
-                        🥬 {t('categories.fresh')} ({sortedFresh.length})
-                      </Text>
-                      <View style={styles.chipContainer}>
-                        {sortedFresh.map((item) => {
-                          const isSelected = selectedIngredients.has(item.id);
-                          const itemColor = getExpiryColor(item);
-                          return (
-                            <TouchableOpacity
-                              key={item.id}
-                              onPress={() => handleToggleIngredient(item.id)}
-                              activeOpacity={0.7}
-                            >
-                              <View
-                                style={[
-                                  styles.ingredientChip,
-                                  { backgroundColor: itemColor }
-                                ]}
-                              >
-                                {isSelected && (
-                                  <MaterialCommunityIcons
-                                    name="check"
-                                    size={12}
-                                    color="#FFFFFF"
-                                    style={styles.chipCheckIcon}
-                                  />
-                                )}
-                                <Text style={styles.chipText} numberOfLines={1}>
-                                  {item.name}
-                                </Text>
-                              </View>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </>
-                  )}
-
-                  {/* 냉동 재료 섹션 */}
-                  {sortedFrozen.length > 0 && (
-                    <>
-                      <Text variant="titleMedium" style={styles.sectionTitle}>
-                        ❄️ {t('categories.frozen')} ({sortedFrozen.length})
-                      </Text>
-                      <View style={styles.chipContainer}>
-                        {sortedFrozen.map((item) => {
-                          const isSelected = selectedIngredients.has(item.id);
-                          const itemColor = getExpiryColor(item);
-                          return (
-                            <TouchableOpacity
-                              key={item.id}
-                              onPress={() => handleToggleIngredient(item.id)}
-                              activeOpacity={0.7}
-                            >
-                              <View
-                                style={[
-                                  styles.ingredientChip,
-                                  { backgroundColor: itemColor }
-                                ]}
-                              >
-                                {isSelected && (
-                                  <MaterialCommunityIcons
-                                    name="check"
-                                    size={12}
-                                    color="#FFFFFF"
-                                    style={styles.chipCheckIcon}
-                                  />
-                                )}
-                                <Text style={styles.chipText} numberOfLines={1}>
-                                  {item.name}
-                                </Text>
-                              </View>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </>
-                  )}
-                </>
-              );
-            })()}
 
             {/* 추천받기 버튼 */}
             {ingredients.length > 0 && !showRecommendations && (
@@ -900,6 +921,7 @@ const BookmarksTab = () => {
   const { user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<CookingStackParamList>>();
   const isFocused = useIsFocused();
+  const searchInputRef = useRef<any>(null);
 
   // Service instances
   const inventoryService = useMemo(() => {
@@ -1115,6 +1137,7 @@ const BookmarksTab = () => {
         <View style={styles.searchContainer}>
           <View style={styles.searchInputWrapper}>
             <TextInput
+              ref={searchInputRef}
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder={t('search.recipePlaceholder')}
@@ -1126,7 +1149,7 @@ const BookmarksTab = () => {
               left={<TextInput.Icon icon="magnify" color={Colors.text.secondary} />}
               right={searchQuery ? (
                 <TextInput.Icon
-                  icon="close"
+                  icon="backspace-outline"
                   color={Colors.text.secondary}
                   onPress={() => setSearchQuery('')}
                 />
@@ -1187,13 +1210,28 @@ const BookmarksTab = () => {
           <IconButton
             icon="magnify"
             size={20}
-            onPress={() => setShowSearch(!showSearch)}
+            onPress={() => {
+              const newShowSearch = !showSearch;
+              setShowSearch(newShowSearch);
+
+              // 검색창을 닫을 때 검색어 초기화
+              if (showSearch) {
+                setSearchQuery('');
+              }
+
+              // 검색창을 열 때 자동 포커스 및 키보드 표시
+              if (newShowSearch) {
+                setTimeout(() => {
+                  searchInputRef.current?.focus();
+                }, 100);
+              }
+            }}
           />
         </View>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={{ paddingVertical: Spacing.md }}>
+        <View style={{ paddingVertical: Spacing.md, paddingTop: Spacing.md }}>
           {displayedRecipes.map((recipe, index) => (
             <TouchableOpacity
               key={index}
@@ -1323,15 +1361,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.background.default,
   },
-  infoCard: {
-    marginHorizontal: Spacing.md,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.sm,
-    padding: Spacing.sm,  // Reduced padding from lg to sm
-    backgroundColor: Colors.background.paper,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
   infoText: {
     color: Colors.text.secondary,
     fontFamily: 'OpenSans-Regular',
@@ -1350,7 +1379,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xs,
   },
   ingredientChip: {
     marginVertical: 4,
@@ -1643,7 +1672,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    marginTop: 4,  // Reduced margin
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   legendItem: {
     flexDirection: 'row',
@@ -1658,7 +1688,7 @@ const styles = StyleSheet.create({
   // Simple bookmark card styles
   simpleRecipeCard: {
     marginHorizontal: Spacing.md,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
     backgroundColor: Colors.background.paper,
     borderRadius: 12,
     borderWidth: 1,
@@ -1776,6 +1806,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
+    backgroundColor: Colors.background.paper,
   },
   searchInputWrapper: {
     flexDirection: 'row',
@@ -1783,7 +1814,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    backgroundColor: Colors.background.default,
+    backgroundColor: Colors.background.paper,
     height: 36,
   },
   searchInputContent: {
@@ -1862,40 +1893,61 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
   },
+  ingredientSelectionCard: {
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+    marginHorizontal: Spacing.md,
+    backgroundColor: Colors.background.paper,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
   selectAllContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    marginHorizontal: Spacing.md,
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.xs,
-    backgroundColor: Colors.background.paper,
-    borderRadius: 8,
-    minHeight: 56,
+    paddingVertical: Spacing.xs,
   },
   selectAllText: {
     color: Colors.text.primary,
-    fontFamily: 'OpenSans-Medium',
+    fontFamily: 'OpenSans-Bold',
   },
   selectAllControls: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
   },
+  allLabel: {
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-Regular',
+    marginRight: 4,
+  },
   tuneButton: {
     margin: 0,
+  },
+  cardSectionTitle: {
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+    color: Colors.text.primary,
+    fontFamily: 'OpenSans-SemiBold',
+  },
+  dividerInCard: {
+    marginVertical: Spacing.sm,
+    backgroundColor: Colors.border.light,
   },
   chipCheckIcon: {
     marginRight: 3,
   },
-  cookingStyleContainer: {
-    marginHorizontal: Spacing.md,
+  cookingStyleInputWrapper: {
     marginTop: Spacing.sm,
-    marginBottom: Spacing.xs,
   },
   cookingStyleInput: {
+    flex: 1,
     backgroundColor: Colors.background.paper,
     fontSize: 14,
     fontFamily: 'OpenSans-Regular',
@@ -1907,7 +1959,6 @@ const styles = StyleSheet.create({
     color: Colors.text.disabled,
     fontFamily: 'OpenSans-Regular',
     marginTop: Spacing.xs,
-    marginLeft: Spacing.xs,
     fontSize: 11,
   },
 });

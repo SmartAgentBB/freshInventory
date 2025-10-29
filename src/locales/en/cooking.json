@@ -6,15 +6,16 @@
   },
   "recommend": {
     "title": "AI Recipe Recommendations",
-    "subtitle": "Create dishes recommended by AI using your ingredients",
-    "selectAll": "Select All",
+    "subtitle": "Recipes recommended by AI based on My ingredients",
+    "selectAll": "My Ingredients",
+    "allLabel": "All",
     "selectIngredients": "Select Ingredients",
     "selectIngredientsAlert": "Please select ingredients for cooking.",
     "noIngredients": "No ingredients available",
     "noIngredientsDesc": "Please add ingredients in inventory management",
     "styleInput": {
       "placeholder": "Enter desired cooking style (optional)",
-      "hint": "e.g., Quick dinner, Beer snacks, High protein diet, Spicy soup"
+      "hint": "e.g., Quick dinner, side dishes, diet"
     },
     "getRecommendation": "Get Recipe Recommendations",
     "recommendButton": "Get Recipe Recommendations",
