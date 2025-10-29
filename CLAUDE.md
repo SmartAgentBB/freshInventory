@@ -128,6 +128,11 @@ src/
 └── navigation/   # 네비게이션 설정
 ```
 
+### 문서 생성 규칙
+- **개발 문서**: 모든 작업용 md 파일은 `/docs` 폴더에 생성
+- **예외**: README.md, CLAUDE.md는 프로젝트 루트에만 배치
+- **목적**: 프로젝트 루트의 정리 및 문서 계층 구조 관리
+
 ### 네이밍 규칙
 - 컴포넌트: PascalCase (`InventoryScreen`)
 - 함수: camelCase (`handleSubmit`)

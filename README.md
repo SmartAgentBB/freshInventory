@@ -109,7 +109,6 @@ ez2cook/
 │   ├── constants/       # 색상, 간격 등 상수
 │   └── utils/          # 유틸리티 함수
 ├── assets/             # 이미지, 폰트 등 정적 자원
-├── freshInventory/     # Flask 프로토타입 (참고용)
 └── __tests__/         # 테스트 파일
 ```
 
