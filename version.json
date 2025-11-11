@@ -71,8 +71,8 @@
     ]
   },
   "android": {
-    "versionCode": 6,
-    "lastBuildDate": "2025-10-23",
+    "versionCode": 8,
+    "lastBuildDate": "2025-11-11",
     "lastBuildType": "production",
     "history": [
       {
@@ -109,6 +109,20 @@
         "type": "production",
         "status": "building",
         "notes": "Version code incremented"
+      },
+      {
+        "versionCode": 7,
+        "date": "2025-11-11",
+        "type": "production",
+        "status": "building",
+        "notes": "Version code incremented"
+      },
+      {
+        "versionCode": 8,
+        "date": "2025-11-11",
+        "type": "production",
+        "status": "building",
+        "notes": "Automated build"
       }
     ]
   }
