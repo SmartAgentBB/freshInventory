@@ -1,8 +1,8 @@
 {
-  "title": "쇼핑",
+  "title": "장보기",
   "tabs": {
-    "shoppingList": "쇼핑 목록",
-    "completed": "완료한 쇼핑"
+    "shoppingList": "장보기 목록",
+    "completed": "장보기 기록"
   },
   "list": {
     "title": "쇼핑 목록",
@@ -16,7 +16,7 @@
     "title": "완료한 쇼핑",
     "empty": "완료한 쇼핑이 없습니다",
     "emptyDesc": "구매 완료한 아이템이 여기에 표시됩니다",
-    "noMonthlyData": "이번 달에 완료한 장보기가 없습니다"
+    "noMonthlyData": "이 달에 완료한 장보기가 없습니다"
   },
   "item": {
     "quantity": "수량",

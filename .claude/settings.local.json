@@ -124,7 +124,12 @@
       "Bash(npm cache clean --force)",
       "Bash(git log:*)",
       "Bash(eas secret:list:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(git rm:*)",
+      "Bash(PYTHONIOENCODING=utf-8 python scripts/init_skill.py:*)",
+      "Bash(PYTHONIOENCODING=utf-8 python:*)",
+      "WebFetch(domain:developers.kakao.com)",
+      "WebFetch(domain:supabase.com)"
     ],
     "deny": [],
     "ask": []

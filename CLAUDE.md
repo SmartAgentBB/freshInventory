@@ -3,6 +3,11 @@
 ## 🎯 프로젝트 개요
 AI 기반 식재료 관리 React Native 앱 (Expo SDK 54)
 
+### 개발 환경
+- **OS**: Windows 10/11
+- **Node.js**: v18+
+- **Package Manager**: npm
+
 ## 🏗 아키텍처
 - **Frontend**: React Native + TypeScript + React Native Paper
 - **Backend**: Supabase (PostgreSQL + Auth + Storage)
@@ -163,6 +168,42 @@ EXPO_PUBLIC_GOOGLE_GENERATIVE_AI_KEY
 - **접근성**: 모든 인터랙티브 요소에 접근성 레이블
 - **성능**: 이미지 최적화, 메모이제이션 활용
 - **보안**: 민감 정보 노출 금지, 환경 변수 사용
+
+## 💻 Windows 개발 환경 가이드
+
+### 경로 표기법
+- **사용**: 백슬래시 `\` (Windows 네이티브 경로)
+- **Git**: 포워드 슬래시 `/` (자동 변환됨)
+- **코드**: 모두 포워드 슬래시 `/` 사용 (Node.js 크로스플랫폼 호환)
+
+### 터미널 명령어
+- **권장**: PowerShell 또는 Git Bash 사용
+- **환경 변수**: `set` 명령어 (cmd.exe) 또는 `$env:` (PowerShell)
+- **경로 참조**: 상대경로는 `.\` 또는 절대경로 `C:\Users\...` 사용
+
+### 주의사항
+- **파일 삭제**: `del` (cmd.exe) 또는 `Remove-Item` (PowerShell) 사용
+- **폴더 삭제**: `rmdir /s /q` (cmd.exe) 또는 `Remove-Item -Recurse` (PowerShell)
+- **권한 문제**: 관리자 권한이 필요한 경우 PowerShell을 관리자 모드로 실행
+- **포트 충돌**: Windows 방화벽에서 Expo 포트(8081) 허용 필요
+
+### 개발 서버 실행 트러블슈팅
+```bash
+# 기존 Watchman 세션 정리 (Windows에서는 불필요하지만, 캐시 문제 시)
+npx watchman watch-del-all
+
+# 포트 충돌 확인
+netstat -ano | findstr :8081  # cmd.exe
+netstat -ano | Select-String :8081  # PowerShell
+
+# 포트 강제 정리
+npx kill-port 8081
+
+# 캐시 완전 초기화
+del /s /q node_modules
+npm cache clean --force
+npm install
+```
 
 ## 🔧 플랫폼별 고려사항
 

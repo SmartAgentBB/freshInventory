@@ -1110,7 +1110,7 @@ const styles = StyleSheet.create({
   updateButton: {
     minWidth: 80,
     height: 36,
-    borderColor: Colors.border.light,
+    borderColor: Colors.text.disabled,
     borderRadius: 18,  // Pill shape
     justifyContent: 'center',
     alignItems: 'center',

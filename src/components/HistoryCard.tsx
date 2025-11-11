@@ -135,7 +135,7 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
           <IconButton
             icon="cart-outline"
             mode="outlined"
-            iconColor={isAddedToShopping ? Colors.primary.main : Colors.text.secondary}
+            iconColor={isAddedToShopping ? Colors.primary.main : Colors.text.disabled}
             size={24}
             onPress={handleToggleShopping}
             style={[
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     height: 48,
   },
   shoppingButtonInactive: {
-    borderColor: Colors.text.secondary,  // Gray border when not selected
+    borderColor: Colors.text.disabled,  // Disabled color when not selected
   },
   shoppingButtonActive: {
     backgroundColor: '#EAF5F2',  // Light mint background when selected
