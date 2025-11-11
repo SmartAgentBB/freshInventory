@@ -108,6 +108,74 @@ npm run lint
 npm test
 ```
 
+## 📦 빌드 및 배포
+
+### Managed Workflow (2025-11-11 전환)
+- **중요**: android/ios 디렉토리 없음 (EAS Build가 자동 생성)
+- **장점**:
+  - app.json이 단일 진실의 소스
+  - 버전 불일치 문제 영구 해결
+  - 유지보수 간편
+- **확인**: 알림, 카메라 등 모든 네이티브 기능 정상 작동
+
+### 버전 관리 시스템
+- **진실의 소스**: `version.json` → `app.json` (자동 동기화)
+- **Android**: `versionCode` (매 빌드마다 증가)
+- **iOS**: `buildNumber` (매 빌드마다 증가)
+- **앱 버전**: `version` (Semantic Versioning)
+
+### 빌드 명령어
+```bash
+# Android 버전 증가
+npm run bump:android
+
+# iOS 빌드 번호 증가
+npm run bump:ios
+
+# 앱 버전 증가 (1.0.0 → 1.0.1)
+npm run bump:version
+
+# 자동 빌드 및 제출 (권장)
+npm run build:android  # Android
+npm run build:ios      # iOS
+
+# 현재 버전 상태 확인
+npm run build:status
+```
+
+### 빌드 자동 검증 (2025-11-11 추가)
+`build-and-submit.js` 스크립트는 다음을 자동으로 검증:
+1. **네이티브 디렉토리 감지**: android/ios 존재 시 경고
+2. **버전 동기화 검증**: version.json ↔ app.json 일치 확인
+3. **환경 변수 검증**: API 키 존재 확인
+
+### 재발 방지 장치
+- **bump-version.js**: app.json 자동 동기화 (2025-11-11 버그 수정)
+- **verifyVersionSync()**: 빌드 전 버전 불일치 차단
+- **checkNativeDirectories()**: Bare workflow 경고
+
+### 수동 빌드
+```bash
+# 1. 버전 증가
+npm run bump:android
+
+# 2. 커밋
+git add app.json version.json
+git commit -m "chore: bump Android version code"
+
+# 3. 빌드
+eas build --platform android --profile production
+
+# 4. 제출
+eas submit --platform android --latest
+```
+
+### 중요 주의사항 (2025-11-11)
+1. **versionCode 동기화 필수**: version.json과 app.json 반드시 일치
+2. **네이티브 디렉토리 금지**: android/ios 생성 시 빌드 실패 가능
+3. **Managed Workflow 유지**: 커스텀 네이티브 코드 불필요
+4. **상세 가이드**: `docs/BUILD_GUIDE.md` 참조
+
 ## 🐛 알려진 이슈 및 해결
 1. **알림 설정 문제**: 사용자별 AsyncStorage 키 분리로 해결
 2. **이메일 인증 리다이렉션**: 딥링크 스킴 설정 필요
