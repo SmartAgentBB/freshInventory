@@ -113,28 +113,38 @@ npm run build:android
    npm run bump:android
    ```
 
-2. **변경사항 커밋**
+2. **버전 동기화 검증** ⚠️ (중요: 2025-11-11 버그 수정)
+   ```bash
+   # version.json과 app.json의 versionCode가 일치하는지 확인
+   echo "version.json:"
+   grep -A 1 '"android"' version.json | grep versionCode
+   echo "app.json:"
+   grep '"versionCode"' app.json
+   # 위 두 값이 반드시 같아야 함!
+   ```
+
+3. **변경사항 커밋**
    ```bash
    git add app.json version.json
    git commit -m "chore: bump Android version code to X"
    ```
 
-3. **환경 변수 재확인** ⚠️
+4. **환경 변수 재확인** ⚠️
    ```bash
    npm run validate-env
    ```
 
-4. **프로덕션 빌드**
+5. **프로덕션 빌드**
    ```bash
    eas build --platform android --profile production
    ```
 
-5. **Play Store 제출**
+6. **Play Store 제출**
    ```bash
    eas submit --platform android --latest
    ```
 
-6. **제출 후 검증** (Internal Testing)
+7. **제출 후 검증** (Internal Testing)
    - Internal Testing 트랙에서 빌드 다운로드
    - AI 이미지 인식 기능 테스트
    - 레시피 생성 기능 테스트
@@ -184,7 +194,20 @@ npm run build:android
 
 ## ⚠️ 주의사항
 
-1. **expo.version 중복 제출 금지** 🚨
+1. **Android versionCode 동기화 필수** 🚨 (2025-11-11 버그 수정)
+   - **문제**: version.json의 versionCode와 app.json의 versionCode가 불일치
+   - **증상**: `npm run bump:android` 실행 후에도 app.json이 업데이트되지 않음
+   - **원인**: bump-version.js 스크립트의 조건부 업데이트 로직 버그 (2025-11-11 수정됨)
+   - **확인**: 빌드 전 `version.json`과 `app.json`의 `android.versionCode` 값이 일치하는지 확인
+     ```bash
+     # version.json에서 Android versionCode 확인
+     grep -A 1 '"android"' version.json | grep versionCode
+
+     # app.json에서 Android versionCode 확인
+     grep '"versionCode"' app.json
+     ```
+
+2. **expo.version 중복 제출 금지** 🚨
    - **문제**: "You've already submitted this version of the app" 에러
    - **원인**: 같은 expo.version으로 중복 제출 시도
    - **해결**: 새 릴리스 전 반드시 `npm run bump:version` 또는 수동으로 version 증가
@@ -194,12 +217,12 @@ npm run build:android
      npm run bump:version  # 1.0.1 → 1.1.0 (새 기능)
      ```
 
-2. **buildNumber와 versionCode 중복 방지**
+3. **buildNumber와 versionCode 중복 방지**
    - 이미 제출한 buildNumber/versionCode는 재사용 불가
    - 실패한 빌드도 번호 증가 필요 (App Store/Play Store 규정)
    - **권장**: iOS와 Android의 빌드 번호를 동기화 유지
 
-3. **커밋 순서**
+4. **커밋 순서**
    - 빌드 전 반드시 버전 변경사항 커밋
    - buildNumber만 올림 (새 릴리스 아님):
      ```bash
@@ -213,13 +236,13 @@ npm run build:android
      ```
    - 빌드 후 성공/실패 상태 기록
 
-4. **환경 변수 관리** 🔐
+5. **환경 변수 관리** 🔐
    - `.env` 파일은 개발 환경에서만 사용됨
    - 프로덕션 빌드는 **반드시 EAS Secret 사용**
    - 빌드 전 `npm run validate-env` 실행 필수
    - API 키 누락 시 AI 기능 완전 차단됨
 
-5. **프로덕션 체크리스트**
+6. **프로덕션 체크리스트**
    - [ ] 환경 변수 검증 (`npm run validate-env`)
    - [ ] EAS Secret 등록 확인 (`eas env:list`)
    - [ ] 테스트 완료 (`npm test`, `npm run type-check`)
@@ -233,7 +256,34 @@ npm run build:android
 
 ## 🔧 트러블슈팅
 
-### 🚨 App Store 제출 시 "이미 제출한 버전" 에러
+### 🚨 Play Store 제출 시 "이미 제출한 버전" 에러 (Android versionCode)
+
+**증상**: `You've already submitted this version of the app. Versions are identified by Android version code.`
+
+**원인**: version.json과 app.json의 android.versionCode가 불일치하거나, 이미 제출된 versionCode로 재제출 시도
+
+**해결 방법** (2025-11-11 버그 수정됨):
+```bash
+# 1. 현재 버전 코드 확인
+echo "version.json versionCode:"
+grep -A 1 '"android"' version.json | grep versionCode
+echo "app.json versionCode:"
+grep '"versionCode"' app.json
+
+# 2. 값이 불일치하면 app.json을 version.json 값으로 동기화
+# (이제 npm run bump:android가 자동으로 동기화함)
+npm run bump:android
+
+# 3. 변경사항 커밋
+git add app.json version.json
+git commit -m "fix: sync Android versionCode"
+
+# 4. 재빌드 및 재제출
+eas build --platform android --profile production
+eas submit --platform android --latest
+```
+
+### 🚨 App Store 제출 시 "이미 제출한 버전" 에러 (iOS buildNumber)
 
 **증상**: `You've already submitted this version of the app.`
 
