@@ -97,6 +97,33 @@ function verifyVersionSync(platform) {
   console.log(`${colors.green}✓ App version verified: ${versionJsonVersion}${colors.reset}`);
 }
 
+// 네이티브 디렉토리 감지 경고 (2025-11-11 추가)
+function checkNativeDirectories() {
+  const hasAndroid = fs.existsSync(path.join(__dirname, '..', 'android'));
+  const hasIos = fs.existsSync(path.join(__dirname, '..', 'ios'));
+
+  if (hasAndroid || hasIos) {
+    console.log(`\n${colors.red}⚠️  WARNING: Native directories detected!${colors.reset}`);
+    if (hasAndroid) console.log(`   ${colors.yellow}• android/ directory found${colors.reset}`);
+    if (hasIos) console.log(`   ${colors.yellow}• ios/ directory found${colors.reset}`);
+    console.log(`\n${colors.bright}This may cause version sync issues:${colors.reset}`);
+    console.log(`   - EAS will use native code instead of app.json`);
+    console.log(`   - versionCode/buildNumber may not match version.json`);
+    console.log(`   - Build failures are more likely\n`);
+    console.log(`${colors.green}Recommendation: Use managed workflow (remove native directories)${colors.reset}`);
+    console.log(`${colors.yellow}If you need bare workflow, ensure native files are in sync.${colors.reset}\n`);
+
+    // 5초 대기하여 사용자가 경고를 읽을 수 있도록
+    console.log(`${colors.blue}Continuing in 5 seconds...${colors.reset}`);
+    const start = Date.now();
+    while (Date.now() - start < 5000) {
+      // 5초 대기
+    }
+  } else {
+    console.log(`${colors.green}✓ Using managed workflow (no native directories)${colors.reset}`);
+  }
+}
+
 // 현재 상태 확인
 function checkStatus() {
   const versionData = readVersionInfo();
@@ -133,6 +160,9 @@ async function buildAndSubmitIOS() {
   console.log(`\n${colors.bright}🍎 Starting iOS Build & Submit Process${colors.reset}\n`);
 
   try {
+    // 네이티브 디렉토리 경고
+    checkNativeDirectories();
+
     // 0. 환경 변수 검증
     console.log(`${colors.yellow}🔐 Step 0: Validating environment variables...${colors.reset}`);
     try {
@@ -182,6 +212,9 @@ async function buildAndSubmitAndroid() {
   console.log(`\n${colors.bright}🤖 Starting Android Build & Submit Process${colors.reset}\n`);
 
   try {
+    // 네이티브 디렉토리 경고
+    checkNativeDirectories();
+
     // 0. 환경 변수 검증
     console.log(`${colors.yellow}🔐 Step 0: Validating environment variables...${colors.reset}`);
     try {
