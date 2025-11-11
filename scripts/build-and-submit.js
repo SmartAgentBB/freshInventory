@@ -13,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 
 const VERSION_FILE = path.join(__dirname, '..', 'version.json');
+const APP_JSON_FILE = path.join(__dirname, '..', 'app.json');
 
 // 색상 코드
 const colors = {
@@ -51,6 +52,49 @@ function updateVersionInfo(platform, status) {
     history[history.length - 1].status = status;
   }
   fs.writeFileSync(VERSION_FILE, JSON.stringify(versionData, null, 2) + '\n');
+}
+
+// 버전 동기화 검증 (2025-11-11 추가)
+function verifyVersionSync(platform) {
+  console.log(`${colors.yellow}🔍 Verifying version synchronization...${colors.reset}`);
+
+  const versionData = JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8'));
+  const appJson = JSON.parse(fs.readFileSync(APP_JSON_FILE, 'utf8'));
+
+  if (platform === 'ios') {
+    const versionJsonBuild = versionData.ios.buildNumber;
+    const appJsonBuild = parseInt(appJson.expo.ios.buildNumber);
+
+    if (versionJsonBuild !== appJsonBuild) {
+      console.error(`${colors.red}❌ Version mismatch detected!${colors.reset}`);
+      console.error(`   version.json buildNumber: ${colors.bright}${versionJsonBuild}${colors.reset}`);
+      console.error(`   app.json buildNumber: ${colors.bright}${appJsonBuild}${colors.reset}`);
+      throw new Error('iOS buildNumber mismatch between version.json and app.json!');
+    }
+    console.log(`${colors.green}✓ iOS buildNumber verified: ${versionJsonBuild}${colors.reset}`);
+  } else if (platform === 'android') {
+    const versionJsonCode = versionData.android.versionCode;
+    const appJsonCode = appJson.expo.android.versionCode;
+
+    if (versionJsonCode !== appJsonCode) {
+      console.error(`${colors.red}❌ Version mismatch detected!${colors.reset}`);
+      console.error(`   version.json versionCode: ${colors.bright}${versionJsonCode}${colors.reset}`);
+      console.error(`   app.json versionCode: ${colors.bright}${appJsonCode}${colors.reset}`);
+      throw new Error('Android versionCode mismatch between version.json and app.json!');
+    }
+    console.log(`${colors.green}✓ Android versionCode verified: ${versionJsonCode}${colors.reset}`);
+  }
+
+  // 앱 버전도 검증
+  const versionJsonVersion = versionData.version;
+  const appJsonVersion = appJson.expo.version;
+  if (versionJsonVersion !== appJsonVersion) {
+    console.error(`${colors.red}❌ App version mismatch detected!${colors.reset}`);
+    console.error(`   version.json version: ${colors.bright}${versionJsonVersion}${colors.reset}`);
+    console.error(`   app.json version: ${colors.bright}${appJsonVersion}${colors.reset}`);
+    throw new Error('App version mismatch between version.json and app.json!');
+  }
+  console.log(`${colors.green}✓ App version verified: ${versionJsonVersion}${colors.reset}`);
 }
 
 // 현재 상태 확인
@@ -103,6 +147,10 @@ async function buildAndSubmitIOS() {
     console.log(`\n${colors.yellow}📝 Step 1: Incrementing build number...${colors.reset}`);
     runCommand('node scripts/bump-version.js ios "Automated build"');
 
+    // 1.5. 버전 동기화 검증
+    console.log(`\n${colors.yellow}🔍 Step 1.5: Verifying version synchronization...${colors.reset}`);
+    verifyVersionSync('ios');
+
     // 2. Git 커밋
     console.log(`\n${colors.yellow}📝 Step 2: Committing version changes...${colors.reset}`);
     runCommand('git add app.json version.json');
@@ -147,6 +195,10 @@ async function buildAndSubmitAndroid() {
     // 1. 버전 코드 증가
     console.log(`\n${colors.yellow}📝 Step 1: Incrementing version code...${colors.reset}`);
     runCommand('node scripts/bump-version.js android "Automated build"');
+
+    // 1.5. 버전 동기화 검증 (2025-11-11 추가)
+    console.log(`\n${colors.yellow}🔍 Step 1.5: Verifying version synchronization...${colors.reset}`);
+    verifyVersionSync('android');
 
     // 2. Git 커밋
     console.log(`\n${colors.yellow}📝 Step 2: Committing version changes...${colors.reset}`);
