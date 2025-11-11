@@ -81,10 +81,8 @@ function main() {
         notes: notes || 'Version code incremented'
       });
 
-      // app.json 업데이트 (Android versionCode 추가 필요 시)
-      if (!appJson.expo.android.versionCode) {
-        appJson.expo.android.versionCode = versionData.android.versionCode;
-      }
+      // app.json 업데이트 (항상 동기화)
+      appJson.expo.android.versionCode = versionData.android.versionCode;
       changes.push(`Android version code: ${versionData.android.versionCode - 1} → ${versionData.android.versionCode}`);
       break;
 
